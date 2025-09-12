@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <title>MF Gestor de Citas</title>
   <meta name="theme-color" content="#5e5bff">
-  <link rel="manifest" href="manifest.webmanifest?v=ui17">
+  <link rel="manifest" href="manifest.webmanifest?v=ui18">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -18,6 +18,7 @@
       --glassBorder: rgba(255,255,255,.22);
       --glassBg: rgba(8,12,24,.45);
       --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
+      --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
     }
 
     body{
@@ -58,7 +59,7 @@
       font-size:17px; color:var(--ink);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
     }
-    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; width:100%; min-height:56px; padding-right:14px; }
+    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; min-height:56px; padding-right:14px; }
     .field select{ min-height:56px; }
     .field textarea{ min-height:140px; resize:vertical; }
     .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
@@ -80,13 +81,14 @@
     }
     .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
     .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
+    .btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
 
     /* ====== LOGIN/SETUP centrados ====== */
     .login-hero{
       min-height:100dvh;
       display:flex;
-      align-items:center;          /* centrado vertical */
-      justify-content:center;      /* centrado horizontal */
+      align-items:center;
+      justify-content:center;
       padding:24px 20px 40px;
     }
     .login-card{
@@ -112,6 +114,7 @@
     .app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
     @media (min-width:980px){ .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px } }
     .glass{ backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px; }
+    .span-2{ grid-column: 1 / -1; }
     .section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
     @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
@@ -137,6 +140,42 @@
     mark{ background:#fff5b1; padding:0 2px; border-radius:4px }
     .footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
     .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
+
+    /* ====== CALENDAR (Agenda) ====== */
+    .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px }
+    .cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
+    .cal-nav{ display:flex; gap:8px }
+    .chip{ border:1px solid rgba(255,255,255,.3); border-radius:12px; padding:8px 10px; background:#fff; color:#0b1220; font-weight:700; cursor:pointer }
+    .cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
+    .cal-dow{ text-align:center; font-weight:800; color:#c7d2fe; padding:4px 0 6px }
+    .cal-cell{
+      background: rgba(255,255,255,.86); color:#0b1220;
+      border-radius:16px; min-height:92px; padding:8px; position:relative;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
+      display:flex; flex-direction:column; gap:6px; cursor:pointer;
+    }
+    .cal-num{ font-weight:900; opacity:.9 }
+    .cal-other{ opacity:.5 }
+    .cal-today{ outline:2px solid var(--violet); outline-offset:2px }
+    .dots{ display:flex; gap:6px; margin-top:auto; flex-wrap:wrap }
+    .dot{ width:8px; height:8px; border-radius:6px; background:var(--violet) }
+    .dot.green{ background:var(--ok) } .dot.yellow{ background:var(--warning) } .dot.red{ background:var(--danger) }
+
+    .day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px }
+    .day-list{ display:grid; gap:8px; margin-top:10px }
+    .evt-item{ background:#fff; color:#0b1220; border-radius:14px; padding:10px 12px; box-shadow: 0 10px 22px rgba(0,0,0,.18); display:grid; gap:6px }
+    .evt-title{ font-weight:900 }
+    .evt-meta{ color:#475569; font-size:14px }
+    .evt-actions{ display:flex; gap:8px; flex-wrap:wrap }
+
+    /* ====== MODAL evento ====== */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter: blur(6px); z-index:100; }
+    .modal[open]{ display:flex; }
+    .modal::before{ content:""; position:absolute; inset:0; background:rgba(0,0,0,.42); }
+    .modal-card{ position:relative; z-index:1; width:min(560px, 100%); border-radius:22px; padding:18px; background: var(--glassBg); border:1px solid var(--glassBorder); box-shadow: var(--shadow) }
+    .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+    .modal-title{ font-weight:900; font-size:18px }
+    .modal-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px }
   </style>
 </head>
 <body>
@@ -205,9 +244,32 @@
         </div>
       </section>
 
-      <!-- === APP (sin cambios de lógica) === -->
+      <!-- === APP === -->
       <section id="appView" class="stage" style="display:none">
         <div class="app-wrap">
+
+          <!-- =============== AGENDA (Mes + modal) =============== -->
+          <div class="glass span-2" id="agendaCard">
+            <div class="cal-head">
+              <div class="cal-title" id="calTitle">Agenda</div>
+              <div class="cal-nav">
+                <button class="chip" id="calPrev" type="button">◀︎</button>
+                <button class="chip" id="calToday" type="button">Hoy</button>
+                <button class="chip" id="calNext" type="button">▶︎</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="calGrid">
+              <!-- DOW -->
+            </div>
+
+            <div class="day-toolbar">
+              <div class="section-title" id="dayTitle" style="margin:0">Hoy</div>
+              <button class="btn-small btn-outline" id="btnNewEvent" type="button">Nueva cita</button>
+            </div>
+            <div id="dayList" class="day-list"></div>
+          </div>
+
+          <!-- =============== ENVIAR CITA (tu módulo actual) =============== -->
           <div class="glass">
             <h3 class="section-title">Enviar cita</h3>
             <div class="grid2">
@@ -240,6 +302,7 @@
             </div>
           </div>
 
+          <!-- =============== CONTACTOS + COPIAS (igual) =============== -->
           <div class="glass" style="display:grid; gap:18px">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
@@ -278,7 +341,49 @@
     </main>
   </div>
 
-  <!-- ===== Lógica intacta ===== -->
+  <!-- ===== MODAL EVENTO ===== -->
+  <dialog id="eventModal" class="modal">
+    <form method="dialog" class="modal-card" id="evtForm" onsubmit="return false;">
+      <div class="modal-head">
+        <div class="modal-title" id="evtModalTitle">Nueva cita</div>
+        <button type="button" id="evtClose" class="chip">Cerrar</button>
+      </div>
+
+      <div class="field" style="margin-bottom:10px">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="evtTitle" placeholder="Título de la cita" />
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="field">
+          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="evtStart" type="datetime-local" />
+        </div>
+        <div class="field">
+          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="evtEnd" type="datetime-local" />
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:10px">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
+        <select id="evtContact"></select>
+      </div>
+
+      <div class="field">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14l-8-4-8 4V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <textarea id="evtNote" rows="3" placeholder="Notas"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button id="evtSave" class="btn" type="button">Guardar</button>
+        <button id="evtSend" class="btn btn-outline" type="button">Enviar cita</button>
+        <button id="evtDelete" class="btn btn-danger" type="button" style="margin-left:auto; display:none">Eliminar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== LÓGICA ===== -->
   <script>
     const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
       state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
@@ -386,7 +491,7 @@
       if(qd && phone.startsWith(qd)) score = Math.max(score, 150);
       return score;
     }
-    function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+    function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]); }
     function highlight(text, query){
       if(!query) return esc(text);
       const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + ')','ig');
@@ -448,14 +553,20 @@
 
     function refreshContactsSelect(list){
       window.__contacts = Array.isArray(list) ? list.slice() : [];
-      const sel=$('contactSelect'); if(!sel) return;
-      sel.innerHTML='';
-      if(!list || !list.length){
-        const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
-      } else {
-        list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); });
+      const sel=$('contactSelect'); if(sel) {
+        sel.innerHTML='';
+        if(!list || !list.length){
+          const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
+        } else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
       }
       renderSearchResults($('contactSearch')?.value || '');
+      // actualizar select del modal
+      const msel = $('evtContact');
+      if (msel){
+        msel.innerHTML='';
+        if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o); }
+        else list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; msel.add(o); });
+      }
     }
 
     function buildMessage(){
@@ -463,6 +574,14 @@
       const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
       const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
+    }
+    function buildEventMessage(evt){
+      const when = new Date(evt.start);
+      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      const title = evt.title ? `“${evt.title}”` : 'la cita';
+      const name = evt.contactName || '';
+      return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
 
     let pendingAutoBackup = null;
@@ -512,6 +631,185 @@
     const eyeOff = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
     function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
 
+    /* ====== CALENDAR HELPERS ====== */
+    const pad = n => String(n).padStart(2,'0');
+    const toLocalInput = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; }
+    const isSameDay = (a,b) => startOfDay(a).getTime()===startOfDay(b).getTime();
+    const addDays = (d, k) => { const x=new Date(d); x.setDate(x.getDate()+k); return x; }
+    const firstDayGrid = (d) => {
+      const x=new Date(d.getFullYear(), d.getMonth(), 1);
+      // Lunes como inicio de semana
+      const day=(x.getDay()+6)%7; // 0=lunes
+      return addDays(x, -day);
+    };
+
+    let currentMonth = new Date();
+    let selectedDay = new Date();
+
+    function ensureEvents(vault){
+      if(!vault.events) vault.events = [];
+      return vault;
+    }
+
+    function monthLabel(date){
+      return date.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+    }
+
+    function renderCalendar(){
+      const grid=$('calGrid'); const title=$('calTitle');
+      if(!grid||!title) return;
+      grid.innerHTML='';
+      title.textContent = `Agenda · ${monthLabel(currentMonth)}`;
+
+      // cabecera DOW
+      const dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+      dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+
+      const start = firstDayGrid(currentMonth);
+      const today = new Date();
+
+      // 6 semanas * 7 = 42 celdas
+      for(let i=0;i<42;i++){
+        const day = addDays(start, i);
+        const cell=document.createElement('div');
+        cell.className='cal-cell';
+        const number=document.createElement('div'); number.className='cal-num'; number.textContent=String(day.getDate());
+        if(day.getMonth()!==currentMonth.getMonth()) number.classList.add('cal-other');
+        if(isSameDay(day,today)) cell.classList.add('cal-today');
+
+        const dots=document.createElement('div'); dots.className='dots'; dots.dataset.date = day.toISOString();
+
+        cell.appendChild(number); cell.appendChild(dots);
+
+        cell.addEventListener('click', ()=>{ selectedDay = day; renderDayList(); });
+        cell.addEventListener('dblclick', ()=>{ selectedDay = day; renderDayList(); openEventModal(); });
+
+        grid.appendChild(cell);
+      }
+      paintEventDots();
+      renderDayList();
+    }
+
+    function paintEventDots(){
+      const st=S.state(); if(!st || !S.key) return;
+      decryptJson(S.key, st.vault).then(v=>{
+        ensureEvents(v);
+        const dotsNodes = document.querySelectorAll('.dots');
+        dotsNodes.forEach(n=>{
+          const day = new Date(n.dataset.date);
+          const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
+          n.innerHTML='';
+          events.slice(0,4).forEach((evt,idx)=>{
+            const d=document.createElement('span');
+            d.className='dot' + (idx===0?' green': idx===1?'':' yellow');
+            n.appendChild(d);
+          });
+        });
+      }).catch(()=>{});
+    }
+
+    function renderDayList(){
+      const st=S.state(); const list=$('dayList'); const head=$('dayTitle');
+      if(!st || !S.key || !list || !head) return;
+      head.textContent = selectedDay.toLocaleDateString(undefined,{weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+      decryptJson(S.key, st.vault).then(v=>{
+        ensureEvents(v);
+        const evts = v.events.filter(e=> isSameDay(selectedDay, new Date(e.start)) )
+          .sort((a,b)=> new Date(a.start)-new Date(b.start));
+        list.innerHTML = '';
+        if(!evts.length){
+          const empty=document.createElement('div'); empty.className='muted'; empty.textContent='Sin citas en este día.';
+          list.appendChild(empty); return;
+        }
+        evts.forEach(evt=>{
+          const card=document.createElement('div'); card.className='evt-item';
+          const hour=new Date(evt.start).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+          card.innerHTML = `
+            <div class="evt-title">${esc(evt.title||'Cita')}</div>
+            <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)} (${esc(evt.contactPhone||'')})`:''}</div>
+          `;
+          const actions=document.createElement('div'); actions.className='evt-actions';
+          const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline'; bEdit.textContent='Editar';
+          const bSend=document.createElement('button'); bSend.className='btn-small btn-outline'; bSend.textContent='Enviar cita';
+          const bDel=document.createElement('button'); bDel.className='btn-small btn-danger'; bDel.textContent='Eliminar';
+          bEdit.onclick=()=>openEventModal(evt);
+          bSend.onclick=()=>sendEventByWhatsApp(evt);
+          bDel.onclick=()=>deleteEvent(evt.id);
+          actions.append(bEdit,bSend,bDel);
+          card.appendChild(actions);
+          list.appendChild(card);
+        });
+      }).catch(()=>{});
+    }
+
+    function openEventModal(evt){
+      const dlg=$('eventModal'); if(!dlg) return;
+      const title=$('evtModalTitle');
+      const t=$('evtTitle'), s=$('evtStart'), e=$('evtEnd'), c=$('evtContact'), n=$('evtNote'), del=$('evtDelete');
+      if(!evt){
+        title.textContent='Nueva cita';
+        t.value=''; const base=new Date(selectedDay); base.setHours(10,0,0,0);
+        s.value = toLocalInput(base); e.value='';
+        c.selectedIndex=0; n.value='';
+        del.style.display='none';
+        dlg.setAttribute('data-id','');
+      }else{
+        title.textContent='Editar cita';
+        t.value=evt.title||'';
+        s.value = toLocalInput(new Date(evt.start));
+        e.value = evt.end ? toLocalInput(new Date(evt.end)) : '';
+        // seleccionar contacto
+        for(let i=0;i<c.options.length;i++){ if(c.options[i].value===evt.contactPhone){ c.selectedIndex=i; break; } }
+        n.value=evt.note||'';
+        del.style.display='inline-flex';
+        dlg.setAttribute('data-id', evt.id);
+      }
+      dlg.showModal();
+    }
+    function closeEventModal(){ $('eventModal')?.close(); }
+
+    function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+    async function saveEvent(){
+      const t=$('evtTitle').value.trim();
+      const s=$('evtStart').value; const e=$('evtEnd').value;
+      const contactPhone=$('evtContact').value||'';
+      const contact = (window.__contacts||[]).find(x=>x.phone===contactPhone)||{};
+      if(!s){ alert('Indica fecha y hora de inicio'); return; }
+      const st=S.state(); if(!st||!S.key) return;
+      const vault=ensureEvents(await decryptJson(S.key, st.vault));
+      const id = $('eventModal').getAttribute('data-id');
+      const evt = { id: id || makeId(), title:t, start:new Date(s).toISOString(),
+                    end: e? new Date(e).toISOString():null,
+                    contactPhone: contactPhone||null, contactName: contact.name||null,
+                    note: $('evtNote').value.trim()||null };
+      if(id){
+        const idx=vault.events.findIndex(x=>x.id===id);
+        if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt);
+      }else{
+        vault.events.push(evt);
+      }
+      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+      closeEventModal(); paintEventDots(); renderDayList();
+    }
+
+    async function deleteEvent(id){
+      if(!confirm('¿Eliminar esta cita?')) return;
+      const st=S.state(); if(!st||!S.key) return;
+      const vault=ensureEvents(await decryptJson(S.key, st.vault));
+      vault.events = vault.events.filter(e=>e.id!==id);
+      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+      paintEventDots(); renderDayList();
+    }
+
+    function sendEventByWhatsApp(evt){
+      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ alert('La cita no tiene un contacto válido'); return; }
+      const text = encodeURIComponent(buildEventMessage(evt));
+      const url=`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${text}`;
+      openExternal(url);
+    }
+
     function wireEvents(){
       const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
       setEyeIcon($('toggleLogin'), false); setEyeIcon($('toggleSetup'), false);
@@ -523,9 +821,9 @@
         if(!user){ alert('Introduce un usuario'); return; }
         if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
         try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
-          const pack=await encryptJson(S.key,{list:[]});
+          const pack=await encryptJson(S.key,{list:[], events:[]});
           S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
-          refreshContactsSelect([]); show('appView');
+          refreshContactsSelect([]); show('appView'); renderCalendar();
         }catch(e){ alert('Error creando el almacén'); }
       });
 
@@ -537,8 +835,11 @@
           const r=await derive(pass, state.saltB64);
           if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
           const vault=await decryptJson(r.aesKey, state.vault);
+          if(!vault.events) vault.events=[];
           S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
-          show('appView'); const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+          show('appView');
+          const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+          currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
         }catch(e){ alert('Error al descifrar datos'); }
       });
 
@@ -553,7 +854,7 @@
 
       $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
 
-      const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[]}; };
+      const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
       const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
 
       (function setupPhoneInput(){
@@ -572,7 +873,6 @@
         vault.list = [...(vault.list||[]), {name, phone}];
         await saveVault(vault);
         refreshContactsSelect(vault.list);
-        $('newName').value=''; $('newPhone').value='';
         if(getAutoBackup()) exportFixedBackup(true);
       });
 
@@ -600,7 +900,7 @@
       $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
       $('btnExportCsv')?.addEventListener('click', exportCSV);
 
-      // === MODIFICACIÓN pedida: input de importación oculto y limpieza en cancelación (iOS) ===
+      // ===== Importar copia: input oculto + limpieza tras cancelar (iOS) =====
       $('btnImportApp')?.addEventListener('click', () => {
         const i = document.createElement('input');
         i.type = 'file';
@@ -639,6 +939,33 @@
 
       wireSearch();
 
+      // ===== Calendar wiring =====
+      $('calPrev')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1); renderCalendar(); });
+      $('calNext')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1); renderCalendar(); });
+      $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
+      $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
+
+      $('evtSave')?.addEventListener('click', saveEvent);
+      $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(id) deleteEvent(id); });
+      $('evtSend')?.addEventListener('click', ()=>{
+        const id=$('eventModal').getAttribute('data-id');
+        if(!id){ // enviar con valores del modal sin guardar
+          const tmp = {
+            title: $('evtTitle').value.trim(),
+            start: new Date($('evtStart').value).toISOString(),
+            end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
+            contactPhone: $('evtContact').value || null,
+            contactName: (window.__contacts||[]).find(x=>x.phone===$('evtContact').value)?.name || null
+          };
+          sendEventByWhatsApp(tmp);
+        } else {
+          decryptJson(S.key, S.state().vault).then(v=>{
+            const e=v.events.find(x=>x.id===id); if(e) sendEventByWhatsApp(e);
+          });
+        }
+      });
+      $('evtClose')?.addEventListener('click', closeEventModal);
+
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
         const el=$(id); el&&el.addEventListener('keydown',e=>{
           if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }
@@ -667,7 +994,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui17').catch(()=>{});
+        navigator.serviceWorker.register('./service-worker.js?v=ui18').catch(()=>{});
       });
     }
   </script>
