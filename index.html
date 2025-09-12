@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>MF Gestor de Citas</title>
+  <meta name="theme-color" content="#5e5bff">
+  <link rel="manifest" href="manifest.webmanifest?v=ui12">
+  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html{ -webkit-text-size-adjust:100%; }
+    :root{
+      --bg1:#0b0e1a; --bg2:#11162a; --bg3:#0c2242;
+      --violet:#5e5bff; --cyan:#10b5ff;
+      --ink:#0b1220; --line: rgba(94,91,255,.22);
+      --glassA: rgba(255,255,255,.86); --glassB: rgba(255,255,255,.82);
+      --muted:#475569; --soft:#eef2ff;
+    }
+    body{
+      margin:0; overflow-x:hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      background:
+        radial-gradient(900px 500px at 10% -10%, rgba(16,181,255,.25), transparent 60%),
+        radial-gradient(1100px 600px at 90% 0%, rgba(94,91,255,.28), transparent 65%),
+        linear-gradient(180deg, var(--bg3), var(--bg2) 55%, var(--bg1));
+    }
+    .card{ width:min(980px, 100%); margin:0 auto; background: linear-gradient(180deg, var(--glassA), var(--glassB)); }
+    @media (min-width:900px){ .card{ border-radius:28px; box-shadow:0 40px 100px rgba(0,0,0,.25), 0 30px 70px rgba(94,91,255,.18) } }
+    .auth-head{ display:flex; align-items:center; gap:12px; padding:20px 16px 10px 16px }
+    .logo-box{ width:46px; height:46px; border-radius:12px; overflow:hidden; flex:0 0 auto; box-shadow:0 10px 30px rgba(16,181,255,.25) }
+    .logo-box img{ width:100%; height:100%; display:block; object-fit:cover; background:#fff }
+    .title{ margin:0; font-size:clamp(22px, 3.8vw, 28px); color:var(--ink) }
+    .subtitle{ margin:2px 0 0; font-size:clamp(12px, 2.4vw, 14px); color:#64748b }
+    .hr{ height:1px; background:var(--line); margin:10px 0 0 }
+
+    .main{ padding:14px 16px 24px; overflow-anchor:none; }
+    .stage{ display:none; }
+    .stage-inner{ width:100%; max-width:600px; margin:12px auto 0; display:grid; gap:24px; }
+    .row{ display:grid; grid-template-columns:1fr; gap:16px }
+    .field{ position:relative; }
+    .field input, .field select, .field textarea, .field [type="datetime-local"]{
+      width:100%; border:1px solid rgba(94,91,255,.24); border-radius:18px;
+      padding:16px 48px 16px 44px; background:rgba(255,255,255,.94);
+      font-size:17px; color:var(--ink);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(94,91,255,.08);
+    }
+    .field select, .field input[type="datetime-local"]{ min-height:56px; }
+    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; }
+    .field textarea{ min-height:130px; resize:vertical; overflow:auto; }
+    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; opacity:.8 }
+    .icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
+    label{ display:block; font-size:16px; color:#374151; margin:6px 0 8px; font-weight:700 }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
+      padding:18px 18px; width:100%;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      box-shadow: 0 18px 34px rgba(16,181,255,.28), 0 18px 34px rgba(94,91,255,.28);
+      letter-spacing:.2px; text-align:center;
+    }
+    .btn-ghost{
+      appearance:none; background:transparent; border:1px dashed rgba(94,91,255,.35);
+      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:700; width:100%;
+      display:inline-flex; align-items:center; justify-content:center; text-align:center;
+    }
+    .btn-small{ padding:12px 14px; border-radius:14px; font-weight:700 }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px }
+    @media (max-width:720px){ .grid2{ grid-template-columns:1fr } }
+    .section{ padding:12px 0 0 }
+    .container{ width:100%; max-width:600px; margin-inline:auto; padding-inline:16px }
+    .contact-block{
+      background:linear-gradient(180deg, rgba(246,247,255,.9), rgba(243,246,255,.85));
+      border:1px solid rgba(94,91,255,.22); border-radius:18px; padding:18px; box-shadow: 0 10px 26px rgba(94,91,255,.08);
+    }
+    .backup-block{
+      background:linear-gradient(180deg, rgba(249,250,255,.92), rgba(245,248,255,.9));
+      border:1px dashed rgba(94,91,255,.35); border-radius:18px; padding:18px; box-shadow: 0 8px 20px rgba(94,91,255,.06);
+    }
+    .btn-outline{ border:1px solid rgba(94,91,255,.35); background:#fff; color:#1f2a44; }
+    .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
+
+    .footer{ padding:18px 16px 24px 16px; display:flex; justify-content:center; align-items:center }
+    .logout{ color:#ef4444; text-decoration:underline; cursor:pointer; font-weight:700 }
+
+    /* Contact Search */
+    .contact-picker{ display:grid; gap:10px }
+    .search-wrap{ position:relative }
+    #contactSearch{
+      width:100%; border:1px solid rgba(94,91,255,.24); border-radius:18px;
+      padding:14px 44px 14px 44px; background:#fff; font-size:16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(94,91,255,.08);
+    }
+    .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
+    .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
+    #contactResults{
+      border:1px solid rgba(94,91,255,.24); border-radius:16px; background:#fff;
+      box-shadow: 0 12px 28px rgba(94,91,255,.12);
+      max-height:260px; overflow:auto; padding:6px;
+    }
+    .result-item{
+      display:flex; align-items:center; gap:8px; width:100%;
+      padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent;
+      background:transparent; font-size:16px; text-align:left;
+    }
+    .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
+    .result-name{ color:#0b1220; font-weight:700 }
+    .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
+    .muted{ color:#64748b; font-size:14px }
+    mark{ background: #fff5b1; padding:0 2px; border-radius:4px }
+    .toggle{ display:flex; align-items:center; gap:10px; user-select:none; }
+    .toggle input{ width:44px; height:26px; appearance:none; background:#e5e7eb; border-radius:999px; position:relative; outline:none; cursor:pointer; transition:background .2s; }
+    .toggle input::after{ content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s; }
+    .toggle input:checked{ background:linear-gradient(90deg, var(--cyan), var(--violet)); }
+    .toggle input:checked::after{ transform:translateX(18px); }
+
+    /* --- Login mobile glow makeover --- */
+    @media (max-width: 640px){
+      body.login-mode .auth-head,
+      body.login-mode .hr{
+        display:none; /* hero limpio */
+      }
+      #loginView{ padding:0; }
+      .login-hero{
+        min-height:100dvh;
+        padding:32px 20px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        position:relative;
+        isolation:isolate;
+      }
+      .login-hero::before{
+        content:"";
+        position:absolute; inset:0;
+        background:
+          radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+          radial-gradient(900px 540px at -10% 100%, rgba(16,181,255,.40), transparent 60%),
+          linear-gradient(180deg, #13203d 0%, #0f1c36 60%, #0a162d 100%);
+        z-index:-1;
+      }
+      .login-card{
+        width:min(520px,100%);
+        border-radius:28px;
+        padding:26px 22px 22px;
+        backdrop-filter: blur(16px) saturate(120%);
+        background: rgba(255,255,255,.06);
+        border: 1px solid rgba(255,255,255,.18);
+        box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25);
+      }
+      .login-badge{
+        width:54px; height:54px; border-radius:50%;
+        border:3px solid rgba(255,255,255,.35);
+        border-top-color:#ff6aa2;
+        margin:2px auto 14px;
+        animation:spin 1.2s linear infinite;
+      }
+      @keyframes spin{ to{ transform:rotate(360deg); } }
+      .login-title{ color:#fff; text-align:center; margin:0 0 4px; font-size:22px; letter-spacing:.4px; font-weight:800 }
+      .login-sub{ color:rgba(255,255,255,.75); text-align:center; font-size:13px; margin:0 0 18px }
+      .login-fields{ display:grid; gap:16px; }
+      .login-field input{
+        background:rgba(255,255,255,.96);
+        border:none !important;
+        border-radius:18px;
+        box-shadow: 0 12px 28px rgba(0,0,0,.10);
+      }
+      .login-field .icon-left{ color:#667085; }
+      .login-field .icon-right{ color:#667085; }
+      .login-primary{ margin-top:8px; }
+      .login-secondary{
+        margin-top:12px;
+        background:#ffffff !important;
+        color:#0b1220 !important;
+        border:none !important;
+        font-weight:800;
+        justify-content:center;
+      }
+      #btnReset{ text-align:center; justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="auth-head">
+      <div class="logo-box"><img src="icons/icon-192.png" alt="Logo" /></div>
+      <div>
+        <h1 id="hdrTitle" class="title">Iniciar sesión</h1>
+        <p class="subtitle">MF Gestor de Citas</p>
+      </div>
+    </div>
+    <div class="hr"></div>
+
+    <main id="main" class="main">
+      <!-- === REGISTRO === -->
+      <section id="setupView" class="stage">
+        <div class="stage-inner">
+          <div class="row">
+            <div class="field">
+              <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
+              </svg>
+              <input id="setupUser" placeholder="Usuario" autocomplete="username">
+            </div>
+            <div class="field">
+              <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                  <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
+                </g>
+              </svg>
+              <input id="setupPass" type="password" placeholder="Contraseña" autocomplete="new-password">
+              <svg id="toggleSetup" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
+            </div>
+          </div>
+          <div class="row"><button id="btnSetup" class="btn" type="button">Crear y acceder</button></div>
+        </div>
+      </section>
+
+      <!-- === LOGIN (rediseñado móvil) === -->
+      <section id="loginView" class="stage">
+        <div class="login-hero">
+          <div class="login-card">
+            <div class="login-badge" aria-hidden="true"></div>
+            <h2 class="login-title">Iniciar sesión</h2>
+            <p class="login-sub">MF Gestor de Citas</p>
+
+            <div class="login-fields">
+              <!-- Usuario -->
+              <div class="field login-field">
+                <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
+                </svg>
+                <input id="loginUser" placeholder="Usuario" autocomplete="username">
+              </div>
+
+              <!-- Contraseña -->
+              <div class="field login-field">
+                <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                    <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
+                  </g>
+                </svg>
+                <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password">
+                <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
+              </div>
+
+              <!-- Botones -->
+              <button id="btnLogin" class="btn login-primary" type="button">Entrar</button>
+              <button id="btnReset" class="btn-ghost login-secondary" type="button" style="display:none">Borrar datos de la app</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- === APP === -->
+      <section id="appView" class="stage" style="display:none">
+        <div class="section">
+          <div class="container grid2">
+            <div>
+              <label>Fecha y hora del recordatorio</label>
+              <div class="field"><input id="dt" type="datetime-local" /></div>
+            </div>
+            <div>
+              <label>Contacto</label>
+              <div class="contact-picker">
+                <div class="search-wrap">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
+                  <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
+                  <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+                </div>
+                <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
+                <div class="muted"><strong>Listado</strong></div>
+                <div class="field"><select id="contactSelect"></select></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="container">
+            <label>Mensaje</label>
+            <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="container"><button id="btnSend" class="btn" type="button">Enviar Cita</button></div>
+        </div>
+
+        <div class="section">
+          <div class="container contact-block">
+            <label style="margin-top:0">Gestionar contactos</label>
+            <div class="grid2">
+              <div class="field"><input id="newName" placeholder="Nombre" /></div>
+              <div class="field">
+                <input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" pattern="^\\+\\d{6,15}$" placeholder="+34600111222" />
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
+              <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
+              <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="container backup-block">
+            <label style="margin-top:0">Copias de seguridad</label>
+            <div style="display:flex; flex-wrap:wrap; gap:12px">
+              <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar copia cifrada (.json)</button>
+              <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar CSV</button>
+              <button id="btnImportApp" class="btn btn-outline" type="button">Importar copia…</button>
+            </div>
+            <div class="toggle" style="margin-top:12px">
+              <input id="autoBackupToggle" type="checkbox" />
+              <span class="muted">Auto-descargar copia tras cada cambio de contactos</span>
+            </div>
+            <div id="autoBackupToast" class="muted">
+              Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <span id="logout" class="logout" style="display:none">Cerrar sesión</span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // ===== Estado y utilidades =====
+    const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
+      state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
+      save(o){ localStorage.setItem(this.stateKey, JSON.stringify(o)); },
+      clear(){ localStorage.removeItem(this.stateKey); } };
+    const $ = id => document.getElementById(id);
+    const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
+
+    async function derive(password, saltB64){
+      const salt=saltB64?ubuf(saltB64):crypto.getRandomValues(new Uint8Array(16)).buffer;
+      const baseKey=await crypto.subtle.importKey('raw', new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
+      const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},baseKey,256);
+      const keyBytes=new Uint8Array(bits);
+      const pwHash=await crypto.subtle.digest('SHA-256', keyBytes);
+      const aesKey=await crypto.subtle.importKey('raw', keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt']);
+      return {aesKey, pwHashB64:b64(pwHash), saltB64:b64(salt)};
+    }
+    async function encryptJson(aesKey,obj){ const iv=crypto.getRandomValues(new Uint8Array(12)); const data=new TextEncoder().encode(JSON.stringify(obj)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,data); return {iv:b64(iv),ct:b64(ct)}; }
+    async function decryptJson(aesKey,pack){ const iv=ubuf(pack.iv), ct=ubuf(pack.ct); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(iv)},aesKey,ct); return JSON.parse(new TextDecoder().decode(pt)); }
+
+    const FIXED_PASS = 'MFGestorCitas';
+    async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
+
+    // ===== Descarga robusta =====
+    async function saveFileSmart(filename, mime, content){
+      let blob;
+      if (typeof content === 'string') blob = new Blob([content], {type: mime});
+      else if (content instanceof ArrayBuffer) blob = new Blob([new Uint8Array(content)], {type: mime});
+      else blob = new Blob([content], {type: mime});
+
+      try {
+        if (navigator.canShare && 'share' in navigator) {
+          const file = new File([blob], filename, {type: mime});
+          if (navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: filename}); return true; }
+        }
+      } catch(e) {}
+
+      try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.rel='noopener';
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){ } a.remove(); }, 1200);
+        return true;
+      } catch(e) {}
+
+      try {
+        const buf = await blob.arrayBuffer();
+        let binary = ''; const bytes = new Uint8Array(buf);
+        for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+        const dataUrl = 'data:' + mime + ';base64,' + base64;
+        window.open(dataUrl, '_blank');
+        return true;
+      } catch(e) {}
+
+      try {
+        if (typeof content === 'string' && navigator.clipboard) {
+          await navigator.clipboard.writeText(content);
+          alert('No se pudo descargar. He copiado el contenido al portapapeles.');
+          return true;
+        }
+      } catch(e) {}
+      alert('No se pudo descargar el archivo en este navegador.');
+      return false;
+    }
+
+    const saveJson = (name, obj) => saveFileSmart(name, 'application/json', JSON.stringify(obj, null, 2));
+    const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv); // BOM + MIME
+
+    // ===== Apertura externa sin “pantalla en blanco” =====
+    function openExternal(url){
+      const isStandalone =
+        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+        (typeof window.navigator.standalone === 'boolean' && window.navigator.standalone);
+      if (isStandalone) { window.location.href = url; }
+      else {
+        const a = document.createElement('a');
+        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+    }
+
+    // ===== UI / navegación =====
+    function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
+    function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
+    function show(id){
+      ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
+      $('logout') && ($('logout').style.display = id==='appView' ? 'inline' : 'none');
+      if(id==='appView'){ setHeaderTitle('Enviar cita'); } else { setHeaderTitle('Iniciar sesión'); }
+      if(id==='loginView'){ toggleResetVisibility(); }
+      if(id==='setupView'){ const r=$('btnReset'); if(r) r.style.display='none'; }
+      document.body.classList.toggle('login-mode', id==='loginView'); /* activa el hero en móvil */
+      window.scrollTo(0,0);
+    }
+
+    const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
+
+    // ===== Buscador de contactos =====
+    function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
+    function scoreContact(q, c){
+      if(!q) return 1;
+      const name = diac(c.name||''), phone = (c.phone||'').replace(/\s+/g,'');
+      const qn = diac(q), qd = q.replace(/\D+/g,'');
+      let score = -Infinity;
+      const ni = name.indexOf(qn); if(ni>=0) score = Math.max(score, 100 - ni);
+      if(name.startsWith(qn)) score = Math.max(score, 140);
+      const pi = phone.indexOf(qd); if(qd && pi>=0) score = Math.max(score, 120 - pi);
+      if(qd && phone.startsWith(qd)) score = Math.max(score, 150);
+      return score;
+    }
+    function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+    function highlight(text, query){
+      if(!query) return esc(text);
+      const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + ')','ig');
+      return esc(text).replace(re,'<mark>$1</mark>');
+    }
+
+    let activeIndex = -1;
+    function renderSearchResults(query){
+      const box = $('contactResults'); const input=$('contactSearch'); const clear=$('clearSearch');
+      if(!box || !input) return;
+      const q = query.trim();
+      clear.style.display = q ? 'block' : 'none';
+
+      const list = (window.__contacts||[]);
+      const items = list.map(c => ({ c, s: scoreContact(q, c) }))
+        .filter(o => o.s > -Infinity)
+        .sort((a,b)=>b.s - a.s)
+        .slice(0, 60);
+
+      box.innerHTML = '';
+      activeIndex = -1;
+      if(!q){ box.hidden = true; return; }
+      if(!items.length){
+        box.hidden = false;
+        const el = document.createElement('div');
+        el.className='muted'; el.style.padding='10px';
+        el.textContent = 'Sin resultados';
+        box.appendChild(el);
+        return;
+      }
+      items.forEach((o, idx)=>{
+        const btn = document.createElement('button');
+        btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
+        btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
+        btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
+        btn.addEventListener('click', ()=>selectContact(o.c));
+        btn.addEventListener('mousemove', ()=>setActive(idx));
+        box.appendChild(btn);
+      });
+      box.hidden = false;
+    }
+    function setActive(idx){
+      const box=$('contactResults'); if(!box) return;
+      const items=[...box.querySelectorAll('.result-item')];
+      items.forEach(el=>el.setAttribute('aria-selected','false'));
+      activeIndex = Math.max(0, Math.min(idx, items.length-1));
+      const el = items[activeIndex];
+      if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); }
+    }
+    function chooseActive(){
+      const box=$('contactResults'); if(!box) return;
+      const el = box.querySelector('.result-item[aria-selected="true"]');
+      if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectContact(c); }
+    }
+    function selectContact(c){
+      const sel=$('contactSelect'); if(sel){
+        for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } }
+      }
+      const input=$('contactSearch'); const box=$('contactResults');
+      input.value = `${c.name} (${c.phone})`; box.hidden = true; activeIndex=-1;
+    }
+    function wireSearch(){
+      const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
+      if(!input || !box) return;
+      const onInput = ()=>renderSearchResults(input.value);
+      input.addEventListener('input', onInput);
+      input.addEventListener('focus', ()=>{ if(input.value.trim()) renderSearchResults(input.value); });
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='ArrowDown'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<0?0:activeIndex+1); }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<=0?0:activeIndex-1); }
+        else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActive(); } }
+        else if(e.key==='Escape'){ box.hidden=true; activeIndex=-1; }
+      });
+      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndex=-1; input.focus(); renderSearchResults(''); });
+      document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
+    }
+
+    // ===== Select de contactos =====
+    function refreshContactsSelect(list){
+      window.__contacts = Array.isArray(list) ? list.slice() : [];
+      const sel=$('contactSelect'); if(!sel) return;
+      sel.innerHTML='';
+      if(!list || !list.length){
+        const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
+      } else {
+        list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); });
+      }
+      renderSearchResults($('contactSearch')?.value || '');
+    }
+
+    // ===== Mensaje =====
+    function buildMessage(){
+      const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
+      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
+    }
+
+    // ===== Export/Import con clave fija =====
+    let pendingAutoBackup = null; // {name, jsonString}
+    function showAutoToast(show){
+      const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none';
+    }
+
+    async function exportFixedBackup(auto=false){
+      const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
+      const vault=await decryptJson(S.key, st.vault);
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const {aesKey, saltB64} = await deriveFixed(b64(salt));
+      const pack = await encryptJson(aesKey, { list: vault.list || [] });
+      const payload = { format: 'mf-contacts-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
+      const name = auto ? ('autobackup-contactos-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-contactos.json';
+
+      if (auto) {
+        pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) };
+        showAutoToast(true);
+      } else {
+        await saveJson(name, payload);
+      }
+    }
+
+    async function importFixedBackupFromFile(file){
+      const text=await file.text();
+      let data;
+      try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
+      if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){
+        alert('Copia no reconocida (se espera formato cifrado fijo).'); return;
+      }
+      const {aesKey} = await deriveFixed(data.saltB64);
+      let obj;
+      try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); }
+      catch(e){ console.error(e); alert('No se pudo descifrar la copia.'); return; }
+      if(!obj || !Array.isArray(obj.list)){ alert('Contenido de copia inválido.'); return; }
+
+      const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
+      const vault=await decryptJson(S.key, st.vault);
+      const map = new Map();
+      (vault.list||[]).forEach(c=>map.set(c.phone, c));
+      let added=0, skipped=0;
+      obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
+      vault.list = Array.from(map.values());
+      const newPack = await encryptJson(S.key, vault);
+      st.vault = newPack; S.save(st);
+      refreshContactsSelect(vault.list);
+      alert(`Importación completa. Añadidos: ${added}. Ya existentes: ${skipped}.`);
+      if(getAutoBackup()) exportFixedBackup(true);
+    }
+
+    // ===== CSV =====
+    async function exportCSV(){
+      if(!S.key){ alert('Inicia sesión para exportar CSV.'); return; }
+      const st=S.state(); if(!st){ alert('No hay datos.'); return; }
+      const vault=await decryptJson(S.key, st.vault);
+      const rows=[['nombre','telefono'], ...(vault.list||[]).map(c=>[c.name, c.phone])];
+      const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      saveCsv('contactos.csv', csv);
+    }
+
+    // ===== Auto-backup flag =====
+    function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
+    function setAutoBackup(v){
+      const st=S.state(); if(!st) return;
+      st.autoBackup = !!v; S.save(st);
+      const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup;
+    }
+
+    // ===== Ojo mostrar/ocultar (estilo iOS) =====
+    const eyeOpen = `
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path>
+        <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle>
+      </g>`;
+    const eyeOff = `
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path>
+        <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle>
+        <path d="M3 3L21 21"></path>
+      </g>`;
+    function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
+
+    // ===== Eventos =====
+    function wireEvents(){
+      const toggle = (inputId, svgId) => {
+        const i=$(inputId), s=$(svgId); if(!i || !s) return;
+        i.type = i.type==='password' ? 'text' : 'password';
+        setEyeIcon(s, i.type==='text');
+      };
+
+      setEyeIcon($('toggleLogin'), false);
+      setEyeIcon($('toggleSetup'), false);
+
+      $('toggleLogin')?.addEventListener('click', ()=>toggle('loginPass','toggleLogin'));
+      $('toggleSetup')?.addEventListener('click', ()=>toggle('setupPass','toggleSetup'));
+
+      $('btnSetup')?.addEventListener('click', async ()=>{
+        const user=$('setupUser').value.trim(), pass=$('setupPass').value;
+        if(!user){ alert('Introduce un usuario'); return; }
+        if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
+        try{
+          const r=await derive(pass); S.key=r.aesKey; S.user=user;
+          const pack=await encryptJson(S.key,{list:[]});
+          S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
+          refreshContactsSelect([]); show('appView');
+        }catch(e){ console.error(e); alert('Error creando el almacén'); }
+      });
+
+      $('btnLogin')?.addEventListener('click', async ()=>{
+        const user=$('loginUser').value.trim(), pass=$('loginPass').value;
+        const state=S.state(); if(!state){ show('setupView'); return; }
+        if(user!==state.user){ alert('Usuario incorrecto'); return; }
+        try{
+          const r=await derive(pass, state.saltB64);
+          if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
+          const vault=await decryptJson(r.aesKey, state.vault);
+          S.key=r.aesKey; S.user=user;
+          refreshContactsSelect(vault.list);
+          show('appView');
+          const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+        }catch(e){ console.error(e); alert('Error al descifrar datos'); }
+      });
+
+      $('logout')?.addEventListener('click', ()=>{
+        show('loginView');
+        const lp=$('loginPass'); if(lp) lp.value='';
+        toggleResetVisibility();
+      });
+
+      $('btnReset')?.addEventListener('click', ()=>{
+        if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){ S.clear(); location.reload(); }
+      });
+
+      const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[]}; };
+      const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
+
+      // Teléfono: prefijo +34 y limpieza
+      (function setupPhoneInput(){
+        const el = $('newPhone'); if(!el) return;
+        el.type='tel'; el.inputMode='tel'; el.autocomplete='tel'; el.enterKeyHint='done'; el.pattern='^\\+\\d{6,15}$';
+        el.addEventListener('focus', ()=>{ if(!el.value || el.value==='+') el.value='+34'; setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length);}catch(_){}} ,0); });
+        el.addEventListener('input', ()=>{ const v=el.value; const cleaned='+'+v.replace(/^\+?/, '').replace(/[^\d]/g,''); if(v!==cleaned){ el.value=cleaned; try{ el.setSelectionRange(cleaned.length, cleaned.length);}catch(_){}} });
+      })();
+
+      $('btnAdd')?.addEventListener('click', async ()=>{
+        const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
+        if(!name){ alert('Introduce un nombre'); return; }
+        if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
+        const vault=await loadVault();
+        if((vault.list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
+        vault.list = [...(vault.list||[]), {name, phone}];
+        await saveVault(vault);
+        refreshContactsSelect(vault.list);
+        $('newName').value=''; $('newPhone').value='';
+        if(getAutoBackup()) exportFixedBackup(true);
+      });
+
+      $('btnRemove')?.addEventListener('click', async ()=>{
+        const sel=$('contactSelect'); const phone=sel?sel.value:'';
+        if(!phone){ alert('No hay contacto seleccionado'); return; }
+        const vault=await loadVault(); const before=(vault.list||[]).length;
+        vault.list = (vault.list||[]).filter(c=>c.phone!==phone);
+        await saveVault(vault);
+        refreshContactsSelect(vault.list);
+        if(before===vault.list.length) alert('No se encontró el contacto');
+        if(getAutoBackup()) exportFixedBackup(true);
+      });
+
+      $('dt')?.addEventListener('change', ()=>{ const m=$('msg'); if(m) m.value=buildMessage(); });
+
+      $('btnSend')?.addEventListener('click', ()=>{
+        const sel=$('contactSelect'); const phone=sel?sel.value:'';
+        if(!isPhoneValid(phone)){ alert('Selecciona un contacto válido'); return; }
+        const text=encodeURIComponent(($('msg')?.value||buildMessage()).trim());
+        const url=`https://wa.me/${phone.replace('+','')}/?text=${text}`;
+        openExternal(url);
+      });
+
+      // Export/Import/Auto
+      $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
+      $('btnExportCsv')?.addEventListener('click', exportCSV);
+
+      $('btnImportApp')?.addEventListener('click', ()=>{
+        const i=document.createElement('input');
+        i.type='file'; i.accept='application/json,.json';
+        i.onchange=e=>{ const f=i.files?.[0]; if(f) importFixedBackupFromFile(f); i.remove(); };
+        document.body.appendChild(i); i.click();
+      });
+
+      $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
+      $('btnDownloadAuto')?.addEventListener('click', ()=>{
+        if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); }
+      });
+
+      // Buscador
+      wireSearch();
+
+      // Enter en inputs
+      ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
+        const el=$(id); el&&el.addEventListener('keydown',e=>{
+          if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }
+        });
+      });
+    }
+
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    function toTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+
+    function init(){
+      const state=S.state();
+      show(state? 'loginView' : 'setupView');
+      const m=$('msg'); if(m) m.value=buildMessage();
+      const d=new Date(Date.now()+60*60*1000);
+      const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      $('dt') && ($('dt').value=iso);
+      wireEvents();
+      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; }, 40);
+    }
+    document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
+    window.addEventListener('orientationchange', ()=>setTimeout(toTop, 60));
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./service-worker.js?v=ui12').catch(()=>{});
+      });
+    }
+  </script>
+</body>
+</html>
