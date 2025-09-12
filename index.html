@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <title>MF Gestor de Citas</title>
   <meta name="theme-color" content="#5e5bff">
-  <link rel="manifest" href="manifest.webmanifest?v=ui13">
+  <link rel="manifest" href="manifest.webmanifest?v=ui14">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -13,16 +13,18 @@
     html, body { height:100%; }
     html{ -webkit-text-size-adjust:100%; }
     :root{
-      --bg1:#0b0e1a; --bg2:#11162a; --bg3:#0c2242;
       --violet:#5e5bff; --cyan:#10b5ff;
-      --ink:#0b1220; --line: rgba(94,91,255,.22);
-      --glassA: rgba(255,255,255,.86); --glassB: rgba(255,255,255,.82);
-      --muted:#475569; --soft:#eef2ff;
+      --ink:#0b1220; --muted:#94a3b8; --soft:#eef2ff;
+      --glassBorder: rgba(255,255,255,.22);
+      --glassBg: rgba(8,12,24,.45);
+      --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
     }
-    /* Fondo a toda pantalla en TODAS las vistas */
+
+    /* === BACKGROUND global a pantalla completa === */
     body{
       margin:0; overflow-x:hidden;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      color:#e5e7eb;
       background:
         radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
         radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
@@ -30,34 +32,48 @@
       background-attachment: fixed;
     }
 
-    /* Contenedor base (se hace transparente en login) */
-    .card{ width:min(980px, 100%); margin:0 auto; background: linear-gradient(180deg, var(--glassA), var(--glassB)); }
-    @media (min-width:900px){ .card{ border-radius:28px; box-shadow:0 40px 100px rgba(0,0,0,.25), 0 30px 70px rgba(94,91,255,.18) } }
+    /* === CONTENEDOR BASE === */
+    .card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
+    .main{ padding:0; }
 
-    .auth-head{ display:flex; align-items:center; gap:12px; padding:20px 16px 10px 16px }
-    .logo-box{ width:46px; height:46px; border-radius:12px; overflow:hidden; flex:0 0 auto; box-shadow:0 10px 30px rgba(16,181,255,.25) }
-    .logo-box img{ width:100%; height:100%; display:block; object-fit:cover; background:#fff }
-    .title{ margin:0; font-size:clamp(22px, 3.8vw, 28px); color:var(--ink) }
-    .subtitle{ margin:2px 0 0; font-size:clamp(12px, 2.4vw, 14px); color:#c7d2fe }
-    .hr{ height:1px; background:var(--line); margin:10px 0 0 }
+    /* === TOPBAR (visible tras login) === */
+    .auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
+    .logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
+    .logo-box img{ width:100%; height:100%; object-fit:cover; background:#fff }
+    .title{ margin:0; font-size:clamp(22px,2.2vw,28px); font-weight:900 }
+    .subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
+    .hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
 
-    .main{ padding:14px 16px 24px; overflow-anchor:none; }
+    /* En login, oculto topbar (ya tienes hero). En app lo convierto en sticky glass */
+    body.login-mode .auth-head, body.login-mode .hr{ display:none; }
+    body:not(.login-mode) .auth-head{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(12px) saturate(120%);
+      background: rgba(8,12,24,.55);
+      border-bottom: 1px solid var(--glassBorder);
+    }
+    body:not(.login-mode) .title{ color:#fff }
+
+    /* === FORM FACTOR GENERAL === */
     .stage{ display:none; }
     .stage-inner{ width:100%; max-width:600px; margin:12px auto 0; display:grid; gap:24px; }
     .row{ display:grid; grid-template-columns:1fr; gap:16px }
+    label{ display:block; font-size:16px; color:#e5e7eb; margin:6px 0 8px; font-weight:700 }
+
+    /* === CAMPOS === */
     .field{ position:relative; }
     .field input, .field select, .field textarea, .field [type="datetime-local"]{
-      width:100%; border:1px solid rgba(94,91,255,.24); border-radius:18px;
-      padding:16px 48px 16px 44px; background:rgba(255,255,255,.94);
+      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
+      padding:16px 48px 16px 44px; background:#ffffff;
       font-size:17px; color:var(--ink);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(94,91,255,.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
     }
     .field select, .field input[type="datetime-local"]{ min-height:56px; }
-    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; }
-    .field textarea{ min-height:130px; resize:vertical; overflow:auto; }
-    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; opacity:.85 }
+    .field textarea{ min-height:140px; resize:vertical; }
+    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
     .icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
-    label{ display:block; font-size:16px; color:#e5e7eb; margin:6px 0 8px; font-weight:700 }
+
+    /* === BOTONES === */
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
       border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
@@ -66,100 +82,47 @@
       box-shadow: 0 18px 34px rgba(16,181,255,.28), 0 18px 34px rgba(94,91,255,.28);
       letter-spacing:.2px; text-align:center;
     }
-    .btn-ghost{
-      appearance:none; background:transparent; border:1px dashed rgba(255,255,255,.45);
-      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
-      display:inline-flex; align-items:center; justify-content:center; text-align:center;
-      background:#fff; box-shadow:0 10px 26px rgba(0,0,0,.12);
-    }
-    .btn-small{ padding:12px 14px; border-radius:14px; font-weight:700 }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px }
-    @media (max-width:720px){ .grid2{ grid-template-columns:1fr } }
-    .section{ padding:12px 0 0 }
-    .container{ width:100%; max-width:600px; margin-inline:auto; padding-inline:16px }
-    .contact-block{
-      background:linear-gradient(180deg, rgba(246,247,255,.10), rgba(243,246,255,.06));
-      border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:18px; box-shadow: 0 10px 26px rgba(0,0,0,.18);
-      backdrop-filter: blur(10px);
-    }
-    .backup-block{
-      background:linear-gradient(180deg, rgba(249,250,255,.10), rgba(245,248,255,.06));
-      border:1px dashed rgba(255,255,255,.25); border-radius:18px; padding:18px; box-shadow: 0 8px 20px rgba(0,0,0,.16);
-      backdrop-filter: blur(10px);
-    }
     .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
     .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
-    .footer{ padding:18px 16px 24px 16px; display:flex; justify-content:center; align-items:center }
-    .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
+    .btn-ghost{
+      appearance:none; background:#fff; border:1px dashed rgba(255,255,255,.35);
+      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
+      display:inline-flex; align-items:center; justify-content:center; text-align:center;
+      box-shadow:0 10px 26px rgba(0,0,0,.16);
+    }
+    .btn-small{ padding:12px 14px; border-radius:14px; font-weight:700 }
 
-    /* ====== LOGIN HERO (móvil y escritorio) ====== */
-    /* En login: quitar fondo gris del .card y ocupar ancho completo */
-    body.login-mode .card{ width:100%; background:transparent; border-radius:0; box-shadow:none; }
-    body.login-mode .auth-head, body.login-mode .hr{ display:none; }
-    body.login-mode .main{ padding:0; }
-
-    .login-hero{
-      min-height:100dvh;
-      display:flex; align-items:center; justify-content:center;
-      padding:60px 20px;
+    /* === TARJETAS GLASS del área APP === */
+    .app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
+    @media (min-width:980px){
+      .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px }
     }
-    .login-card{
-      width:min(560px, 100%);
-      border-radius:28px;
-      padding:30px 24px 24px;
-      backdrop-filter: blur(18px) saturate(120%);
-      background: rgba(8,12,24,.45);
-      border: 1px solid rgba(255,255,255,.22);
-      box-shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18);
+    .glass{
+      backdrop-filter: blur(14px) saturate(120%);
+      background: var(--glassBg);
+      border:1px solid var(--glassBorder);
+      border-radius:24px;
+      box-shadow: var(--shadow);
+      padding:20px;
     }
-    .login-logo{
-      width:74px; height:74px; margin:0 auto 14px; border-radius:50%;
-      display:grid; place-items:center;
-      background:
-        radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.65), transparent 60%),
-        linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85));
-      padding:3px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.35);
-    }
-    .login-logo img{
-      width:100%; height:100%;
-      border-radius:50%;
-      background:#ffffff;
-      padding:10px;
-      box-shadow: inset 0 1px 0 rgba(0,0,0,.06);
-    }
-    .login-title{ color:#fff; text-align:center; margin:6px 0 2px; font-size:clamp(22px, 2.4vw, 28px); letter-spacing:.3px; font-weight:900 }
-    .login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
-    .login-fields{ display:grid; gap:16px; }
-    .login-field input{
-      background:rgba(255,255,255,.98);
-      border:none !important;
-      border-radius:18px;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-    }
-    .login-field .icon-left, .login-field .icon-right{ color:#667085; }
-    .login-primary{ margin-top:8px; }
-    .login-secondary{
-      margin-top:12px;
-      background:#ffffff !important;
-      color:#0b1220 !important;
-      border:none !important;
-      font-weight:800;
-      justify-content:center;
+    .section-title{
+      margin:0 0 12px;
+      font-weight:900; letter-spacing:.3px; color:#fff;
+      font-size: clamp(18px, 1.8vw, 20px);
     }
 
-    /* Buscador */
+    /* === BUSCADOR === */
     .contact-picker{ display:grid; gap:10px }
     .search-wrap{ position:relative }
     #contactSearch{
-      width:100%; border:1px solid rgba(255,255,255,.18); border-radius:18px;
+      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
       padding:14px 44px 14px 44px; background:#fff; font-size:16px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(0,0,0,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
     }
     .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
     .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
     #contactResults{
-      border:1px solid rgba(255,255,255,.18); border-radius:16px; background:#fff;
+      border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff;
       box-shadow: 0 12px 28px rgba(0,0,0,.18);
       max-height:260px; overflow:auto; padding:6px;
     }
@@ -171,19 +134,30 @@
     .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
     .result-name{ color:#0b1220; font-weight:700 }
     .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
-    .muted{ color:#d1d5db; font-size:14px }
+    .muted{ color:#cbd5e1; font-size:14px }
     mark{ background: #fff5b1; padding:0 2px; border-radius:4px }
-    .toggle{ display:flex; align-items:center; gap:10px; user-select:none; }
-    .toggle input{ width:44px; height:26px; appearance:none; background:#e5e7eb; border-radius:999px; position:relative; outline:none; cursor:pointer; transition:background .2s; }
-    .toggle input::after{ content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s; }
-    .toggle input:checked{ background:linear-gradient(90deg, var(--cyan), var(--violet)); }
-    .toggle input:checked::after{ transform:translateX(18px); }
 
-    #autoBackupToast{ display:none; margin-top:12px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25) }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+    @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
+
+    .footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
+    .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
+
+    /* === LOGIN HERO (se mantiene igual que antes) === */
+    .login-hero{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:60px 20px; }
+    .login-card{ width:min(560px, 100%); border-radius:28px; padding:30px 24px 24px; backdrop-filter: blur(18px) saturate(120%); background: var(--glassBg); border: 1px solid var(--glassBorder); box-shadow: var(--shadow); }
+    .login-logo{ width:74px; height:74px; margin:0 auto 14px; border-radius:50%; display:grid; place-items:center; background: radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.65), transparent 60%), linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85)); padding:3px; box-shadow: 0 20px 40px rgba(0,0,0,.35) }
+    .login-logo img{ width:100%; height:100%; border-radius:50%; background:#ffffff; padding:10px }
+    .login-title{ color:#fff; text-align:center; margin:6px 0 2px; font-size:clamp(22px, 2.4vw, 28px); letter-spacing:.3px; font-weight:900 }
+    .login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
+    .login-fields{ display:grid; gap:16px }
+    .login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
+    .login-secondary{ background:#ffffff !important; color:#0b1220 !important; border:none !important; font-weight:800; justify-content:center }
   </style>
 </head>
 <body>
   <div class="card">
+    <!-- Topbar (stickied en app, oculto en login) -->
     <div class="auth-head">
       <div class="logo-box"><img src="icons/icon-192.png" alt="Logo" /></div>
       <div>
@@ -194,56 +168,40 @@
     <div class="hr"></div>
 
     <main id="main" class="main">
-      <!-- === REGISTRO === -->
+      <!-- === REGISTRO (sin cambios de lógica) === -->
       <section id="setupView" class="stage">
         <div class="stage-inner">
-          <div class="row">
+          <div class="row glass">
             <div class="field">
-              <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
-              </svg>
+              <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
               <input id="setupUser" placeholder="Usuario" autocomplete="username">
             </div>
             <div class="field">
-              <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-                  <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
-                </g>
-              </svg>
+              <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
               <input id="setupPass" type="password" placeholder="Contraseña" autocomplete="new-password">
               <svg id="toggleSetup" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
             </div>
+            <button id="btnSetup" class="btn" type="button">Crear y acceder</button>
           </div>
-          <div class="row"><button id="btnSetup" class="btn" type="button">Crear y acceder</button></div>
         </div>
       </section>
 
-      <!-- === LOGIN (hero en móvil y escritorio) === -->
+      <!-- === LOGIN (igual que antes) === -->
       <section id="loginView" class="stage">
         <div class="login-hero">
           <div class="login-card">
-            <div class="login-logo" aria-hidden="true">
-              <img src="icons/icon-192.png" alt="MF" />
-            </div>
+            <div class="login-logo" aria-hidden="true"><img src="icons/icon-192.png" alt="MF" /></div>
             <h2 class="login-title">Iniciar sesión</h2>
             <p class="login-sub">MF Gestor de Citas</p>
 
             <div class="login-fields">
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
-                </svg>
+                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
                 <input id="loginUser" placeholder="Usuario" autocomplete="username">
               </div>
 
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="5" y="11" width="14" height="10" rx="2"></rect>
-                    <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
-                  </g>
-                </svg>
+                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
                 <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password">
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
@@ -255,73 +213,75 @@
         </div>
       </section>
 
-      <!-- === APP === -->
+      <!-- === APP (estética renovada) === -->
       <section id="appView" class="stage" style="display:none">
-        <div class="section">
-          <div class="container grid2">
-            <div>
-              <label>Fecha y hora del recordatorio</label>
-              <div class="field"><input id="dt" type="datetime-local" /></div>
-            </div>
-            <div>
-              <label>Contacto</label>
-              <div class="contact-picker">
-                <div class="search-wrap">
-                  <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
-                  <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
-                  <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
-                </div>
-                <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
-                <div class="muted"><strong>Listado</strong></div>
-                <div class="field"><select id="contactSelect"></select></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="app-wrap">
 
-        <div class="section">
-          <div class="container">
-            <label>Mensaje</label>
-            <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
-          </div>
-        </div>
+          <!-- Columna izquierda: cita y envío -->
+          <div class="glass">
+            <h3 class="section-title">Enviar cita</h3>
 
-        <div class="section">
-          <div class="container"><button id="btnSend" class="btn" type="button">Enviar Cita</button></div>
-        </div>
-
-        <div class="section">
-          <div class="container contact-block">
-            <label style="margin-top:0">Gestionar contactos</label>
             <div class="grid2">
-              <div class="field"><input id="newName" placeholder="Nombre" /></div>
-              <div class="field">
-                <input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" pattern="^\\+\\d{6,15}$" placeholder="+34600111222" />
+              <div>
+                <label>Fecha y hora del recordatorio</label>
+                <div class="field"><input id="dt" type="datetime-local" /></div>
+              </div>
+              <div>
+                <label>Contacto</label>
+                <div class="contact-picker">
+                  <div class="search-wrap">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
+                    <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
+                    <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+                  </div>
+                  <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
+                  <div class="muted"><strong>Listado</strong></div>
+                  <div class="field"><select id="contactSelect"></select></div>
+                </div>
               </div>
             </div>
-            <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
-              <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
-              <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
-            </div>
-          </div>
-        </div>
 
-        <div class="section">
-          <div class="container backup-block">
-            <label style="margin-top:0">Copias de seguridad</label>
-            <div style="display:flex; flex-wrap:wrap; gap:12px">
-              <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar copia cifrada (.json)</button>
-              <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar CSV</button>
-              <button id="btnImportApp" class="btn btn-outline" type="button">Importar copia…</button>
+            <div style="margin-top:14px">
+              <label>Mensaje</label>
+              <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
             </div>
-            <div class="toggle" style="margin-top:12px">
-              <input id="autoBackupToggle" type="checkbox" />
-              <span class="muted">Auto-descargar copia tras cada cambio de contactos</span>
-            </div>
-            <div id="autoBackupToast" class="muted">
-              Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
+
+            <div style="margin-top:16px">
+              <button id="btnSend" class="btn" type="button">Enviar Cita</button>
             </div>
           </div>
+
+          <!-- Columna derecha: contactos + copias -->
+          <div class="glass" style="display:grid; gap:18px">
+            <div>
+              <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
+              <div class="grid2">
+                <div class="field"><input id="newName" placeholder="Nombre" /></div>
+                <div class="field"><input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" pattern="^\\+\\d{6,15}$" placeholder="+34600111222" /></div>
+              </div>
+              <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
+                <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
+                <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
+              <div style="display:flex; flex-wrap:wrap; gap:12px">
+                <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar copia cifrada (.json)</button>
+                <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar CSV</button>
+                <button id="btnImportApp" class="btn btn-outline" type="button">Importar copia…</button>
+              </div>
+              <div class="toggle" style="margin-top:12px">
+                <input id="autoBackupToggle" type="checkbox" />
+                <span class="muted">Auto-descargar copia tras cada cambio de contactos</span>
+              </div>
+              <div id="autoBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
+                Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="footer">
@@ -331,8 +291,8 @@
     </main>
   </div>
 
+  <!-- ================== LÓGICA (sin cambios) ================== -->
   <script>
-    // ===== Estado y utilidades =====
     const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
       state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
       save(o){ localStorage.setItem(this.stateKey, JSON.stringify(o)); },
@@ -356,7 +316,6 @@
     const FIXED_PASS = 'MFGestorCitas';
     async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
 
-    // ===== Descarga robusta =====
     async function saveFileSmart(filename, mime, content){
       let blob;
       if (typeof content === 'string') blob = new Blob([content], {type: mime});
@@ -401,9 +360,8 @@
     }
 
     const saveJson = (name, obj) => saveFileSmart(name, 'application/json', JSON.stringify(obj, null, 2));
-    const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv); // BOM + MIME
+    const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
-    // ===== Apertura externa sin “pantalla en blanco” =====
     function openExternal(url){
       const isStandalone =
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
@@ -416,7 +374,6 @@
       }
     }
 
-    // ===== UI / navegación =====
     function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
     function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
     function show(id){
@@ -425,13 +382,12 @@
       if(id==='appView'){ setHeaderTitle('Enviar cita'); } else { setHeaderTitle('Iniciar sesión'); }
       if(id==='loginView'){ toggleResetVisibility(); }
       if(id==='setupView'){ const r=$('btnReset'); if(r) r.style.display='none'; }
-      document.body.classList.toggle('login-mode', id==='loginView'); /* activa hero en login */
+      document.body.classList.toggle('login-mode', id==='loginView');
       window.scrollTo(0,0);
     }
 
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
 
-    // ===== Buscador de contactos =====
     function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
     function scoreContact(q, c){
       if(!q) return 1;
@@ -522,7 +478,6 @@
       document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
     }
 
-    // ===== Select de contactos =====
     function refreshContactsSelect(list){
       window.__contacts = Array.isArray(list) ? list.slice() : [];
       const sel=$('contactSelect'); if(!sel) return;
@@ -535,7 +490,6 @@
       renderSearchResults($('contactSearch')?.value || '');
     }
 
-    // ===== Mensaje =====
     function buildMessage(){
       const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
       const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
@@ -543,11 +497,8 @@
       return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
     }
 
-    // ===== Export/Import con clave fija =====
     let pendingAutoBackup = null;
-    function showAutoToast(show){
-      const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none';
-    }
+    function showAutoToast(show){ const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
     async function exportFixedBackup(auto=false){
       const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
       const vault=await decryptJson(S.key, st.vault);
@@ -556,42 +507,27 @@
       const pack = await encryptJson(aesKey, { list: vault.list || [] });
       const payload = { format: 'mf-contacts-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
       const name = auto ? ('autobackup-contactos-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-contactos.json';
-
-      if (auto) {
-        pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) };
-        showAutoToast(true);
-      } else {
-        await saveJson(name, payload);
-      }
+      if (auto) { pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoToast(true); }
+      else { await saveJson(name, payload); }
     }
     async function importFixedBackupFromFile(file){
-      const text=await file.text();
-      let data;
+      const text=await file.text(); let data;
       try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
-      if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){
-        alert('Copia no reconocida (se espera formato cifrado fijo).'); return;
-      }
+      if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia no reconocida.'); return; }
       const {aesKey} = await deriveFixed(data.saltB64);
-      let obj;
-      try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); }
-      catch(e){ console.error(e); alert('No se pudo descifrar la copia.'); return; }
+      let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
       if(!obj || !Array.isArray(obj.list)){ alert('Contenido de copia inválido.'); return; }
-
       const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
       const vault=await decryptJson(S.key, st.vault);
-      const map = new Map();
-      (vault.list||[]).forEach(c=>map.set(c.phone, c));
-      let added=0, skipped=0;
-      obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
+      const map = new Map(); (vault.list||[]).forEach(c=>map.set(c.phone, c));
+      let added=0, skipped=0; obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
       vault.list = Array.from(map.values());
-      const newPack = await encryptJson(S.key, vault);
-      st.vault = newPack; S.save(st);
+      const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
       refreshContactsSelect(vault.list);
       alert(`Importación completa. Añadidos: ${added}. Ya existentes: ${skipped}.`);
       if(getAutoBackup()) exportFixedBackup(true);
     }
 
-    // ===== CSV =====
     async function exportCSV(){
       if(!S.key){ alert('Inicia sesión para exportar CSV.'); return; }
       const st=S.state(); if(!st){ alert('No hay datos.'); return; }
@@ -601,39 +537,16 @@
       saveCsv('contactos.csv', csv);
     }
 
-    // ===== Auto-backup flag =====
     function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
-    function setAutoBackup(v){
-      const st=S.state(); if(!st) return;
-      st.autoBackup = !!v; S.save(st);
-      const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup;
-    }
+    function setAutoBackup(v){ const st=S.state(); if(!st) return; st.autoBackup = !!v; S.save(st); const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup; }
 
-    // ===== Ojo mostrar/ocultar (estilo iOS) =====
-    const eyeOpen = `
-      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path>
-        <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle>
-      </g>`;
-    const eyeOff = `
-      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path>
-        <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle>
-        <path d="M3 3L21 21"></path>
-      </g>`;
+    const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
+    const eyeOff = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
     function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
 
-    // ===== Eventos =====
     function wireEvents(){
-      const toggle = (inputId, svgId) => {
-        const i=$(inputId), s=$(svgId); if(!i || !s) return;
-        i.type = i.type==='password' ? 'text' : 'password';
-        setEyeIcon(s, i.type==='text');
-      };
-
-      setEyeIcon($('toggleLogin'), false);
-      setEyeIcon($('toggleSetup'), false);
-
+      const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
+      setEyeIcon($('toggleLogin'), false); setEyeIcon($('toggleSetup'), false);
       $('toggleLogin')?.addEventListener('click', ()=>toggle('loginPass','toggleLogin'));
       $('toggleSetup')?.addEventListener('click', ()=>toggle('setupPass','toggleSetup'));
 
@@ -641,12 +554,11 @@
         const user=$('setupUser').value.trim(), pass=$('setupPass').value;
         if(!user){ alert('Introduce un usuario'); return; }
         if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
-        try{
-          const r=await derive(pass); S.key=r.aesKey; S.user=user;
+        try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
           const pack=await encryptJson(S.key,{list:[]});
           S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
           refreshContactsSelect([]); show('appView');
-        }catch(e){ console.error(e); alert('Error creando el almacén'); }
+        }catch(e){ alert('Error creando el almacén'); }
       });
 
       $('btnLogin')?.addEventListener('click', async ()=>{
@@ -657,27 +569,17 @@
           const r=await derive(pass, state.saltB64);
           if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
           const vault=await decryptJson(r.aesKey, state.vault);
-          S.key=r.aesKey; S.user=user;
-          refreshContactsSelect(vault.list);
-          show('appView');
-          const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
-        }catch(e){ console.error(e); alert('Error al descifrar datos'); }
+          S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
+          show('appView'); const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+        }catch(e){ alert('Error al descifrar datos'); }
       });
 
-      $('logout')?.addEventListener('click', ()=>{
-        show('loginView');
-        const lp=$('loginPass'); if(lp) lp.value='';
-        toggleResetVisibility();
-      });
-
-      $('btnReset')?.addEventListener('click', ()=>{
-        if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){ S.clear(); location.reload(); }
-      });
+      $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
+      $('btnReset')?.addEventListener('click', ()=>{ if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){ S.clear(); location.reload(); } });
 
       const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[]}; };
       const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
 
-      // Teléfono: prefijo +34 y limpieza
       (function setupPhoneInput(){
         const el = $('newPhone'); if(!el) return;
         el.type='tel'; el.inputMode='tel'; el.autocomplete='tel'; el.enterKeyHint='done'; el.pattern='^\\+\\d{6,15}$';
@@ -719,7 +621,6 @@
         openExternal(url);
       });
 
-      // Export/Import/Auto
       $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
       $('btnExportCsv')?.addEventListener('click', exportCSV);
 
@@ -731,11 +632,23 @@
       });
 
       $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
-      $('btnDownloadAuto')?.addEventListener('click', ()=>{
-        if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); }
-      });
+      $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
 
-      wireSearch();
+      // Buscador
+      (function(){ const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
+        if(!input || !box) return;
+        const onInput = ()=>renderSearchResults(input.value);
+        input.addEventListener('input', onInput);
+        input.addEventListener('focus', ()=>{ if(input.value.trim()) renderSearchResults(input.value); });
+        input.addEventListener('keydown', (e)=>{
+          if(e.key==='ArrowDown'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<0?0:activeIndex+1); }
+          else if(e.key==='ArrowUp'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<=0?0:activeIndex-1); }
+          else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActive(); } }
+          else if(e.key==='Escape'){ box.hidden=true; activeIndex=-1; }
+        });
+        clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndex=-1; input.focus(); renderSearchResults(''); });
+        document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
+      })();
 
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
         const el=$(id); el&&el.addEventListener('keydown',e=>{
@@ -765,7 +678,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui13').catch(()=>{});
+        navigator.serviceWorker.register('./service-worker.js?v=ui14').catch(()=>{});
       });
     }
   </script>
