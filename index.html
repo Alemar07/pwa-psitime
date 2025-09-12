@@ -85,8 +85,8 @@
     .login-hero{
       min-height:100dvh;
       display:flex;
-      align-items:center;          /* <- centrado vertical */
-      justify-content:center;      /* <- centrado horizontal */
+      align-items:center;          /* centrado vertical */
+      justify-content:center;      /* centrado horizontal */
       padding:24px 20px 40px;
     }
     .login-card{
@@ -600,11 +600,38 @@
       $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
       $('btnExportCsv')?.addEventListener('click', exportCSV);
 
-      $('btnImportApp')?.addEventListener('click', ()=>{
-        const i=document.createElement('input');
-        i.type='file'; i.accept='application/json,.json';
-        i.onchange=e=>{ const f=i.files?.[0]; if(f) importFixedBackupFromFile(f); i.remove(); };
-        document.body.appendChild(i); i.click();
+      // === MODIFICACIÓN pedida: input de importación oculto y limpieza en cancelación (iOS) ===
+      $('btnImportApp')?.addEventListener('click', () => {
+        const i = document.createElement('input');
+        i.type = 'file';
+        i.accept = 'application/json,.json';
+        Object.assign(i.style, {
+          position: 'fixed', left: '-9999px', top: '-9999px',
+          opacity: '0', width: '0.1px', height: '0.1px', zIndex: '-1'
+        });
+        document.body.appendChild(i);
+
+        const cleanup = () => {
+          try { i.value = ''; } catch(_) {}
+          i.remove();
+          window.removeEventListener('focus', onFocus, true);
+        };
+
+        const onFocus = () => {
+          setTimeout(() => {
+            if (!i.files || !i.files.length) cleanup();
+          }, 300);
+        };
+
+        window.addEventListener('focus', onFocus, true);
+
+        i.addEventListener('change', async () => {
+          const f = i.files && i.files[0];
+          if (f) { await importFixedBackupFromFile(f); }
+          cleanup();
+        });
+
+        i.click();
       });
 
       $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
