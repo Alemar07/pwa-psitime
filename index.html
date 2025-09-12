@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <title>MF Gestor de Citas</title>
   <meta name="theme-color" content="#5e5bff">
-  <link rel="manifest" href="manifest.webmanifest?v=ui16">
+  <link rel="manifest" href="manifest.webmanifest?v=ui17">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -20,7 +20,6 @@
       --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
     }
 
-    /* Fondo a toda pantalla */
     body{
       margin:0; overflow-x:hidden;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
@@ -36,7 +35,6 @@
     .main{ padding:0; }
     .stage{ display:none; }
 
-    /* Topbar (oculto en login y setup) */
     .auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
     .logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
     .logo-box img{ width:100%; height:100%; object-fit:cover; background:#fff }
@@ -53,7 +51,6 @@
     }
     body:not(.login-mode):not(.setup-mode) .title{ color:#fff }
 
-    /* Campos / botones */
     .field{ position:relative; }
     .field input, .field select, .field textarea, .field [type="datetime-local"]{
       width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
@@ -61,11 +58,7 @@
       font-size:17px; color:var(--ink);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
     }
-    /* igualar ancho de fecha con Contacto */
-    .field input[type="datetime-local"]{
-      -webkit-appearance:none; appearance:none; width:100%;
-      min-height:56px; padding-right:14px;
-    }
+    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; width:100%; min-height:56px; padding-right:14px; }
     .field select{ min-height:56px; }
     .field textarea{ min-height:140px; resize:vertical; }
     .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
@@ -88,8 +81,14 @@
     .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
     .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
 
-    /* --- LOGIN / SETUP estilo de la foto (logo circular centrado) --- */
-    .login-hero{ min-height:100dvh; display:flex; align-items:flex-start; justify-content:center; padding:24px 20px 40px; }
+    /* ====== LOGIN/SETUP centrados ====== */
+    .login-hero{
+      min-height:100dvh;
+      display:flex;
+      align-items:center;          /* <- centrado vertical */
+      justify-content:center;      /* <- centrado horizontal */
+      padding:24px 20px 40px;
+    }
     .login-card{
       width:min(560px, 100%); border-radius:26px; padding:24px 20px 20px;
       backdrop-filter: blur(18px) saturate(120%); background: var(--glassBg);
@@ -109,13 +108,10 @@
     .login-fields{ display:grid; gap:16px }
     .login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
 
-    /* Layout APP */
+    /* ====== APP ====== */
     .app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
     @media (min-width:980px){ .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px } }
-    .glass{
-      backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg);
-      border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px;
-    }
+    .glass{ backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px; }
     .section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
     @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
@@ -133,11 +129,7 @@
       box-shadow: 0 12px 28px rgba(0,0,0,.18);
       max-height:260px; overflow:auto; padding:6px;
     }
-    .result-item{
-      display:flex; align-items:center; gap:8px; width:100%;
-      padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent;
-      background:transparent; font-size:16px; text-align:left;
-    }
+    .result-item{ display:flex; align-items:center; gap:8px; width:100%; padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; font-size:16px; text-align:left; }
     .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
     .result-name{ color:#0b1220; font-weight:700 }
     .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
@@ -160,7 +152,7 @@
     <div class="hr"></div>
 
     <main id="main" class="main">
-      <!-- === SETUP (Crear y acceder) con el MISMO diseño que la foto === -->
+      <!-- === SETUP (Crear y acceder) centrado === -->
       <section id="setupView" class="stage">
         <div class="login-hero">
           <div class="login-card">
@@ -186,7 +178,7 @@
         </div>
       </section>
 
-      <!-- === LOGIN con el diseño de la foto === -->
+      <!-- === LOGIN centrado === -->
       <section id="loginView" class="stage">
         <div class="login-hero">
           <div class="login-card">
@@ -213,7 +205,7 @@
         </div>
       </section>
 
-      <!-- === APP === -->
+      <!-- === APP (sin cambios de lógica) === -->
       <section id="appView" class="stage" style="display:none">
         <div class="app-wrap">
           <div class="glass">
@@ -286,7 +278,7 @@
     </main>
   </div>
 
-  <!-- ================== LÓGICA (idéntica a la anterior) ================== -->
+  <!-- ===== Lógica intacta ===== -->
   <script>
     const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
       state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
@@ -382,7 +374,6 @@
 
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
 
-    /* Buscador y helpers (igual) */
     function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
     function scoreContact(q, c){
       if(!q) return 1;
@@ -551,7 +542,6 @@
         }catch(e){ alert('Error al descifrar datos'); }
       });
 
-      /* Borrar: limpiar y navegar al setup sin recarga (evita popup iOS) */
       $('btnReset')?.addEventListener('click', ()=>{
         if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){
           S.clear();
@@ -650,7 +640,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui16').catch(()=>{});
+        navigator.serviceWorker.register('./service-worker.js?v=ui17').catch(()=>{});
       });
     }
   </script>
