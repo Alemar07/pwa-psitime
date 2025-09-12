@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <title>MF Gestor de Citas</title>
   <meta name="theme-color" content="#5e5bff">
-  <link rel="manifest" href="manifest.webmanifest?v=ui12">
+  <link rel="manifest" href="manifest.webmanifest?v=ui13">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+    html, body { height:100%; }
     html{ -webkit-text-size-adjust:100%; }
     :root{
       --bg1:#0b0e1a; --bg2:#11162a; --bg3:#0c2242;
@@ -18,21 +19,26 @@
       --glassA: rgba(255,255,255,.86); --glassB: rgba(255,255,255,.82);
       --muted:#475569; --soft:#eef2ff;
     }
+    /* Fondo a toda pantalla en TODAS las vistas */
     body{
       margin:0; overflow-x:hidden;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
       background:
-        radial-gradient(900px 500px at 10% -10%, rgba(16,181,255,.25), transparent 60%),
-        radial-gradient(1100px 600px at 90% 0%, rgba(94,91,255,.28), transparent 65%),
-        linear-gradient(180deg, var(--bg3), var(--bg2) 55%, var(--bg1));
+        radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+        radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
+        linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
+      background-attachment: fixed;
     }
+
+    /* Contenedor base (se hace transparente en login) */
     .card{ width:min(980px, 100%); margin:0 auto; background: linear-gradient(180deg, var(--glassA), var(--glassB)); }
     @media (min-width:900px){ .card{ border-radius:28px; box-shadow:0 40px 100px rgba(0,0,0,.25), 0 30px 70px rgba(94,91,255,.18) } }
+
     .auth-head{ display:flex; align-items:center; gap:12px; padding:20px 16px 10px 16px }
     .logo-box{ width:46px; height:46px; border-radius:12px; overflow:hidden; flex:0 0 auto; box-shadow:0 10px 30px rgba(16,181,255,.25) }
     .logo-box img{ width:100%; height:100%; display:block; object-fit:cover; background:#fff }
     .title{ margin:0; font-size:clamp(22px, 3.8vw, 28px); color:var(--ink) }
-    .subtitle{ margin:2px 0 0; font-size:clamp(12px, 2.4vw, 14px); color:#64748b }
+    .subtitle{ margin:2px 0 0; font-size:clamp(12px, 2.4vw, 14px); color:#c7d2fe }
     .hr{ height:1px; background:var(--line); margin:10px 0 0 }
 
     .main{ padding:14px 16px 24px; overflow-anchor:none; }
@@ -49,9 +55,9 @@
     .field select, .field input[type="datetime-local"]{ min-height:56px; }
     .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; }
     .field textarea{ min-height:130px; resize:vertical; overflow:auto; }
-    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; opacity:.8 }
+    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; opacity:.85 }
     .icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
-    label{ display:block; font-size:16px; color:#374151; margin:6px 0 8px; font-weight:700 }
+    label{ display:block; font-size:16px; color:#e5e7eb; margin:6px 0 8px; font-weight:700 }
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
       border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
@@ -61,9 +67,10 @@
       letter-spacing:.2px; text-align:center;
     }
     .btn-ghost{
-      appearance:none; background:transparent; border:1px dashed rgba(94,91,255,.35);
-      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:700; width:100%;
+      appearance:none; background:transparent; border:1px dashed rgba(255,255,255,.45);
+      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
       display:inline-flex; align-items:center; justify-content:center; text-align:center;
+      background:#fff; box-shadow:0 10px 26px rgba(0,0,0,.12);
     }
     .btn-small{ padding:12px 14px; border-radius:14px; font-weight:700 }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px }
@@ -71,32 +78,89 @@
     .section{ padding:12px 0 0 }
     .container{ width:100%; max-width:600px; margin-inline:auto; padding-inline:16px }
     .contact-block{
-      background:linear-gradient(180deg, rgba(246,247,255,.9), rgba(243,246,255,.85));
-      border:1px solid rgba(94,91,255,.22); border-radius:18px; padding:18px; box-shadow: 0 10px 26px rgba(94,91,255,.08);
+      background:linear-gradient(180deg, rgba(246,247,255,.10), rgba(243,246,255,.06));
+      border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:18px; box-shadow: 0 10px 26px rgba(0,0,0,.18);
+      backdrop-filter: blur(10px);
     }
     .backup-block{
-      background:linear-gradient(180deg, rgba(249,250,255,.92), rgba(245,248,255,.9));
-      border:1px dashed rgba(94,91,255,.35); border-radius:18px; padding:18px; box-shadow: 0 8px 20px rgba(94,91,255,.06);
+      background:linear-gradient(180deg, rgba(249,250,255,.10), rgba(245,248,255,.06));
+      border:1px dashed rgba(255,255,255,.25); border-radius:18px; padding:18px; box-shadow: 0 8px 20px rgba(0,0,0,.16);
+      backdrop-filter: blur(10px);
     }
-    .btn-outline{ border:1px solid rgba(94,91,255,.35); background:#fff; color:#1f2a44; }
+    .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
     .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
-
     .footer{ padding:18px 16px 24px 16px; display:flex; justify-content:center; align-items:center }
-    .logout{ color:#ef4444; text-decoration:underline; cursor:pointer; font-weight:700 }
+    .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
 
-    /* Contact Search */
+    /* ====== LOGIN HERO (móvil y escritorio) ====== */
+    /* En login: quitar fondo gris del .card y ocupar ancho completo */
+    body.login-mode .card{ width:100%; background:transparent; border-radius:0; box-shadow:none; }
+    body.login-mode .auth-head, body.login-mode .hr{ display:none; }
+    body.login-mode .main{ padding:0; }
+
+    .login-hero{
+      min-height:100dvh;
+      display:flex; align-items:center; justify-content:center;
+      padding:60px 20px;
+    }
+    .login-card{
+      width:min(560px, 100%);
+      border-radius:28px;
+      padding:30px 24px 24px;
+      backdrop-filter: blur(18px) saturate(120%);
+      background: rgba(8,12,24,.45);
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    .login-logo{
+      width:74px; height:74px; margin:0 auto 14px; border-radius:50%;
+      display:grid; place-items:center;
+      background:
+        radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.65), transparent 60%),
+        linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85));
+      padding:3px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.35);
+    }
+    .login-logo img{
+      width:100%; height:100%;
+      border-radius:50%;
+      background:#ffffff;
+      padding:10px;
+      box-shadow: inset 0 1px 0 rgba(0,0,0,.06);
+    }
+    .login-title{ color:#fff; text-align:center; margin:6px 0 2px; font-size:clamp(22px, 2.4vw, 28px); letter-spacing:.3px; font-weight:900 }
+    .login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
+    .login-fields{ display:grid; gap:16px; }
+    .login-field input{
+      background:rgba(255,255,255,.98);
+      border:none !important;
+      border-radius:18px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.18);
+    }
+    .login-field .icon-left, .login-field .icon-right{ color:#667085; }
+    .login-primary{ margin-top:8px; }
+    .login-secondary{
+      margin-top:12px;
+      background:#ffffff !important;
+      color:#0b1220 !important;
+      border:none !important;
+      font-weight:800;
+      justify-content:center;
+    }
+
+    /* Buscador */
     .contact-picker{ display:grid; gap:10px }
     .search-wrap{ position:relative }
     #contactSearch{
-      width:100%; border:1px solid rgba(94,91,255,.24); border-radius:18px;
+      width:100%; border:1px solid rgba(255,255,255,.18); border-radius:18px;
       padding:14px 44px 14px 44px; background:#fff; font-size:16px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(94,91,255,.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(0,0,0,.16);
     }
     .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
     .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
     #contactResults{
-      border:1px solid rgba(94,91,255,.24); border-radius:16px; background:#fff;
-      box-shadow: 0 12px 28px rgba(94,91,255,.12);
+      border:1px solid rgba(255,255,255,.18); border-radius:16px; background:#fff;
+      box-shadow: 0 12px 28px rgba(0,0,0,.18);
       max-height:260px; overflow:auto; padding:6px;
     }
     .result-item{
@@ -107,7 +171,7 @@
     .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
     .result-name{ color:#0b1220; font-weight:700 }
     .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
-    .muted{ color:#64748b; font-size:14px }
+    .muted{ color:#d1d5db; font-size:14px }
     mark{ background: #fff5b1; padding:0 2px; border-radius:4px }
     .toggle{ display:flex; align-items:center; gap:10px; user-select:none; }
     .toggle input{ width:44px; height:26px; appearance:none; background:#e5e7eb; border-radius:999px; position:relative; outline:none; cursor:pointer; transition:background .2s; }
@@ -115,70 +179,7 @@
     .toggle input:checked{ background:linear-gradient(90deg, var(--cyan), var(--violet)); }
     .toggle input:checked::after{ transform:translateX(18px); }
 
-    /* --- Login mobile glow makeover --- */
-    @media (max-width: 640px){
-      body.login-mode .auth-head,
-      body.login-mode .hr{
-        display:none; /* hero limpio */
-      }
-      #loginView{ padding:0; }
-      .login-hero{
-        min-height:100dvh;
-        padding:32px 20px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        position:relative;
-        isolation:isolate;
-      }
-      .login-hero::before{
-        content:"";
-        position:absolute; inset:0;
-        background:
-          radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
-          radial-gradient(900px 540px at -10% 100%, rgba(16,181,255,.40), transparent 60%),
-          linear-gradient(180deg, #13203d 0%, #0f1c36 60%, #0a162d 100%);
-        z-index:-1;
-      }
-      .login-card{
-        width:min(520px,100%);
-        border-radius:28px;
-        padding:26px 22px 22px;
-        backdrop-filter: blur(16px) saturate(120%);
-        background: rgba(255,255,255,.06);
-        border: 1px solid rgba(255,255,255,.18);
-        box-shadow: 0 30px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.25);
-      }
-      .login-badge{
-        width:54px; height:54px; border-radius:50%;
-        border:3px solid rgba(255,255,255,.35);
-        border-top-color:#ff6aa2;
-        margin:2px auto 14px;
-        animation:spin 1.2s linear infinite;
-      }
-      @keyframes spin{ to{ transform:rotate(360deg); } }
-      .login-title{ color:#fff; text-align:center; margin:0 0 4px; font-size:22px; letter-spacing:.4px; font-weight:800 }
-      .login-sub{ color:rgba(255,255,255,.75); text-align:center; font-size:13px; margin:0 0 18px }
-      .login-fields{ display:grid; gap:16px; }
-      .login-field input{
-        background:rgba(255,255,255,.96);
-        border:none !important;
-        border-radius:18px;
-        box-shadow: 0 12px 28px rgba(0,0,0,.10);
-      }
-      .login-field .icon-left{ color:#667085; }
-      .login-field .icon-right{ color:#667085; }
-      .login-primary{ margin-top:8px; }
-      .login-secondary{
-        margin-top:12px;
-        background:#ffffff !important;
-        color:#0b1220 !important;
-        border:none !important;
-        font-weight:800;
-        justify-content:center;
-      }
-      #btnReset{ text-align:center; justify-content:center; }
-    }
+    #autoBackupToast{ display:none; margin-top:12px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25) }
   </style>
 </head>
 <body>
@@ -218,16 +219,17 @@
         </div>
       </section>
 
-      <!-- === LOGIN (rediseñado móvil) === -->
+      <!-- === LOGIN (hero en móvil y escritorio) === -->
       <section id="loginView" class="stage">
         <div class="login-hero">
           <div class="login-card">
-            <div class="login-badge" aria-hidden="true"></div>
+            <div class="login-logo" aria-hidden="true">
+              <img src="icons/icon-192.png" alt="MF" />
+            </div>
             <h2 class="login-title">Iniciar sesión</h2>
             <p class="login-sub">MF Gestor de Citas</p>
 
             <div class="login-fields">
-              <!-- Usuario -->
               <div class="field login-field">
                 <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
@@ -235,7 +237,6 @@
                 <input id="loginUser" placeholder="Usuario" autocomplete="username">
               </div>
 
-              <!-- Contraseña -->
               <div class="field login-field">
                 <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -247,7 +248,6 @@
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
 
-              <!-- Botones -->
               <button id="btnLogin" class="btn login-primary" type="button">Entrar</button>
               <button id="btnReset" class="btn-ghost login-secondary" type="button" style="display:none">Borrar datos de la app</button>
             </div>
@@ -425,7 +425,7 @@
       if(id==='appView'){ setHeaderTitle('Enviar cita'); } else { setHeaderTitle('Iniciar sesión'); }
       if(id==='loginView'){ toggleResetVisibility(); }
       if(id==='setupView'){ const r=$('btnReset'); if(r) r.style.display='none'; }
-      document.body.classList.toggle('login-mode', id==='loginView'); /* activa el hero en móvil */
+      document.body.classList.toggle('login-mode', id==='loginView'); /* activa hero en login */
       window.scrollTo(0,0);
     }
 
@@ -544,11 +544,10 @@
     }
 
     // ===== Export/Import con clave fija =====
-    let pendingAutoBackup = null; // {name, jsonString}
+    let pendingAutoBackup = null;
     function showAutoToast(show){
       const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none';
     }
-
     async function exportFixedBackup(auto=false){
       const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
       const vault=await decryptJson(S.key, st.vault);
@@ -565,7 +564,6 @@
         await saveJson(name, payload);
       }
     }
-
     async function importFixedBackupFromFile(file){
       const text=await file.text();
       let data;
@@ -737,10 +735,8 @@
         if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); }
       });
 
-      // Buscador
       wireSearch();
 
-      // Enter en inputs
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
         const el=$(id); el&&el.addEventListener('keydown',e=>{
           if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }
@@ -769,7 +765,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui12').catch(()=>{});
+        navigator.serviceWorker.register('./service-worker.js?v=ui13').catch(()=>{});
       });
     }
   </script>
