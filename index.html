@@ -1,1239 +1,955 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <title>MF Gestor de Citas</title>
-  <meta name="theme-color" content="#5e5bff">
-  <link rel="manifest" href="manifest.webmanifest?v=ui19">
-  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { height:100%; }
-    html{ -webkit-text-size-adjust:100%; }
-    :root{
-      --violet:#5e5bff; --cyan:#10b5ff;
-      --ink:#0b1220; --muted:#94a3b8; --soft:#eef2ff;
-      --glassBorder: rgba(255,255,255,.22);
-      --glassBg: rgba(8,12,24,.45);
-      --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
-      --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1430">
+<title>MF Gestor de Citas</title>
 
-    body{
-      margin:0; overflow-x:hidden;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
-      color:#e5e7eb;
-      background:
-        radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
-        radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
-        linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
-      background-attachment: fixed;
-    }
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="logo_sofa_cal_transparent_1024.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-    .card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
-    .main{ padding:0; }
-    .stage{ display:none; }
+<style>
+:root{
+  --bg-top:#1a1f3c;
+  --bg-bottom:#07263a;
+  --card:#0e1a2f;
+  --card-2:#0b1630;
+  --muted:#aab6c7;
+  --text:#e8eef7;
+  --white:#fff;
+  --brand1:#15b7ff;
+  --brand2:#5e5bff;
+  --ok:#1abc9c;
+  --danger:#ef5964;
+  --chip:#23314f;
+  --soft-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 800px at 40% -10%, #2a214b 0%, #0b2440 50%, #051a2d 100%) fixed;
+}
 
-    .auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
-    .logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
-    .logo-box img{ width:100%; height:100%; object-fit:cover; background:#fff }
-    .title{ margin:0; font-size:clamp(22px,2.2vw,28px); font-weight:900 }
-    .subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
-    .hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
-    body.login-mode .auth-head, body.login-mode .hr,
-    body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
-    body:not(.login-mode):not(.setup-mode) .auth-head{
-      position:sticky; top:0; z-index:20;
-      backdrop-filter: blur(12px) saturate(120%);
-      background: rgba(8,12,24,.55);
-      border-bottom: 1px solid var(--glassBorder);
-    }
-    body:not(.login-mode):not(.setup-mode) .title{ color:#fff }
+/* ===== Generic ===== */
+.container{max-width:980px;margin:0 auto;padding:18px}
+.header{
+  position:sticky; top:0; z-index:5; backdrop-filter:saturate(160%) blur(14px);
+  background:linear-gradient(180deg, rgba(21,16,56,.85), rgba(7,28,49,.78));
+  border-bottom:1px solid rgba(255,255,255,.06)
+}
+.appbar{display:flex;align-items:center;gap:12px;padding:14px 18px}
+.appbar img{width:38px;height:38px;border-radius:8px}
+.h1{font-size:28px;margin:0;font-weight:800}
+.sub{font-size:14px;opacity:.8;margin-top:2px}
 
-    .field{ position:relative; }
-    .field input, .field select, .field textarea, .field [type="datetime-local"]{
-      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
-      padding:16px 48px 16px 44px; background:#ffffff;
-      font-size:17px; color:var(--ink);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
-    }
-    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; min-height:56px; padding-right:14px; }
-    .field select{ min-height:56px; }
-    .field textarea{ min-height:140px; resize:vertical; }
-    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
-    .icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
+/* Cards / Sections */
+.section{
+  margin:16px auto;
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:22px;
+  padding:18px;
+  box-shadow:var(--soft-shadow);
+}
 
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
-      padding:18px 18px; width:100%;
-      background: linear-gradient(90deg, var(--cyan), var(--violet));
-      box-shadow: 0 18px 34px rgba(16,181,255,.28), 0 18px 34px rgba(94,91,255,.28);
-      letter-spacing:.2px; text-align:center;
-    }
-    .btn-ghost{
-      appearance:none; background:#fff; border:1px dashed rgba(255,255,255,.35);
-      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
-      display:inline-flex; align-items:center; justify-content:center; text-align:center;
-      box-shadow:0 10px 26px rgba(0,0,0,.16);
-    }
-    .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
-    .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
-    .btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
+/* Inputs */
+.field{margin:10px 0; position:relative}
+.label{display:block;margin:8px 4px 6px 6px;font-weight:700;opacity:.85}
+.input, select, textarea{
+  width:100%; border:0; outline:0; color:#0b2440; font-weight:600;
+  background:#f5f7fb; padding:14px 48px; border-radius:18px; font-size:16px;
+}
+textarea{min-height:140px; resize:vertical}
+.icon-left{
+  position:absolute; left:16px; top:50%; transform:translateY(-50%);
+  opacity:.6; width:22px;height:22px; pointer-events:none; color:#0b2440
+}
+.eye{position:absolute; right:14px; top:50%; transform:translateY(-50%); opacity:.65; width:24px;height:24px; cursor:pointer}
 
-    /* ====== LOGIN/SETUP centrados ====== */
-    .login-hero{
-      min-height:100dvh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px 20px 40px;
-    }
-    .login-card{
-      width:min(560px, 100%); border-radius:26px; padding:24px 20px 20px;
-      backdrop-filter: blur(18px) saturate(120%); background: var(--glassBg);
-      border: 1px solid var(--glassBorder); box-shadow: var(--shadow);
-      position:relative;
-    }
-    .login-logo-wrap{ display:grid; place-items:center; margin-top:-40px; }
-    .login-logo-circle{
-      width:86px; height:86px; border-radius:50%;
-      display:grid; place-items:center;
-      background: radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.85), transparent 60%), linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85));
-      padding:4px; box-shadow:0 18px 36px rgba(0,0,0,.35);
-    }
-    .login-logo-circle img{ width:100%; height:100%; border-radius:50%; display:block; background:#fff; padding:10px }
-    .login-title{ color:#fff; text-align:center; margin:12px 0 2px; font-size:clamp(22px, 2.6vw, 28px); letter-spacing:.3px; font-weight:900 }
-    .login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
-    .login-fields{ display:grid; gap:16px }
-    .login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
+/* Buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:10px; border:0; padding:14px 18px; border-radius:18px;
+  color:#fff; cursor:pointer; font-weight:800; letter-spacing:.2px;
+}
+.btn-wide{width:100%}
+.btn-grad{ background: linear-gradient(90deg, var(--brand1), var(--brand2)); box-shadow:0 16px 36px rgba(63,94,251,.25)}
+.btn-soft{ background:#fff; color:#0b2440; }
+.btn-danger{ background:var(--danger) }
+.btn-chip{
+  background:var(--chip); padding:8px 12px; border-radius:14px; font-weight:700; color:#dbe6ff
+}
 
-    /* ====== APP ====== */
-    .app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
-    @media (min-width:980px){ .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px } }
-    .glass{ backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px; }
-    .span-2{ grid-column: 1 / -1; }
-    .section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
-    @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
-    .contact-picker{ display:grid; gap:10px }
-    .search-wrap{ position:relative }
-    #contactSearch{
-      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
-      padding:14px 44px 14px 44px; background:#fff; font-size:16px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
-    }
-    .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
-    .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
-    #contactResults{
-      border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-      max-height:260px; overflow:auto; padding:6px;
-    }
-    .result-item{ display:flex; align-items:center; gap:8px; width:100%; padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; font-size:16px; text-align:left; }
-    .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
-    .result-name{ color:#0b1220; font-weight:700 }
-    .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
-    .muted{ color:#cbd5e1; font-size:14px }
-    mark{ background:#fff5b1; padding:0 2px; border-radius:4px }
-    .footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
-    .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
+.actions-row{display:flex;flex-wrap:wrap;gap:10px}
+.divider{height:1px;background:rgba(255,255,255,.08);margin:10px 0}
 
-    /* ====== CALENDAR (Agenda) — versión móvil pro ====== */
-    .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px }
-    .cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
-    .cal-nav{ display:flex; gap:8px }
-    .chip{ border:1px solid rgba(255,255,255,.3); border-radius:12px; padding:8px 10px; background:#fff; color:#0b1220; font-weight:700; cursor:pointer }
+/* ===== Login ===== */
+.login-wrap{
+  min-height:calc(100svh - 70px); display:grid; place-items:start center;
+  padding-top:24px; padding-bottom:40px;
+}
+.login-card{
+  width:min(680px, 92vw);
+  background:linear-gradient(180deg, rgba(12,23,47,.96), rgba(11,27,54,.88));
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:26px; padding:20px 18px 20px; box-shadow:var(--soft-shadow)
+}
+.login-head{
+  display:flex; align-items:center; gap:14px; margin:2px 6px 12px
+}
+.login-head .logo{width:62px;height:62px;border-radius:14px;background:#fff;display:grid;place-items:center;overflow:hidden}
+.login-title{font-size:30px;margin:0;font-weight:900}
+.login-sub{opacity:.8;margin:0}
 
-    .cal-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; align-items:stretch }
-    .cal-dow{
-      text-align:center; font-weight:800; color:#c7d2fe;
-      padding:4px 0 6px; font-size:clamp(11px, 2.6vw, 13px)
-    }
-    .cal-cell{
-      position:relative; background:rgba(255,255,255,.94); color:#0b1220;
-      border-radius:14px; aspect-ratio:1/1; padding:6px 6px 12px; min-height:0;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 22px rgba(0,0,0,.14);
-      display:block; cursor:pointer; touch-action:manipulation
-    }
-    .cal-cell:active{ transform:translateY(1px) scale(.995) }
-    .cal-num{
-      position:absolute; top:6px; left:8px; font-weight:900; opacity:.9;
-      font-size:clamp(12px, 3.1vw, 15px); letter-spacing:.1px
-    }
-    .cal-other .cal-num{ opacity:.45 }
-    .cal-today{ outline:2px solid var(--violet); outline-offset:2px; }
-    .cal-cell.cal-selected{ outline:3px solid var(--cyan); outline-offset:2px }
+/* ===== Calendar ===== */
+.month-header{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px
+}
+.month-title{font-size:22px;font-weight:900}
+.nav-btn{
+  border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06);
+  color:var(--text); border-radius:14px; padding:10px 12px; cursor:pointer;
+}
+.grid-weekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin:10px 0; font-weight:800; opacity:.9}
+.grid-days{display:grid; grid-template-columns:repeat(7,1fr); gap:10px}
+.day{
+  background:#e9edf6; color:#0b2440; border-radius:18px;
+  height:56px; display:flex; align-items:center; justify-content:center;
+  font-weight:900; box-shadow:0 8px 18px rgba(0,0,0,.15)
+}
+.day.out{opacity:.35}
+.day.today{outline:3px solid #8fb6ff}
+.day.sel{outline:3px solid #6d79ff}
 
-    .dots{
-      position:absolute; left:6px; right:6px; bottom:6px;
-      display:flex; justify-content:center; gap:4px; flex-wrap:nowrap
-    }
-    .dot{ width:6px; height:6px; border-radius:50%; background:var(--violet); opacity:.95 }
-    .dot.green{ background:var(--ok) } .dot.yellow{ background:var(--warning) } .dot.red{ background:var(--danger) }
+/* ===== Events list ===== */
+.day-title{font-size:24px;font-weight:900;margin:16px 4px}
+.event{ padding:10px 0 16px }
+.event + .event{ border-top:1px dashed rgba(255,255,255,.12) }
+.event h4{margin:8px 0 6px;font-size:18px}
+.event .meta{opacity:.8; margin-bottom:10px}
 
-    @media (min-width:480px){
-      .cal-grid{ gap:8px }
-      .cal-cell{ border-radius:16px; padding:8px 8px 12px }
-      .dot{ width:7px; height:7px }
-    }
-    @media (min-width:768px){
-      .cal-cell{ aspect-ratio: 1 / .9; padding:10px 10px 14px; border-radius:16px }
-      .cal-num{ font-size:clamp(13px, 1.6vw, 16px) }
-      .dot{ width:7px; height:7px }
-    }
-    @media (min-width:1100px){
-      .cal-cell{ aspect-ratio: 1 / .85 }
-    }
+/* ===== Modal ===== */
+dialog{border:0;padding:0;background:transparent}
+dialog::backdrop{background:rgba(0,0,0,.55); backdrop-filter:blur(3px)}
+.modal-card{
+  width:min(700px,92vw);
+  background:linear-gradient(180deg,#ffffff, #f6f7fb);
+  color:#0b2440; border-radius:22px; padding:18px; margin:auto; box-shadow:var(--soft-shadow)
+}
+.modal-title{font-size:22px;font-weight:900;margin:0 0 12px;padding-right:96px}
+#evtClose{position:absolute;top:10px;right:10px;z-index:10}
+#evtPicked{display:none}
 
-    /* === Mejora agenda (espacios y foco + separadores) === */
-    .day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; margin-bottom:14px; }
-    .day-list{ display:grid; gap:14px; margin-top:6px; }
-    .evt-item{
-      position:relative;
-      background:#fff; color:#0b1220;
-      border-radius:14px; padding:12px 12px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.18);
-    }
-    .evt-actions{ display:flex; gap:12px; flex-wrap:wrap; }
-    .evt-sep{ height:1px; background:rgba(255,255,255,.12); margin:4px 8px; border-radius:1px; }
+/* Contact search inside modal */
+#evtContactSearchArea{ position:relative }
+#evtContactSearchArea .searchbox{ position:relative; border-radius:16px; background:#fff; box-shadow:var(--soft-shadow) }
+#evtContactSearch{ width:100%; border:0; outline:0; padding:14px 48px; font-size:16px; border-radius:16px }
+#evtContactSearchArea .icon-left{ left:14px; color:#0b2440 }
+#evtContactSearchArea .caret{
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  width:18px; height:18px; opacity:.5; pointer-events:none
+}
+#evtContactResults{
+  margin:8px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto;
+  border-radius:14px; background:rgba(255,255,255,.97); box-shadow:var(--soft-shadow)
+}
+#evtContactResults li{ display:flex; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid rgba(0,0,0,.06); cursor:pointer }
+#evtContactResults li:last-child{ border-bottom:none }
 
-    /* Título del día con animación sutil al cambiar */
-    @keyframes glowTitle { 
-      0% { text-shadow: 0 0 0 rgba(16,181,255,0); }
-      50% { text-shadow: 0 0 16px rgba(16,181,255,.6); }
-      100% { text-shadow: 0 0 0 rgba(16,181,255,0); }
-    }
-    .flash { animation: glowTitle 360ms ease-out; }
-	
-	
-	/* Modal: botón Cerrar arriba a la derecha */
-	.modal-card{ position:relative; }
-	#evtClose{
-	  position:absolute;
-	  top:10px;
-	  right:10px;
-	  z-index:10;
-	}
+.hidden{display:none !important}
 
-	/* Campo Contacto dentro del modal: icono + texto sin solape y con elipsis */
-	#eventModal .field.select-field .icon-left{
-	  left:16px;
-	  pointer-events:none;
-	  z-index:1;
-	}
-	#eventModal .field.select-field select{
-	  -webkit-appearance:none; appearance:none;
-	  padding-left:64px;          /* deja sitio para el icono */
-	  padding-right:44px;         /* deja sitio para la “flecha” */
-	  overflow:hidden;
-	  text-overflow:ellipsis;     /* elipsis si es largo */
-	  white-space:nowrap;
-	}
-	#eventModal .field.select-field .caret{
-	  position:absolute;
-	  right:14px;
-	  top:50%;
-	  transform:translateY(-50%);
-	  width:18px; height:18px;
-	  opacity:.6;
-	  pointer-events:none;
-	}
-	#eventModal .modal-title{
-	  font-size:22px; font-weight:700; margin:0 0 14px 0; padding-right:96px;
-	}
-	#evtClose{
-	  position:absolute; top:10px; right:10px;
-	  z-index:10; padding:10px 14px; border-radius:14px;
-	}
-
-	/* --- Buscador de contacto en el modal --- */
-	#evtContactSearchArea{ position:relative; }
-	#evtContactSearchArea .searchbox{
-	  position:relative; border-radius:16px; background:#fff; box-shadow:var(--soft-shadow);
-	}
-	#evtContactSearch{ 
-	  width:100%; border:0; outline:none; padding:14px 48px 14px 48px; 
-	  font-size:17px; border-radius:16px; 
-	}
-	#evtContactSearchArea .icon-left{
-	  position:absolute; left:14px; top:50%; transform:translateY(-50%);
-	  width:22px; height:22px; opacity:.6; pointer-events:none;
-	}
-	#evtContactSearchArea .caret{
-	  position:absolute; right:14px; top:50%; transform:translateY(-50%);
-	  width:18px; height:18px; opacity:.5; pointer-events:none;
-	}
-	#evtContactResults{
-	  margin:8px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto;
-	  border-radius:14px; background:rgba(255,255,255,.95); backdrop-filter:saturate(180%) blur(10px);
-	  box-shadow:var(--soft-shadow);
-	}
-	#evtContactResults li{
-	  display:flex; align-items:center; gap:10px;
-	  padding:10px 14px; border-bottom:1px solid rgba(0,0,0,.06); cursor:pointer;
-	}
-	#evtContactResults li:last-child{ border-bottom:none; }
-	#evtPicked{
-	  display:none; margin-top:10px; align-items:center; gap:8px;
-	  background:linear-gradient(90deg,#e7f3ff,#eef7ff); color:#0b3d66;
-	  border-radius:16px; padding:8px 12px; font-weight:600;
-	}
-	#evtPicked .remove{
-	  margin-left:auto; border:0; background:transparent; color:#0b3d66; opacity:.7;
-	}
-	.hidden{ display:none !important; }
-	
-  </style>
+/* Responsive tweaks */
+@media (min-width:900px){
+  .login-wrap{place-items:center}
+}
+</style>
 </head>
 <body>
-  <div class="card">
-    <!-- Topbar (oculto en login y setup) -->
-    <div class="auth-head">
-      <div class="logo-box"><img src="icons/icon-192.png" alt="Logo" /></div>
+
+<!-- ========== HEADER (App) ========== -->
+<header class="header hidden" id="appHeader">
+  <div class="appbar container">
+    <img src="logo_sofa_cal_transparent_512.png" alt="logo">
+    <div>
+      <h1 class="h1" id="topTitle">Enviar cita</h1>
+      <div class="sub">MF Gestor de Citas</div>
+    </div>
+  </div>
+</header>
+
+<!-- ========== LOGIN ========== -->
+<main id="loginView" class="login-wrap">
+  <section class="login-card" id="cardCreate" style="display:none">
+    <div class="login-head">
+      <div class="logo"><img src="logo_sofa_cal_transparent_512.png" alt="" style="width:100%;height:100%"></div>
       <div>
-        <h1 id="hdrTitle" class="title">Iniciar sesión</h1>
-        <p class="subtitle">MF Gestor de Citas</p>
+        <h2 class="login-title">Crear cuenta</h2>
+        <p class="login-sub">Privado · sin servidores · 100% local</p>
       </div>
     </div>
-    <div class="hr"></div>
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
+      <input id="newUser" class="input" placeholder="Usuario" autocomplete="username">
+    </div>
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M6 10V7a6 6 0 1 1 12 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h1Zm2 0h8V7a4 4 0 1 0-8 0v3Z" fill="currentColor"/></svg>
+      <input id="newPass" class="input" placeholder="Contraseña" type="password" autocomplete="new-password">
+      <svg class="eye" id="eyeNew" viewBox="0 0 24 24"><path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" fill="currentColor"/></svg>
+    </div>
+    <button class="btn btn-grad btn-wide" id="btnCreate">Crear y acceder</button>
+  </section>
 
-    <main id="main" class="main">
-      <!-- === SETUP (Crear y acceder) === -->
-      <section id="setupView" class="stage">
-        <div class="login-hero">
-          <div class="login-card">
-            <div class="login-logo-wrap">
-              <div class="login-logo-circle"><img src="icons/icon-192.png" alt="MF"></div>
-            </div>
-            <h2 class="login-title">Iniciar sesión</h2>
-            <p class="login-sub">MF Gestor de Citas</p>
-
-            <div class="login-fields">
-              <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
-                <input id="setupUser" placeholder="Usuario" autocomplete="username">
-              </div>
-              <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
-                <input id="setupPass" type="password" placeholder="Contraseña" autocomplete="new-password">
-                <svg id="toggleSetup" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
-              </div>
-              <button id="btnSetup" class="btn" type="button">Crear y acceder</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- === LOGIN === -->
-      <section id="loginView" class="stage">
-        <div class="login-hero">
-          <div class="login-card">
-            <div class="login-logo-wrap">
-              <div class="login-logo-circle"><img src="icons/icon-192.png" alt="MF"></div>
-            </div>
-            <h2 class="login-title">Iniciar sesión</h2>
-            <p class="login-sub">MF Gestor de Citas</p>
-
-            <div class="login-fields">
-              <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
-                <input id="loginUser" placeholder="Usuario" autocomplete="username">
-              </div>
-              <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
-                <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password">
-                <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
-              </div>
-              <button id="btnLogin" class="btn" type="button">Entrar</button>
-              <button id="btnReset" class="btn-ghost" type="button" style="display:none">Borrar datos de la app</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- === APP === -->
-      <section id="appView" class="stage" style="display:none">
-        <div class="app-wrap">
-
-          <!-- AGENDA -->
-          <div class="glass span-2" id="agendaCard">
-            <div class="cal-head">
-              <div class="cal-title" id="calTitle">Agenda</div>
-              <div class="cal-nav">
-                <button class="chip" id="calPrev" type="button">◀︎</button>
-                <button class="chip" id="calToday" type="button">Hoy</button>
-                <button class="chip" id="calNext" type="button">▶︎</button>
-              </div>
-            </div>
-            <div class="cal-grid" id="calGrid"></div>
-
-            <div class="day-toolbar">
-              <div class="section-title" id="dayTitle" style="margin:0">Hoy</div>
-              <button class="btn-small btn-outline" id="btnNewEvent" type="button">Nueva cita</button>
-            </div>
-            <div id="dayList" class="day-list"></div>
-          </div>
-
-          <!-- ENVIAR CITA -->
-          <div class="glass">
-            <h3 class="section-title">Enviar cita</h3>
-            <div class="grid2">
-              <div>
-                <label>Fecha y hora del recordatorio</label>
-                <div class="field"><input id="dt" type="datetime-local" /></div>
-              </div>
-              <div>
-                <label>Contacto</label>
-                <div class="contact-picker">
-                  <div class="search-wrap">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
-                    <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
-                    <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
-                  </div>
-                  <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
-                  <div class="muted"><strong>Listado</strong></div>
-                  <div class="field"><select id="contactSelect"></select></div>
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top:14px">
-              <label>Mensaje</label>
-              <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
-            </div>
-
-            <div style="margin-top:16px">
-              <button id="btnSend" class="btn" type="button">Enviar Cita</button>
-            </div>
-          </div>
-
-          <!-- CONTACTOS + COPIAS -->
-          <div class="glass" style="display:grid; gap:18px">
-            <div>
-              <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
-              <div class="grid2">
-                <div class="field"><input id="newName" placeholder="Nombre" /></div>
-                <div class="field"><input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" pattern="^\\+\\d{6,15}$" placeholder="+34600111222" /></div>
-              </div>
-              <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
-                <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
-                <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
-              <div style="display:flex; flex-wrap:wrap; gap:12px">
-                <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar copia cifrada (.json)</button>
-                <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar CSV</button>
-                <button id="btnImportApp" class="btn btn-outline" type="button">Importar copia…</button>
-              </div>
-              <div class="toggle" style="margin-top:12px">
-                <input id="autoBackupToggle" type="checkbox" />
-                <span class="muted">Auto-descargar copia tras cada cambio de contactos</span>
-              </div>
-              <div id="autoBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
-                Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <span id="logout" class="logout" style="display:none">Cerrar sesión</span>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- ===== MODAL EVENTO ===== -->
-  <dialog id="eventModal" class="modal">
-    <form method="dialog" class="modal-card" id="evtForm" onsubmit="return false;">
-      <div class="modal-head">
-        <div class="modal-title" id="evtModalTitle">Nueva cita</div>
-        <button type="button" id="evtClose" class="chip">Cerrar</button>
+  <section class="login-card" id="cardLogin" style="display:none">
+    <div class="login-head">
+      <div class="logo"><img src="logo_sofa_cal_transparent_512.png" alt="" style="width:100%;height:100%"></div>
+      <div>
+        <h2 class="login-title">Iniciar sesión</h2>
+        <p class="login-sub">MF Gestor de Citas</p>
       </div>
+    </div>
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
+      <input id="loginUser" class="input" placeholder="Usuario" autocomplete="username">
+    </div>
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M6 10V7a6 6 0 1 1 12 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h1Zm2 0h8V7a4 4 0 1 0-8 0v3Z" fill="currentColor"/></svg>
+      <input id="loginPass" class="input" placeholder="Contraseña" type="password" autocomplete="current-password">
+      <svg class="eye" id="eyeLogin" viewBox="0 0 24 24"><path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" fill="currentColor"/></svg>
+    </div>
+    <div class="actions-row">
+      <button class="btn btn-grad btn-wide" id="btnLogin">Entrar</button>
+      <button class="btn btn-soft btn-wide" id="btnWipe">Borrar datos de la app</button>
+    </div>
+  </section>
+</main>
 
-      <div class="field" style="margin-bottom:10px">
-        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="evtTitle" placeholder="Título de la cita" />
+<!-- ========== APP VIEW ========== -->
+<div id="appView" class="hidden">
+
+  <section class="container section">
+    <div class="month-header">
+      <div class="month-title" id="monthTitle">Agenda</div>
+      <div>
+        <button class="nav-btn" id="prevMonth">◀</button>
+        <button class="nav-btn" id="todayBtn">Hoy</button>
+        <button class="nav-btn" id="nextMonth">▶</button>
       </div>
+    </div>
 
-      <div class="grid2" style="margin-bottom:10px">
-        <div class="field">
-          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input id="evtStart" type="datetime-local" />
-        </div>
-        <div class="field">
-          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input id="evtEnd" type="datetime-local" />
-        </div>
+    <div class="grid-weekdays">
+      <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+    </div>
+    <div class="grid-days" id="daysGrid"></div>
+  </section>
+
+  <section class="container section" id="dayPanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="day-title" id="dayTitle">Hoy</div>
+      <button class="btn btn-chip" id="btnNewEvent">Nueva cita</button>
+    </div>
+    <div id="eventsList"></div>
+  </section>
+
+  <section class="container section">
+    <h3 style="margin:8px 4px 12px">Enviar cita</h3>
+    <div class="field">
+      <label class="label">Fecha y hora del recordatorio</label>
+      <input id="reminderDT" class="input" type="datetime-local">
+    </div>
+
+    <!-- Buscador de contactos “rápido” principal -->
+    <div class="field" id="mainSearchArea">
+      <label class="label">Contacto — Listado</label>
+      <div class="searchbox" style="position:relative">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/></svg>
+        <input id="contactSearch" class="input" type="search" placeholder="Buscar por nombre o teléfono" inputmode="search" autocomplete="off" style="padding-left:48px">
       </div>
+      <ul id="contactResults" class="hidden" style="margin:8px 0 0; padding:0; list-style:none; border-radius:14px; overflow:hidden; background:rgba(255,255,255,.98); box-shadow:var(--soft-shadow)"></ul>
+      <input type="hidden" id="selectedPhone">
+      <input type="hidden" id="selectedName">
+    </div>
 
-      <div class="field select-field" style="margin-bottom:10px">
-        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
-        <!-- Contacto (buscador con sugerencias) -->
-		<div class="field" id="evtContactSearchArea">
-		  <label class="label">Contacto</label>
-		  <div class="searchbox">
-			<svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-			  <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-			  <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/>
-			</svg>
-			<input id="evtContactSearch" type="search" autocomplete="off"
-				   placeholder="Buscar por nombre o teléfono" inputmode="search">
-			<svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-			  <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
-		  </div>
+    <div class="field">
+      <label class="label">Mensaje</label>
+      <textarea id="messageBox" class="input" placeholder="Texto del recordatorio…"></textarea>
+    </div>
 
-		  <!-- Sugerencias -->
-		  <ul id="evtContactResults"></ul>
+    <div class="actions-row">
+      <button class="btn btn-grad" id="sendWA">Enviar cita</button>
+    </div>
 
-		  <!-- Contacto elegido -->
-		  <div id="evtPicked">
-			<span id="evtPickedName"></span>
-			<button type="button" class="remove" id="evtPickedClear">Quitar</button>
-		  </div>
+    <div class="divider"></div>
 
-		  <!-- Valores ocultos (para lógica existente) -->
-		  <input type="hidden" id="evtContactPhone">
-		  <input type="hidden" id="evtContactName">
-		</div>
+    <h3 style="margin:14px 4px 10px">Gestionar contactos</h3>
+    <div class="field"><input id="contactName" class="input" placeholder="Nombre"></div>
+    <div class="field">
+      <input id="contactPhone" class="input" type="tel" inputmode="tel" placeholder="+34600111222" pattern="\\+?[0-9 ]*" />
+    </div>
+    <div class="actions-row">
+      <button class="btn btn-soft" id="addContact">Añadir contacto</button>
+      <button class="btn btn-danger" id="delContact">Eliminar contacto</button>
+    </div>
 
-		<svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-			<path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-		</svg>
+    <div class="divider"></div>
+
+    <h3 style="margin:14px 4px 10px">Copias de seguridad</h3>
+    <div class="actions-row">
+      <button class="btn btn-soft" id="exportCSV">Exportar CSV</button>
+      <button class="btn btn-soft" id="exportEncrypted">Exportar copia cifrada</button>
+      <button class="btn btn-soft" id="importBtn">Importar copia…</button>
+      <input type="file" id="importFile" accept=".json,.csv" class="hidden">
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:12px">
+      <input type="checkbox" id="autoDL">
+      <span>Auto-descargar copia tras cada cambio de contactos</span>
+    </label>
+
+    <div style="display:flex;justify-content:center;margin-top:18px">
+      <a href="#" id="logout" style="color:#ff9a9a;font-weight:800;text-decoration:underline">Cerrar sesión</a>
+    </div>
+  </section>
+</div>
+
+<!-- ========== MODAL NUEVA CITA ========== -->
+<dialog id="eventModal">
+  <form method="dialog" class="modal-card" id="evtForm">
+    <h3 class="modal-title">Nueva cita</h3>
+    <button class="btn btn-soft" id="evtClose">Cerrar</button>
+
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M4 6h16v2H4zM4 10h16v2H4zM4 14h10v2H4z" fill="currentColor"/></svg>
+      <input id="evtTitle" class="input" placeholder="Título de la cita">
+    </div>
+
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M7 2h10v2h2a1 1 0 0 1 1 1v4H4V5a1 1 0 0 1 1-1h2V2Zm-3 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10Zm8 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" fill="currentColor"/></svg>
+      <input id="evtDateTime" type="datetime-local" class="input">
+    </div>
+
+    <!-- (opcional) fecha fin, conservamos hueco por si lo usas -->
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M7 2h10v2h2a1 1 0 0 1 1 1v4H4V5a1 1 0 0 1 1-1h2V2Zm-3 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10Z" fill="currentColor"/></svg>
+      <input id="evtDateTimeEnd" type="datetime-local" class="input" placeholder="">
+    </div>
+
+    <!-- Buscador de contacto (reemplaza al select) -->
+    <div class="field" id="evtContactSearchArea">
+      <label class="label">Contacto</label>
+      <div class="searchbox">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <input id="evtContactSearch" type="search" placeholder="Buscar por nombre o teléfono" inputmode="search" autocomplete="off">
+        <svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-
-      <div class="field">
-        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14l-8-4-8 4V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <textarea id="evtNote" rows="3" placeholder="Notas"></textarea>
+      <ul id="evtContactResults"></ul>
+      <div id="evtPicked" class="btn-chip">
+        <span id="evtPickedName"></span>
+        <button type="button" class="remove" id="evtPickedClear">Quitar</button>
       </div>
+      <input type="hidden" id="evtContactPhone">
+      <input type="hidden" id="evtContactName">
+    </div>
 
-      <div class="modal-actions">
-        <button id="evtSave" class="btn" type="button">Guardar</button>
-        <button id="evtSend" class="btn btn-outline" type="button">Enviar cita</button>
-        <button id="evtDelete" class="btn btn-danger" type="button" style="margin-left:auto; display:none">Eliminar</button>
-      </div>
-    </form>
-  </dialog>
+    <div class="field">
+      <svg class="icon-left" viewBox="0 0 24 24"><path d="M6 19h12v2H6zM6 3h12v12H6z" fill="currentColor"/></svg>
+      <textarea id="evtNotes" class="input" placeholder="Notas"></textarea>
+    </div>
 
-  <!-- ===== LÓGICA (sin cambios de funcionalidad) ===== -->
-  <script>
-    const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
-      state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
-      save(o){ localStorage.setItem(this.stateKey, JSON.stringify(o)); },
-      clear(){ localStorage.removeItem(this.stateKey); } };
-    const $ = id => document.getElementById(id);
-    const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
-    const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
-	
-	const $ = (s, r=document) => r.querySelector(s);
-	const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+    <div class="actions-row" style="margin-top:8px">
+      <button class="btn btn-grad btn-wide" id="evtSave">Guardar</button>
+      <button class="btn btn-soft btn-wide" id="evtSend">Enviar cita</button>
+    </div>
+  </form>
+</dialog>
 
-	const evtSearch   = () => $('#evtContactSearch');
-	const evtResults  = () => $('#evtContactResults');
-	const evtPicked   = () => $('#evtPicked');
-	const evtPickedNm = () => $('#evtPickedName');
-	const evtPhone    = () => $('#evtContactPhone');
-	const evtName     = () => $('#evtContactName');
-	const evtClearBtn = () => $('#evtPickedClear');
-	
-	const { phone: contactPhone, name: contactName } = getEvtContact();
+<script>
+/* ===========================
+   Storage + Crypto helpers
+=========================== */
+const LS_USER = 'mf_user';
+const LS_BOOK = 'mf_contacts_cipher';
+const LS_SETTINGS = 'mf_settings';
+const LS_EVENTS = 'mf_events';
+const FIXED_BACKUP_PASS = 'MFGestorCitas';
 
+const enc = new TextEncoder(); const dec = new TextDecoder();
 
-	function getAllContacts(){
-	  // usa tu fuente actual; normalmente ya tienes algo como window.contacts
-	  return (window.contacts || []);
-	}
+// PBKDF2 -> AES-GCM
+async function deriveKey(password, salt){
+  const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:200000, hash:'SHA-256'},
+    base,
+    {name:'AES-GCM', length:256},
+    false,
+    ['encrypt','decrypt']
+  );
+}
+async function aesEncrypt(key, data){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, enc.encode(JSON.stringify(data)));
+  return { iv: btoa(String.fromCharCode(...iv)), payload: btoa(String.fromCharCode(...new Uint8Array(cipher))) };
+}
+async function aesDecrypt(key, bundle){
+  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
+  const bytes = Uint8Array.from(atob(bundle.payload), c => c.charCodeAt(0));
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, bytes);
+  return JSON.parse(dec.decode(plain));
+}
 
-	// Pintar sugerencias
-	function renderEvtSuggestions(q){
-	  const list = getAllContacts();
-	  const ul = evtResults();
-	  ul.innerHTML = '';
-	  if(!q || !q.trim()) return;
+function getSettings(){
+  return JSON.parse(localStorage.getItem(LS_SETTINGS) || '{"autoDL":false}');
+}
+function setSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
 
-	  const term = q.trim().toLowerCase();
-	  const items = list.filter(c =>
-		(c.name||'').toLowerCase().includes(term) ||
-		(c.phone||'').replace(/\s+/g,'').includes(term.replace(/\s+/g,'')))
-		.slice(0,12);
+function nowISO(d=new Date()){ return d.toISOString(); }
+function fmtDateKey(d){ return d.toISOString().slice(0,10); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmtHuman(dt){
+  const d = new Date(dt);
+  return d.toLocaleString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtTime(dt){
+  const d = new Date(dt);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
-	  items.forEach(c => {
-		const li = document.createElement('li');
-		li.innerHTML = `
-		  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="opacity:.7">
-			<path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
-		  </svg>
-		  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-			<div style="font-weight:700">${c.name||'Sin nombre'}</div>
-			<div style="opacity:.65">${c.phone||''}</div>
-		  </div>`;
-		li.addEventListener('click', () => pickEvtContact(c));
-		ul.appendChild(li);
-	  });
-	}
+/* ===========================
+   App state
+=========================== */
+let state = {
+  user: null,          // { username, saltB64 }
+  key: null,           // CryptoKey AES-GCM
+  contacts: [],        // [{name, phone}]
+  events: {},          // { 'YYYY-MM-DD': [ { id, title, start, end?, notes, contactName, contactPhone } ] }
+  selDate: new Date(), // selected day
+};
 
-	// Seleccionar contacto
-	function pickEvtContact(c){
-	  evtPhone().value = c.phone || '';
-	  evtName().value  = c.name  || '';
-	  evtPickedNm().textContent = c.name || 'Sin nombre';
-	  evtPicked().style.display = 'flex';
-	  evtResults().innerHTML = '';
-	  evtSearch().value = '';
-	}
+/* ===========================
+   UI Helpers
+=========================== */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function toast(msg){ alert(msg); }
 
-	// Limpiar selección
-	function clearEvtContact(){
-	  evtPhone().value = '';
-	  evtName().value  = '';
-	  evtPicked().style.display = 'none';
-	}
+function updateHeader(title='Enviar cita'){ $('#topTitle').textContent = title; }
 
-	// Inicializa buscador del modal (llámalo cuando abras el modal)
-	function initEvtContactSearch(){
-	  clearEvtContact();
-	  evtResults().innerHTML = '';
-	  evtSearch().value = '';
-	  evtSearch().addEventListener('input', onEvtSearchInput, { passive:true });
-	  evtClearBtn().onclick = clearEvtContact;
-	}
+function openWhatsApp(phone, text){
+  const num = (phone||'').replace(/\s+/g,'');
+  if(!num){ toast('Selecciona un contacto válido'); return; }
+  const url = `https://wa.me/${encodeURIComponent(num)}?text=${encodeURIComponent(text||'')}`;
+  window.open(url, '_blank'); // evita “pantalla en blanco” al volver
+}
 
-	function onEvtSearchInput(e){
-	  renderEvtSuggestions(e.target.value);
-	}
+/* ===========================
+   LOGIN / CREATE
+=========================== */
+function hasUser(){ return !!localStorage.getItem(LS_USER); }
 
-	// Helper para consumir desde la lógica existente
-	function getEvtContact(){
-	  return { phone: evtPhone().value || '', name: evtName().value || '' };
-	}
+async function createUser(){
+  const username = $('#newUser').value.trim();
+  const password = $('#newPass').value;
+  if(!username || !password){ toast('Introduce usuario y contraseña'); return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKey(password, salt);
+  const user = { username, saltB64: btoa(String.fromCharCode(...salt)) };
+  localStorage.setItem(LS_USER, JSON.stringify(user));
+  state.user = user; state.key = key; state.contacts = []; state.events = {};
+  await saveContacts(); await saveEvents();
+  enterApp();
+}
 
+async function login(){
+  const user = JSON.parse(localStorage.getItem(LS_USER)||'null');
+  const u = $('#loginUser').value.trim();
+  const p = $('#loginPass').value;
+  if(!user){ toast('No hay usuario creado aún'); return; }
+  if(u !== user.username){ toast('Usuario incorrecto'); return; }
+  const salt = Uint8Array.from(atob(user.saltB64), c=>c.charCodeAt(0));
+  const key = await deriveKey(p, salt);
+  state.user = user; state.key = key;
+  await loadContacts(); await loadEvents();
+  enterApp();
+}
 
+function logout(){
+  // Limpia solo sesión en memoria.
+  state = { user:null, key:null, contacts:[], events:{}, selDate:new Date() };
+  hide('#appView'); hide('#appHeader'); show('#loginView');
+  decideLoginCards();
+}
 
-    async function derive(password, saltB64){
-      const salt=saltB64?ubuf(saltB64):crypto.getRandomValues(new Uint8Array(16)).buffer;
-      const baseKey=await crypto.subtle.importKey('raw', new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-      const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},baseKey,256);
-      const keyBytes=new Uint8Array(bits);
-      const pwHash=await crypto.subtle.digest('SHA-256', keyBytes);
-      const aesKey=await crypto.subtle.importKey('raw', keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt']);
-      return {aesKey, pwHashB64:b64(pwHash), saltB64:b64(salt)};
+function wipeApp(){
+  if(confirm('Esto borrará usuario, contactos y eventos guardados en este navegador. ¿Continuar?')){
+    localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_BOOK);
+    localStorage.removeItem(LS_EVENTS);
+    // ajusta UI
+    $('#newUser').value=''; $('#newPass').value='';
+    $('#loginUser').value=''; $('#loginPass').value='';
+    decideLoginCards();
+  }
+}
+
+function decideLoginCards(){
+  $('#loginView').style.display='grid';
+  if(hasUser()){ $('#cardLogin').style.display='block'; $('#cardCreate').style.display='none'; }
+  else { $('#cardCreate').style.display='block'; $('#cardLogin').style.display='none'; }
+}
+
+/* ===========================
+   CONTACTS (encrypted)
+=========================== */
+async function saveContacts(){
+  if(!state.key) return;
+  const bundle = await aesEncrypt(state.key, state.contacts);
+  localStorage.setItem(LS_BOOK, JSON.stringify(bundle));
+  if(getSettings().autoDL) exportEncrypted(true); // auto
+}
+async function loadContacts(){
+  state.contacts = [];
+  const raw = localStorage.getItem(LS_BOOK);
+  if(!raw) return;
+  const bundle = JSON.parse(raw);
+  try{
+    // normalmente cifrado con clave del usuario
+    state.contacts = await aesDecrypt(state.key, bundle);
+  }catch(e){
+    // si fue copia con contraseña fija para import, inténtalo:
+    const salt = enc.encode('fixed-salt'); // constante para backup
+    const k = await deriveKey(FIXED_BACKUP_PASS, salt);
+    try { state.contacts = await aesDecrypt(k, bundle); }
+    catch(e2){ state.contacts = []; }
+  }
+}
+
+/* ===========================
+   EVENTS (plain local)
+=========================== */
+function saveEvents(){ localStorage.setItem(LS_EVENTS, JSON.stringify(state.events)); }
+function loadEvents(){ state.events = JSON.parse(localStorage.getItem(LS_EVENTS) || '{}'); }
+
+/* ===========================
+   APP ENTER
+=========================== */
+function enterApp(){
+  hide('#loginView'); show('#appHeader'); show('#appView');
+  updateHeader('Enviar cita');
+  // init UI defaults
+  $('#reminderDT').value = new Date(Date.now()+3600e3).toISOString().slice(0,16);
+  renderMonth(state.selDate);
+  renderDay(state.selDate);
+  renderContactSearch('#contactSearch','#contactResults','#selectedName','#selectedPhone');
+  $('#messageBox').value = buildMessage(new Date($('#reminderDT').value));
+}
+
+/* ===========================
+   Month render
+=========================== */
+function monthName(date){
+  return date.toLocaleString('es-ES',{month:'long', year:'numeric'});
+}
+function startOfMonth(date){ return new Date(date.getFullYear(), date.getMonth(), 1); }
+function endOfMonth(date){ return new Date(date.getFullYear(), date.getMonth()+1, 0); }
+function renderMonth(refDate){
+  $('#monthTitle').textContent = `Agenda · ${monthName(refDate)}`;
+  const grid = $('#daysGrid'); grid.innerHTML='';
+  const start = startOfMonth(refDate);
+  const end = endOfMonth(refDate);
+  // Monday-first grid
+  const startIdx = (start.getDay()+6)%7;
+  const total = startIdx + end.getDate();
+  const cells = Math.ceil(total/7)*7;
+  const todayKey = fmtDateKey(new Date());
+
+  for(let i=0;i<cells;i++){
+    const dayNum = i - startIdx + 1;
+    const cell = document.createElement('button');
+    cell.className = 'day';
+    let d;
+    if(dayNum<=0){
+      d = new Date(refDate.getFullYear(), refDate.getMonth(), dayNum);
+      cell.textContent = d.getDate(); cell.classList.add('out');
+    }else if(dayNum> end.getDate()){
+      d = new Date(refDate.getFullYear(), refDate.getMonth(), dayNum);
+      cell.textContent = d.getDate(); cell.classList.add('out');
+    }else{
+      d = new Date(refDate.getFullYear(), refDate.getMonth(), dayNum);
+      cell.textContent = dayNum;
     }
-    async function encryptJson(aesKey,obj){ const iv=crypto.getRandomValues(new Uint8Array(12)); const data=new TextEncoder().encode(JSON.stringify(obj)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,data); return {iv:b64(iv),ct:b64(ct)}; }
-    async function decryptJson(aesKey,pack){ const iv=ubuf(pack.iv), ct=ubuf(pack.ct); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(iv)},aesKey,ct); return JSON.parse(new TextDecoder().decode(pt)); }
+    const key = fmtDateKey(d);
+    if(key===todayKey) cell.classList.add('today');
+    if(fmtDateKey(state.selDate)===key) cell.classList.add('sel');
 
-    const FIXED_PASS = 'MFGestorCitas';
-    async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
+    cell.addEventListener('click',()=>{
+      state.selDate = d;
+      renderMonth(state.selDate);
+      renderDay(state.selDate, true);
+      // foco al panel
+      $('#dayPanel').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    grid.appendChild(cell);
+  }
+}
+$('#prevMonth').onclick = ()=>{ state.selDate = new Date(state.selDate.getFullYear(), state.selDate.getMonth()-1, 1); renderMonth(state.selDate); };
+$('#nextMonth').onclick = ()=>{ state.selDate = new Date(state.selDate.getFullYear(), state.selDate.getMonth()+1, 1); renderMonth(state.selDate); };
+$('#todayBtn').onclick = ()=>{ state.selDate = new Date(); renderMonth(state.selDate); renderDay(state.selDate,true); };
 
-    async function saveFileSmart(filename, mime, content){
-      let blob;
-      if (typeof content === 'string') blob = new Blob([content], {type: mime});
-      else if (content instanceof ArrayBuffer) blob = new Blob([new Uint8Array(content)], {type: mime});
-      else blob = new Blob([content], {type: mime});
+/* ===========================
+   Day render + events
+=========================== */
+function getDayEvents(date){
+  const k = fmtDateKey(date);
+  return (state.events[k]||[]).slice().sort((a,b)=> new Date(a.start)-new Date(b.start));
+}
 
-      try {
-        if (navigator.canShare && 'share' in navigator) {
-          const file = new File([blob], filename, {type: mime});
-          if (navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: filename}); return true; }
-        }
-      } catch(e) {}
+function renderDay(date, fromCalendar=false){
+  const title = date.toLocaleDateString('es-ES', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  $('#dayTitle').textContent = title;
+  const cont = $('#eventsList'); cont.innerHTML='';
+  const list = getDayEvents(date);
 
-      try {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.rel='noopener';
-        document.body.appendChild(a); a.click();
-        setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){ } a.remove(); }, 1200);
-        return true;
-      } catch(e) {}
+  const btnRow = document.createElement('div');
+  btnRow.style.margin='6px 0 14px';
+  cont.appendChild(btnRow);
 
-      try {
-        const buf = await blob.arrayBuffer();
-        let binary = ''; const bytes = new Uint8Array(buf);
-        for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
-        const base64 = btoa(binary);
-        const dataUrl = 'data:' + mime + ';base64,' + base64;
-        window.open(dataUrl, '_blank');
-        return true;
-      } catch(e) {}
+  if(list.length===0){
+    const p = document.createElement('div'); p.style.opacity='.7'; p.textContent = 'No hay citas';
+    cont.appendChild(p);
+  }
 
-      try {
-        if (typeof content === 'string' && navigator.clipboard) {
-          await navigator.clipboard.writeText(content);
-          alert('No se pudo descargar. He copiado el contenido al portapapeles.');
-          return true;
-        }
-      } catch(e) {}
-      alert('No se pudo descargar el archivo en este navegador.');
-      return false;
-    }
-    const saveJson = (name, obj) => saveFileSmart(name, 'application/json', JSON.stringify(obj, null, 2));
-    const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
+  list.forEach(ev=>{
+    const wrap = document.createElement('div'); wrap.className='event';
+    const h = document.createElement('h4'); h.textContent = ev.title || '(Sin título)';
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.textContent = `${fmtTime(ev.start)} · ${ev.contactName||''}`;
 
-    function openExternal(url){
-      const isStandalone =
-        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-        (typeof window.navigator.standalone === 'boolean' && window.navigator.standalone);
-      if (isStandalone) { window.location.href = url; }
-      else {
-        const a = document.createElement('a');
-        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-        document.body.appendChild(a); a.click(); a.remove();
+    const row = document.createElement('div'); row.className='actions-row';
+    const bEdit = btn('Editar','btn btn-soft');
+    const bSend = btn('Enviar cita','btn btn-soft');
+    const bDel  = btn('Eliminar','btn btn-danger');
+
+    bEdit.onclick = ()=> openEventModal('edit', ev);
+    bSend.onclick = ()=>{
+      const msg = buildMessage(new Date(ev.start), ev.title, ev.notes);
+      openWhatsApp(ev.contactPhone, msg);
+    };
+    bDel.onclick = ()=>{
+      if(confirm('¿Eliminar esta cita?')){
+        const key = fmtDateKey(new Date(ev.start));
+        state.events[key] = (state.events[key]||[]).filter(x=>x.id!==ev.id);
+        saveEvents(); renderDay(state.selDate);
       }
-    }
-
-    function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
-    function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
-    function show(id){
-      ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
-      $('logout') && ($('logout').style.display = id==='appView' ? 'inline' : 'none');
-      setHeaderTitle(id==='appView' ? 'Enviar cita' : 'Iniciar sesión');
-      toggleResetVisibility();
-      document.body.classList.toggle('login-mode', id==='loginView');
-      document.body.classList.toggle('setup-mode', id==='setupView');
-      window.scrollTo(0,0);
-    }
-
-    const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
-
-    function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
-    function scoreContact(q, c){
-      if(!q) return 1;
-      const name = diac(c.name||''), phone = (c.phone||'').replace(/\s+/g,'');
-      const qn = diac(q), qd = q.replace(/\D+/g,'');
-      let score = -Infinity;
-      const ni = name.indexOf(qn); if(ni>=0) score = Math.max(score, 100 - ni);
-      if(name.startsWith(qn)) score = Math.max(score, 140);
-      const pi = phone.indexOf(qd); if(qd && pi>=0) score = Math.max(score, 120 - pi);
-      if(qd && phone.startsWith(qd)) score = Math.max(score, 150);
-      return score;
-    }
-    function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]); }
-    function highlight(text, query){
-      if(!query) return esc(text);
-      const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + ')','ig');
-      return esc(text).replace(re,'<mark>$1</mark>');
-    }
-    let activeIndex = -1;
-    function renderSearchResults(query){
-      const box = $('contactResults'); const input=$('contactSearch'); const clear=$('clearSearch');
-      if(!box || !input) return;
-      const q = query.trim(); clear.style.display = q ? 'block' : 'none';
-      const list = (window.__contacts||[]);
-      const items = list.map(c => ({ c, s: scoreContact(q, c) }))
-        .filter(o => o.s > -Infinity).sort((a,b)=>b.s - a.s).slice(0,60);
-      box.innerHTML = ''; activeIndex = -1;
-      if(!q){ box.hidden = true; return; }
-      if(!items.length){ box.hidden=false; const el=document.createElement('div'); el.className='muted'; el.style.padding='10px'; el.textContent='Sin resultados'; box.appendChild(el); return; }
-      items.forEach((o, idx)=>{
-        const btn=document.createElement('button');
-        btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
-        btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
-        btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
-        btn.addEventListener('click', ()=>selectContact(o.c));
-        btn.addEventListener('mousemove', ()=>setActive(idx));
-        box.appendChild(btn);
-      });
-      box.hidden = false;
-    }
-    function setActive(idx){
-      const box=$('contactResults'); if(!box) return;
-      const items=[...box.querySelectorAll('.result-item')];
-      items.forEach(el=>el.setAttribute('aria-selected','false'));
-      activeIndex = Math.max(0, Math.min(idx, items.length-1));
-      const el = items[activeIndex]; if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); }
-    }
-    function chooseActive(){
-      const box=$('contactResults'); if(!box) return;
-      const el = box.querySelector('.result-item[aria-selected="true"]');
-      if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectContact(c); }
-    }
-    function selectContact(c){
-      const sel=$('contactSelect'); if(sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
-      const input=$('contactSearch'); const box=$('contactResults'); input.value = `${c.name} (${c.phone})`; box.hidden = true; activeIndex=-1;
-    }
-    function wireSearch(){
-      const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
-      if(!input || !box) return;
-      const onInput = ()=>renderSearchResults(input.value);
-      input.addEventListener('input', onInput);
-      input.addEventListener('focus', ()=>{ if(input.value.trim()) renderSearchResults(input.value); });
-      input.addEventListener('keydown', (e)=>{
-        if(e.key==='ArrowDown'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<0?0:activeIndex+1); }
-        else if(e.key==='ArrowUp'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<=0?0:activeIndex-1); }
-        else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActive(); } }
-        else if(e.key==='Escape'){ box.hidden=true; activeIndex=-1; }
-      });
-      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndex=-1; input.focus(); renderSearchResults(''); });
-      document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
-    }
-
-    function refreshContactsSelect(list){
-      window.__contacts = Array.isArray(list) ? list.slice() : [];
-      const sel=$('contactSelect'); if(sel) {
-        sel.innerHTML='';
-        if(!list || !list.length){
-          const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
-        } else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
-      }
-      renderSearchResults($('contactSearch')?.value || '');
-      const msel = $('evtContact');
-      if (msel){
-        msel.innerHTML='';
-        if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o); }
-        else list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; msel.add(o); });
-      }
-    }
-
-    function buildMessage(){
-      const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
-      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
-    }
-    function buildEventMessage(evt){
-      const when = new Date(evt.start);
-      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      const title = evt.title ? `“${evt.title}”` : 'la cita';
-      const name = evt.contactName || '';
-      return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
-    }
-
-    let pendingAutoBackup = null;
-    function showAutoToast(show){ const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
-    async function exportFixedBackup(auto=false){
-      const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const {aesKey, saltB64} = await deriveFixed(b64(salt));
-      const pack = await encryptJson(aesKey, { list: vault.list || [] });
-      const payload = { format: 'mf-contacts-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
-      const name = auto ? ('autobackup-contactos-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-contactos.json';
-      if (auto) { pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoToast(true); }
-      else { await saveJson(name, payload); }
-    }
-    async function importFixedBackupFromFile(file){
-      const text=await file.text(); let data;
-      try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
-      if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia no reconocida.'); return; }
-      const {aesKey} = await deriveFixed(data.saltB64);
-      let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
-      if(!obj || !Array.isArray(obj.list)){ alert('Contenido de copia inválido.'); return; }
-      const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const map = new Map(); (vault.list||[]).forEach(c=>map.set(c.phone, c));
-      let added=0, skipped=0; obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
-      vault.list = Array.from(map.values());
-      const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
-      refreshContactsSelect(vault.list);
-      alert(`Importación completa. Añadidos: ${added}. Ya existentes: ${skipped}.`);
-      if(getAutoBackup()) exportFixedBackup(true);
-    }
-
-    async function exportCSV(){
-      if(!S.key){ alert('Inicia sesión para exportar CSV.'); return; }
-      const st=S.state(); if(!st){ alert('No hay datos.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const rows=[['nombre','telefono'], ...(vault.list||[]).map(c=>[c.name, c.phone])];
-      const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-      saveCsv('contactos.csv', csv);
-    }
-
-    function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
-    function setAutoBackup(v){ const st=S.state(); if(!st) return; st.autoBackup = !!v; S.save(st); const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup; }
-
-    const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
-    const eyeOff = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
-    function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
-
-    /* ====== CALENDAR HELPERS ====== */
-    const toLocalInput = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-    const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; }
-    const isSameDay = (a,b) => startOfDay(a).getTime()===startOfDay(b).getTime();
-    const addDays = (d, k) => { const x=new Date(d); x.setDate(x.getDate()+k); return x; }
-    const firstDayGrid = (d) => {
-      const x=new Date(d.getFullYear(), d.getMonth(), 1);
-      const day=(x.getDay()+6)%7; // lunes
-      return addDays(x, -day);
     };
 
-    let currentMonth = new Date();
-    let selectedDay = new Date();
+    row.append(bEdit,bSend,bDel);
+    wrap.append(h,meta,row);
+    cont.appendChild(wrap);
+  });
+}
+function btn(text, cls){ const b=document.createElement('button'); b.className=cls; b.textContent=text; return b; }
 
-    function ensureEvents(vault){ if(!vault.events) vault.events = []; return vault; }
-    function monthLabel(date){ return date.toLocaleDateString(undefined, {month:'long', year:'numeric'}); }
+/* ===========================
+   Event Modal (New/Edit)
+=========================== */
+const dlg = $('#eventModal');
+$('#btnNewEvent').onclick = ()=> openEventModal('new');
+$('#evtClose').onclick = (e)=>{ e.preventDefault(); dlg.close(); };
 
-    function highlightSelected(dateKey){
-      const key = dateKey || selectedDay.toISOString().slice(0,10);
-      document.querySelectorAll('.cal-cell.cal-selected').forEach(el=>el.classList.remove('cal-selected'));
-      const target = document.querySelector(`.cal-cell[data-date="${key}"]`);
-      if (target) target.classList.add('cal-selected');
-    }
+function openEventModal(mode, ev=null){
+  dlg.showModal();
+  // header
+  $('.modal-title').textContent = mode==='edit' ? 'Editar cita' : 'Nueva cita';
 
-    function renderCalendar(){
-      const grid=$('calGrid'); const title=$('calTitle');
-      if(!grid||!title) return;
-      grid.innerHTML='';
-      title.textContent = `Agenda · ${monthLabel(currentMonth)}`;
+  const d = ev ? new Date(ev.start) : new Date(state.selDate);
+  $('#evtTitle').value = ev?.title || '';
+  $('#evtDateTime').value = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()).toISOString().slice(0,16);
+  $('#evtDateTimeEnd').value = ev?.end ? new Date(ev.end).toISOString().slice(0,16) : '';
+  $('#evtNotes').value = ev?.notes || '';
 
-      const dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-      dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+  initEvtContactSearch();
+  if(ev){
+    // Preselecciona contacto
+    pickEvtContact({name: ev.contactName||'', phone: ev.contactPhone||''});
+  }
 
-      const start = firstDayGrid(currentMonth);
-      const today = new Date();
+  $('#evtSave').onclick = (e)=>{ e.preventDefault(); saveEventFromModal(mode, ev); };
+  $('#evtSend').onclick = (e)=>{ e.preventDefault(); sendEventFromModal(); };
+}
 
-      for(let i=0;i<42;i++){
-        const day = addDays(start, i);
-        const cell=document.createElement('div');
-        cell.className='cal-cell';
-        const number=document.createElement('div'); number.className='cal-num'; number.textContent=String(day.getDate());
-        if(day.getMonth()!==currentMonth.getMonth()) number.classList.add('cal-other');
-        if(isSameDay(day,today)) cell.classList.add('cal-today');
+function saveEventFromModal(mode, ev0){
+  const title = $('#evtTitle').value.trim() || '(Sin título)';
+  const start = new Date($('#evtDateTime').value);
+  const end = $('#evtDateTimeEnd').value ? new Date($('#evtDateTimeEnd').value) : null;
+  const notes = $('#evtNotes').value.trim();
+  const { phone:contactPhone, name:contactName } = getEvtContact();
 
-        const dateKey = day.toISOString().slice(0,10);
-        cell.dataset.date = dateKey;
+  if(!contactPhone){ toast('Selecciona un contacto'); return; }
 
-        const dots=document.createElement('div'); dots.className='dots'; dots.dataset.date = day.toISOString();
+  const key = fmtDateKey(start);
+  state.events[key] = state.events[key]||[];
 
-        cell.appendChild(number); cell.appendChild(dots);
+  if(mode==='edit'){
+    const idx = state.events[key].findIndex(x=>x.id===ev0.id);
+    const ev = { ...ev0, title, start: start.toISOString(), end: end?.toISOString()||null, notes, contactPhone, contactName };
+    if(idx>-1) state.events[key][idx] = ev;
+  }else{
+    const ev = { id:crypto.randomUUID(), title, start:start.toISOString(), end:end?.toISOString()||null, notes, contactPhone, contactName };
+    state.events[key].push(ev);
+  }
 
-        cell.addEventListener('click', ()=>{
-          selectedDay = day;
-          renderDayList();
-          highlightSelected(dateKey);
-          cell.tabIndex = -1;
-          try { cell.focus({preventScroll:true}); } catch(_){}
-          cell.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
-        });
+  saveEvents();
+  dlg.close();
+  state.selDate = start; renderMonth(state.selDate); renderDay(state.selDate);
+}
 
-        grid.appendChild(cell);
-      }
-      paintEventDots();
-      highlightSelected(selectedDay.toISOString().slice(0,10));
-      renderDayList();
-    }
+function sendEventFromModal(){
+  const title = $('#evtTitle').value.trim() || '(Sin título)';
+  const start = new Date($('#evtDateTime').value);
+  const notes = $('#evtNotes').value.trim();
+  const { phone:contactPhone } = getEvtContact();
+  if(!contactPhone){ toast('Selecciona un contacto'); return; }
+  const msg = buildMessage(start, title, notes);
+  openWhatsApp(contactPhone, msg);
+}
 
-    function paintEventDots(){
-      const st=S.state(); if(!st || !S.key) return;
-      decryptJson(S.key, st.vault).then(v=>{
-        ensureEvents(v);
-        const dotsNodes = document.querySelectorAll('.dots');
-        dotsNodes.forEach(n=>{
-          const day = new Date(n.dataset.date);
-          const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
-          n.innerHTML='';
-          events.slice(0,4).forEach((evt,idx)=>{
-            const d=document.createElement('span');
-            d.className='dot' + (idx===0?' green': idx===1?'':' yellow');
-            n.appendChild(d);
-          });
-        });
-      }).catch(()=>{});
-    }
+/* ==== Contact search in modal ==== */
+const evtSearch   = () => $('#evtContactSearch');
+const evtResults  = () => $('#evtContactResults');
+const evtPicked   = () => $('#evtPicked');
+const evtPickedNm = () => $('#evtPickedName');
+const evtPhone    = () => $('#evtContactPhone');
+const evtName     = () => $('#evtContactName');
+const evtClearBtn = () => $('#evtPickedClear');
 
-    function renderDayList(){
-      const st=S.state(); const list=$('dayList'); const head=$('dayTitle');
-      if(!st || !S.key || !list || !head) return;
-      head.textContent = selectedDay.toLocaleDateString(undefined,{weekday:'long', day:'2-digit', month:'long', year:'numeric'});
-      // animación sutil al cambiar de día
-      head.classList.remove('flash'); void head.offsetWidth; head.classList.add('flash');
+function getAllContacts(){ return state.contacts||[]; }
 
-      decryptJson(S.key, st.vault).then(v=>{
-        ensureEvents(v);
-        const evts = v.events.filter(e=> isSameDay(selectedDay, new Date(e.start)) )
-          .sort((a,b)=> new Date(a.start)-new Date(b.start));
-        list.innerHTML = '';
-        if(!evts.length){
-          const empty=document.createElement('div'); empty.className='muted'; empty.textContent='Sin citas en este día.';
-          list.appendChild(empty); return;
-        }
-        evts.forEach((evt, idx)=>{
-          const card=document.createElement('div'); card.className='evt-item';
-          const hour=new Date(evt.start).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-          card.innerHTML = `
-            <div class="evt-title">${esc(evt.title||'Cita')}</div>
-            <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)} (${esc(evt.contactPhone||'')})`:''}</div>
-          `;
-          const actions=document.createElement('div'); actions.className='evt-actions';
-          const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline'; bEdit.textContent='Editar';
-          const bSend=document.createElement('button'); bSend.className='btn-small btn-outline'; bSend.textContent='Enviar cita';
-          const bDel=document.createElement('button'); bDel.className='btn-small btn-danger'; bDel.textContent='Eliminar';
-          bEdit.onclick=()=>openEventModal(evt);
-          bSend.onclick=()=>sendEventByWhatsApp(evt);
-          bDel.onclick=()=>deleteEvent(evt.id);
-          actions.append(bEdit,bSend,bDel);
-          card.appendChild(actions);
-          list.appendChild(card);
+function renderEvtSuggestions(q){
+  const ul = evtResults(); ul.innerHTML='';
+  if(!q || !q.trim()) return;
+  const term = q.trim().toLowerCase();
+  const items = getAllContacts().filter(c =>
+    (c.name||'').toLowerCase().includes(term) ||
+    (c.phone||'').replace(/\s+/g,'').includes(term.replace(/\s+/g,'')))
+    .slice(0,12);
 
-          if (idx < evts.length - 1){
-            const sep = document.createElement('div');
-            sep.className = 'evt-sep';
-            list.appendChild(sep);
-          }
-        });
-      }).catch(()=>{});
-    }
+  items.forEach(c=>{
+    const li=document.createElement('li');
+    li.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="opacity:.7">
+        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
+      </svg>
+      <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <div style="font-weight:700">${c.name||'Sin nombre'}</div>
+        <div style="opacity:.65">${c.phone||''}</div>
+      </div>
+    `;
+    li.onclick = ()=> pickEvtContact(c);
+    ul.appendChild(li);
+  });
+}
+function pickEvtContact(c){
+  evtPhone().value = c.phone||''; evtName().value = c.name||'';
+  evtPickedNm().textContent = c.name||'Sin nombre';
+  evtPicked().style.display='flex'; evtResults().innerHTML=''; evtSearch().value='';
+}
+function clearEvtContact(){
+  evtPhone().value=''; evtName().value=''; evtPicked().style.display='none';
+}
+function initEvtContactSearch(){
+  clearEvtContact(); evtResults().innerHTML=''; evtSearch().value='';
+  evtSearch().oninput = (e)=> renderEvtSuggestions(e.target.value);
+  evtClearBtn().onclick = clearEvtContact;
+}
+function getEvtContact(){ return { phone: evtPhone().value||'', name: evtName().value||'' }; }
 
-    function openEventModal(evt){
-      const dlg=$('eventModal'); if(!dlg) return;
-      const title=$('evtModalTitle');
-      const t=$('evtTitle'), s=$('evtStart'), e=$('evtEnd'), c=$('evtContact'), n=$('evtNote'), del=$('evtDelete');
-      if(!evt){
-        title.textContent='Nueva cita';
-        t.value=''; const base=new Date(selectedDay); base.setHours(10,0,0,0);
-        s.value = toLocalInput(base); e.value='';
-        c.selectedIndex=0; n.value='';
-        del.style.display='none';
-        dlg.setAttribute('data-id','');
-      }else{
-        title.textContent='Editar cita';
-        t.value=evt.title||'';
-        s.value = toLocalInput(new Date(evt.start));
-        e.value = evt.end ? toLocalInput(new Date(evt.end)) : '';
-        for(let i=0;i<c.options.length;i++){ if(c.options[i].value===evt.contactPhone){ c.selectedIndex=i; break; } }
-        n.value=evt.note||'';
-        del.style.display='inline-flex';
-        dlg.setAttribute('data-id', evt.id);
-      }
-      dlg.showModal();
-    }
-    function closeEventModal(){ $('eventModal')?.close(); }
+/* ===========================
+   Main contact search
+=========================== */
+function renderContactSearch(inputSel, listSel, nameSel, phoneSel){
+  const inp = $(inputSel), ul=$(listSel);
+  function draw(q){
+    ul.innerHTML='';
+    const t=q.trim().toLowerCase();
+    if(!t){ ul.classList.add('hidden'); return; }
+    const results = (state.contacts||[]).filter(c=>
+      (c.name||'').toLowerCase().includes(t) || (c.phone||'').replace(/\s+/g,'').includes(t.replace(/\s+/g,''))).slice(0,20);
+    results.forEach(c=>{
+      const li=document.createElement('li');
+      li.style.cssText='display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;color:#0b2440';
+      li.innerHTML = `<strong style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name||'Sin nombre'}</strong>
+                      <span style="opacity:.7">${c.phone||''}</span>`;
+      li.onclick=()=>{
+        $(nameSel).value = c.name||''; $(phoneSel).value = c.phone||'';
+        inp.value = c.name ? `${c.name} (${c.phone||''})` : (c.phone||'');
+        ul.classList.add('hidden');
+      };
+      ul.appendChild(li);
+    });
+    ul.classList.toggle('hidden', results.length===0);
+  }
+  inp.oninput = e=> draw(e.target.value);
+  document.addEventListener('click', (ev)=>{ if(!ul.contains(ev.target) && ev.target!==inp) ul.classList.add('hidden'); });
+}
 
-    function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+/* ===========================
+   Build default WA message
+=========================== */
+function buildMessage(dateObj, title='Recordatorio', notes=''){
+  const d = dateObj;
+  const fecha = d.toLocaleDateString('es-ES', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  const hora = d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+  return `¡Hola! 👋 Tienes una cita: *${title}* para el ${fecha} a las ${hora}.${notes?`\n\nNotas: ${notes}`:''}`;
+}
 
-    async function saveEvent(){
-      const t=$('evtTitle').value.trim();
-      const s=$('evtStart').value; const e=$('evtEnd').value;
-      const contactPhone=$('evtContact').value||'';
-      const contact = (window.__contacts||[]).find(x=>x.phone===contactPhone)||{};
-      if(!s){ alert('Indica fecha y hora de inicio'); return; }
-      const st=S.state(); if(!st||!S.key) return;
-      const vault=ensureEvents(await decryptJson(S.key, st.vault));
-      const id = $('eventModal').getAttribute('data-id');
-      const evt = { id: id || makeId(), title:t, start:new Date(s).toISOString(),
-                    end: e? new Date(e).toISOString():null,
-                    contactPhone: contactPhone||null, contactName: contact.name||null,
-                    note: $('evtNote').value.trim()||null };
-      if(id){
-        const idx=vault.events.findIndex(x=>x.id===id);
-        if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt);
-      }else{
-        vault.events.push(evt);
-      }
-      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
-      closeEventModal(); paintEventDots(); renderDayList();
-    }
+/* ===========================
+   Buttons / flows
+=========================== */
+$('#btnCreate').onclick = createUser;
+$('#btnLogin').onclick = login;
+$('#btnWipe').onclick = wipeApp;
 
-    async function deleteEvent(id){
-      if(!confirm('¿Eliminar esta cita?')) return;
-      const st=S.state(); if(!st||!S.key) return;
-      const vault=ensureEvents(await decryptJson(S.key, st.vault));
-      vault.events = vault.events.filter(e=>e.id!==id);
-      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
-      paintEventDots(); renderDayList();
-    }
+$('#logout').onclick = (e)=>{ e.preventDefault(); logout(); };
 
-    function sendEventByWhatsApp(evt){
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ alert('La cita no tiene un contacto válido'); return; }
-      const text = encodeURIComponent(buildEventMessage(evt));
-      const url=`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${text}`;
-      openExternal(url);
-    }
+$('#eyeLogin').onclick = ()=> togglePw('#loginPass','#eyeLogin');
+$('#eyeNew').onclick   = ()=> togglePw('#newPass','#eyeNew');
+function togglePw(inpSel, eyeSel){
+  const i=$(inpSel); i.type = (i.type==='password'?'text':'password');
+  // Opcional: podríamos alternar icono si lo deseas
+}
 
-    function wireEvents(){
-      const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
-      setEyeIcon($('toggleLogin'), false); setEyeIcon($('toggleSetup'), false);
-      $('toggleLogin')?.addEventListener('click', ()=>toggle('loginPass','toggleLogin'));
-      $('toggleSetup')?.addEventListener('click', ()=>toggle('setupPass','toggleSetup'));
+/* Phone helper */
+const phoneInput = $('#contactPhone');
+phoneInput.addEventListener('focus', ()=>{
+  if(!phoneInput.value.trim()) phoneInput.value='+34';
+});
 
-      $('btnSetup')?.addEventListener('click', async ()=>{
-        const user=$('setupUser').value.trim(), pass=$('setupPass').value;
-        if(!user){ alert('Introduce un usuario'); return; }
-        if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
-        try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
-          const pack=await encryptJson(S.key,{list:[], events:[]});
-          S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
-          refreshContactsSelect([]); show('appView'); renderCalendar();
-        }catch(e){ alert('Error creando el almacén'); }
-      });
+/* Add/Delete contact */
+$('#addContact').onclick = async()=>{
+  const name = $('#contactName').value.trim();
+  let phone = $('#contactPhone').value.trim();
+  if(!phone){ toast('Introduce un teléfono'); return; }
+  if(!phone.startsWith('+')) phone = '+34'+phone.replace(/\D+/g,'');
+  // dedup por teléfono
+  const i = state.contacts.findIndex(c=> (c.phone||'')===phone);
+  if(i>-1) state.contacts[i].name = name; else state.contacts.push({name, phone});
+  await saveContacts();
+  $('#contactName').value=''; $('#contactPhone').value='';
+};
+$('#delContact').onclick = async()=>{
+  const name = $('#contactName').value.trim();
+  let phone = $('#contactPhone').value.trim();
+  if(phone && !phone.startsWith('+')) phone = '+34'+phone.replace(/\D+/g,'');
+  state.contacts = state.contacts.filter(c => (name?c.name!==name:true) && (phone?c.phone!==phone:true));
+  await saveContacts();
+  $('#contactName').value=''; $('#contactPhone').value='';
+};
 
-      $('btnLogin')?.addEventListener('click', async ()=>{
-        const user=$('loginUser').value.trim(), pass=$('loginPass').value;
-        const state=S.state(); if(!state){ show('setupView'); return; }
-        if(user!==state.user){ alert('Usuario incorrecto'); return; }
-        try{
-          const r=await derive(pass, state.saltB64);
-          if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
-          const vault=await decryptJson(r.aesKey, state.vault);
-          if(!vault.events) vault.events=[];
-          S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
-          show('appView');
-          const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
-          currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
-        }catch(e){ alert('Error al descifrar datos'); }
-      });
+/* Send WA from main */
+$('#sendWA').onclick = ()=>{
+  const dt = $('#reminderDT').value;
+  const { value:phone } = $('#selectedPhone');
+  const name = $('#selectedName').value;
+  const msg = $('#messageBox').value || buildMessage(new Date(dt));
+  if(!phone){ toast('Selecciona un contacto'); return; }
+  openWhatsApp(phone, msg);
+};
 
-      $('btnReset')?.addEventListener('click', ()=>{
-        if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){
-          S.clear();
-          try{ document.activeElement && document.activeElement.blur(); }catch(_){}
-          show('setupView');
-          window.scrollTo(0,0);
-        }
-      });
+/* Default message update when dt changes */
+$('#reminderDT').addEventListener('change', ()=>{
+  $('#messageBox').value = buildMessage(new Date($('#reminderDT').value));
+});
 
-      $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
+/* ===== Export / Import ===== */
+$('#exportCSV').onclick = ()=>{
+  const rows = [['Nombre','Telefono'], ...state.contacts.map(c=>[c.name||'', c.phone||''])];
+  const csv = rows.map(r=>r.map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('contactos.csv', 'text/csv', csv);
+};
 
-      const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
-      const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
+async function exportEncrypted(silent=false){
+  // Copia cifrada con contraseña fija (portable)
+  const salt = enc.encode('fixed-salt');  // constante
+  const key = await deriveKey(FIXED_BACKUP_PASS, salt);
+  const bundle = await aesEncrypt(key, state.contacts);
+  download(`copia-cifrada.json`, 'application/json', JSON.stringify(bundle));
+  if(!silent) toast('Copia cifrada descargada');
+}
+$('#exportEncrypted').onclick = ()=> exportEncrypted(false);
 
-      (function setupPhoneInput(){
-        const el = $('newPhone'); if(!el) return;
-        el.type='tel'; el.inputMode='tel'; el.autocomplete='tel'; el.enterKeyHint='done'; el.pattern='^\\+\\d{6,15}$';
-        el.addEventListener('focus', ()=>{ if(!el.value || el.value==='+') el.value='+34'; setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length);}catch(_){}} ,0); });
-        el.addEventListener('input', ()=>{ const v=el.value; const cleaned='+'+v.replace(/^\+?/, '').replace(/[^\d]/g,''); if(v!==cleaned){ el.value=cleaned; try{ el.setSelectionRange(cleaned.length, cleaned.length);}catch(_){}} });
-      })();
-
-      $('btnAdd')?.addEventListener('click', async ()=>{
-        const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
-        if(!name){ alert('Introduce un nombre'); return; }
-        if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
-        const vault=await loadVault();
-        if((vault.list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
-        vault.list = [...(vault.list||[]), {name, phone}];
-        await saveVault(vault);
-        refreshContactsSelect(vault.list);
-        if(getAutoBackup()) exportFixedBackup(true);
-      });
-
-      $('btnRemove')?.addEventListener('click', async ()=>{
-        const sel=$('contactSelect'); const phone=sel?sel.value:'';
-        if(!phone){ alert('No hay contacto seleccionado'); return; }
-        const vault=await loadVault(); const before=(vault.list||[]).length;
-        vault.list = (vault.list||[]).filter(c=>c.phone!==phone);
-        await saveVault(vault);
-        refreshContactsSelect(vault.list);
-        if(before===vault.list.length) alert('No se encontró el contacto');
-        if(getAutoBackup()) exportFixedBackup(true);
-      });
-
-      $('dt')?.addEventListener('change', ()=>{ const m=$('msg'); if(m) m.value=buildMessage(); });
-
-      $('btnSend')?.addEventListener('click', ()=>{
-        const sel=$('contactSelect'); const phone=sel?sel.value:'';
-        if(!isPhoneValid(phone)){ alert('Selecciona un contacto válido'); return; }
-        const text=encodeURIComponent(($('msg')?.value||buildMessage()).trim());
-        const url=`https://wa.me/${phone.replace('+','')}/?text=${text}`;
-        openExternal(url);
-      });
-
-      $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
-      $('btnExportCsv')?.addEventListener('click', exportCSV);
-
-      // Importar copia… (input oculto con limpieza en iOS/cancel)
-      $('btnImportApp')?.addEventListener('click', () => {
-        const i = document.createElement('input');
-        i.type = 'file';
-        i.accept = 'application/json,.json';
-        Object.assign(i.style, {
-          position: 'fixed', left: '-9999px', top: '-9999px',
-          opacity: '0', width: '0.1px', height: '0.1px', zIndex: '-1'
-        });
-        document.body.appendChild(i);
-
-        const cleanup = () => {
-          try { i.value = ''; } catch(_) {}
-          i.remove();
-          window.removeEventListener('focus', onFocus, true);
-        };
-
-        const onFocus = () => {
-          setTimeout(() => {
-            if (!i.files || !i.files.length) cleanup();
-          }, 300);
-        };
-
-        window.addEventListener('focus', onFocus, true);
-
-        i.addEventListener('change', async () => {
-          const f = i.files && i.files[0];
-          if (f) { await importFixedBackupFromFile(f); }
-          cleanup();
-        });
-
-        i.click();
-      });
-
-      $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
-      $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
-
-      wireSearch();
-
-      // Calendar wiring
-      $('calPrev')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1); renderCalendar(); });
-      $('calNext')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1); renderCalendar(); });
-      $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
-      $('btnNewEvent')?.addEventListener('click', ()=>{openEventModal(); initEvtContactSearch();});
-
-      $('evtSave')?.addEventListener('click', saveEvent);
-      $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(id) deleteEvent(id); });
-      $('evtSend')?.addEventListener('click', ()=>{
-        const id=$('eventModal').getAttribute('data-id');
-        if(!id){
-          const tmp = {
-            title: $('evtTitle').value.trim(),
-            start: new Date($('evtStart').value).toISOString(),
-            end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
-            contactPhone: $('evtContact').value || null,
-            contactName: (window.__contacts||[]).find(x=>x.phone===$('evtContact').value)?.name || null
-          };
-          sendEventByWhatsApp(tmp);
-        } else {
-          decryptJson(S.key, S.state().vault).then(v=>{
-            const e=v.events.find(x=>x.id===id); if(e) sendEventByWhatsApp(e);
-          });
+$('#importBtn').onclick = ()=> { const f=$('#importFile'); f.value=''; f.click(); };
+$('#importFile').addEventListener('change', async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;                    // si cancelan, no aparece nada
+  const text = await file.text();
+  try{
+    if(file.name.endsWith('.csv')){
+      // simple CSV: Nombre,Telefono
+      const lines = text.split(/\r?\n/).slice(1);
+      lines.forEach(line=>{
+        const parts = line.split(',');
+        if(parts.length>=2){
+          const name = parts[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim();
+          const phone = parts[1].replace(/^"|"$/g,'').replace(/""/g,'"').trim();
+          if(phone) state.contacts.push({name, phone});
         }
       });
-      $('evtClose')?.addEventListener('click', closeEventModal);
-
-      ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
-        const el=$(id); el&&el.addEventListener('keydown',e=>{
-          if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }
-        });
-      });
+    }else{
+      // JSON (en claro o cifrado con pass fija)
+      const obj = JSON.parse(text);
+      if(obj.iv && obj.payload){
+        const salt = enc.encode('fixed-salt');
+        const key = await deriveKey(FIXED_BACKUP_PASS, salt);
+        const data = await aesDecrypt(key, obj);
+        if(Array.isArray(data)) state.contacts = data;
+      }else if(Array.isArray(obj)){
+        state.contacts = obj;
+      }
     }
+    await saveContacts();
+    toast('Importación completada');
+  }catch(err){
+    console.error(err); toast('No se pudo importar el archivo');
+  }
+});
 
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    function toTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+/* ===== Auto-Descarga setting ===== */
+$('#autoDL').checked = getSettings().autoDL;
+$('#autoDL').onchange = ()=> setSettings({autoDL: $('#autoDL').checked});
 
-    function init(){
-      const state=S.state();
-      show(state? 'loginView' : 'setupView');
-      const m=$('msg'); if(m) m.value=buildMessage();
-      const d=new Date(Date.now()+60*60*1000);
-      const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-      $('dt') && ($('dt').value=iso);
-      wireEvents();
-      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; }, 40);
-    }
-    document.addEventListener('DOMContentLoaded', init);
-    window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
-    window.addEventListener('orientationchange', ()=>setTimeout(toTop, 60));
-  </script>
+/* ===== Utils ===== */
+function download(name, mime, content){
+  const blob = new Blob([content], {type:mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove()}, 0);
+}
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui19').catch(()=>{});
-      });
-    }
-  </script>
+/* ===== Init ===== */
+window.addEventListener('load', ()=>{
+  decideLoginCards();
+  $('#contactPhone').setAttribute('inputmode','tel');
+});
+
+/* (opcional) registrar SW si existe */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+}
+</script>
 </body>
 </html>
