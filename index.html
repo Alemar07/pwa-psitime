@@ -141,7 +141,7 @@
     .footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
     .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
 
-    /* ====== CALENDAR (Agenda) — versión móvil pro ====== */
+    /* ====== CALENDAR (Agenda) ====== */
     .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px }
     .cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
     .cal-nav{ display:flex; gap:8px }
@@ -189,7 +189,16 @@
     }
 
     /* === Mejora agenda (espacios y foco + separadores) === */
-    .day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; margin-bottom:14px; }
+    .day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; margin-bottom:14px; gap:12px;}
+	@media (max-width: 560px){
+	  .day-toolbar{
+		flex-wrap: wrap;     /* si no cabe, el botón salta abajo */
+		row-gap: 10px;       /* espacio vertical cuando salta */
+	  }
+	  #btnNewEvent{          /* si salta, queda alineado a la derecha */
+		margin-left: auto;
+	}
+	
     .day-list{ display:grid; gap:14px; margin-top:6px; }
     .evt-item{
       position:relative;
