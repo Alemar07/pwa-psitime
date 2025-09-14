@@ -235,10 +235,10 @@
 	}
 	#eventModal .field.select-field select{
 	  -webkit-appearance:none; appearance:none;
-	  padding-left:64px;          /* deja sitio para el icono */
-	  padding-right:44px;         /* deja sitio para la “flecha” */
+	  padding-left:64px;          
+	  padding-right:44px;         
 	  overflow:hidden;
-	  text-overflow:ellipsis;     /* elipsis si es largo */
+	  text-overflow:ellipsis;     
 	  white-space:nowrap;
 	}
 	#eventModal .field.select-field .caret{
@@ -250,7 +250,32 @@
 	  opacity:.6;
 	  pointer-events:none;
 	}
-	
+	/* ===== Modal: título centrado y botón Cerrar sin solaparse ===== */
+	#eventModal .modal-head{
+	  position: relative;           
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;      
+	  padding: 12px 16px;
+	  margin-bottom: 10px;         
+	  min-height: 56px;             
+	}
+
+	#eventModal .modal-title{
+	  margin: 0;
+	  font-weight: 900;             
+	  text-align: center;           
+	  font-size: clamp(18px, 2.2vw, 20px);
+	  padding: 0 80px;              
+	}
+
+	#eventModal #evtClose{
+	  position: absolute;
+	  top: 10px;
+	  right: 10px;
+	  z-index: 2;
+	}
+
 	
   </style>
 </head>
