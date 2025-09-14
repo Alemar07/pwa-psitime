@@ -207,6 +207,42 @@
       100% { text-shadow: 0 0 0 rgba(16,181,255,0); }
     }
     .flash { animation: glowTitle 360ms ease-out; }
+	
+	
+	/* Modal: botón Cerrar arriba a la derecha */
+	.modal-card{ position:relative; }
+	#evtClose{
+	  position:absolute;
+	  top:10px;
+	  right:10px;
+	  z-index:10;
+	}
+
+	/* Campo Contacto dentro del modal: icono + texto sin solape y con elipsis */
+	#eventModal .field.select-field .icon-left{
+	  left:16px;
+	  pointer-events:none;
+	  z-index:1;
+	}
+	#eventModal .field.select-field select{
+	  -webkit-appearance:none; appearance:none;
+	  padding-left:64px;          /* deja sitio para el icono */
+	  padding-right:44px;         /* deja sitio para la “flecha” */
+	  overflow:hidden;
+	  text-overflow:ellipsis;     /* elipsis si es largo */
+	  white-space:nowrap;
+	}
+	#eventModal .field.select-field .caret{
+	  position:absolute;
+	  right:14px;
+	  top:50%;
+	  transform:translateY(-50%);
+	  width:18px; height:18px;
+	  opacity:.6;
+	  pointer-events:none;
+	}
+
+	
   </style>
 </head>
 <body>
@@ -394,9 +430,12 @@
         </div>
       </div>
 
-      <div class="field" style="margin-bottom:10px">
+      <div class="field select-field" style="margin-bottom:10px">
         <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
         <select id="evtContact"></select>
+		<svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+			<path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+		</svg>
       </div>
 
       <div class="field">
