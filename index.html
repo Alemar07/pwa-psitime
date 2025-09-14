@@ -796,7 +796,7 @@
         const cell=document.createElement('div');
         cell.className='cal-cell';
         const number=document.createElement('div'); number.className='cal-num'; number.textContent=String(day.getDate());
-        if(day.getMonth()!==currentMonth.getMonth()) number.classList.add('cal-other');
+        if(day.getMonth()!==currentMonth.getMonth()) cell.classList.add('cal-other');
         if(isSameDay(day,today)) cell.classList.add('cal-today');
 
         const dateKey = day.toISOString().slice(0,10);
