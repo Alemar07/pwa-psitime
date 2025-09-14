@@ -1081,7 +1081,7 @@
       closeEventModal(); paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
 	  if (!id && getGCalAuto()){
-	  
+
 	  const evtForGoogle = {
 		id: evt.id,
 		title: evt.title,
@@ -1090,6 +1090,7 @@
 		note: evt.note || null
 	  };
 	  addEventToGoogle(evtForGoogle);
+	  }
 	  
     }
 
