@@ -241,7 +241,50 @@
 	  opacity:.6;
 	  pointer-events:none;
 	}
+	#eventModal .modal-title{
+	  font-size:22px; font-weight:700; margin:0 0 14px 0; padding-right:96px;
+	}
+	#evtClose{
+	  position:absolute; top:10px; right:10px;
+	  z-index:10; padding:10px 14px; border-radius:14px;
+	}
 
+	/* --- Buscador de contacto en el modal --- */
+	#evtContactSearchArea{ position:relative; }
+	#evtContactSearchArea .searchbox{
+	  position:relative; border-radius:16px; background:#fff; box-shadow:var(--soft-shadow);
+	}
+	#evtContactSearch{ 
+	  width:100%; border:0; outline:none; padding:14px 48px 14px 48px; 
+	  font-size:17px; border-radius:16px; 
+	}
+	#evtContactSearchArea .icon-left{
+	  position:absolute; left:14px; top:50%; transform:translateY(-50%);
+	  width:22px; height:22px; opacity:.6; pointer-events:none;
+	}
+	#evtContactSearchArea .caret{
+	  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+	  width:18px; height:18px; opacity:.5; pointer-events:none;
+	}
+	#evtContactResults{
+	  margin:8px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto;
+	  border-radius:14px; background:rgba(255,255,255,.95); backdrop-filter:saturate(180%) blur(10px);
+	  box-shadow:var(--soft-shadow);
+	}
+	#evtContactResults li{
+	  display:flex; align-items:center; gap:10px;
+	  padding:10px 14px; border-bottom:1px solid rgba(0,0,0,.06); cursor:pointer;
+	}
+	#evtContactResults li:last-child{ border-bottom:none; }
+	#evtPicked{
+	  display:none; margin-top:10px; align-items:center; gap:8px;
+	  background:linear-gradient(90deg,#e7f3ff,#eef7ff); color:#0b3d66;
+	  border-radius:16px; padding:8px 12px; font-weight:600;
+	}
+	#evtPicked .remove{
+	  margin-left:auto; border:0; background:transparent; color:#0b3d66; opacity:.7;
+	}
+	.hidden{ display:none !important; }
 	
   </style>
 </head>
@@ -432,7 +475,35 @@
 
       <div class="field select-field" style="margin-bottom:10px">
         <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
-        <select id="evtContact"></select>
+        <!-- Contacto (buscador con sugerencias) -->
+		<div class="field" id="evtContactSearchArea">
+		  <label class="label">Contacto</label>
+		  <div class="searchbox">
+			<svg class="icon-left" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+			  <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+			  <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/>
+			</svg>
+			<input id="evtContactSearch" type="search" autocomplete="off"
+				   placeholder="Buscar por nombre o teléfono" inputmode="search">
+			<svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+			  <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+		  </div>
+
+		  <!-- Sugerencias -->
+		  <ul id="evtContactResults"></ul>
+
+		  <!-- Contacto elegido -->
+		  <div id="evtPicked">
+			<span id="evtPickedName"></span>
+			<button type="button" class="remove" id="evtPickedClear">Quitar</button>
+		  </div>
+
+		  <!-- Valores ocultos (para lógica existente) -->
+		  <input type="hidden" id="evtContactPhone">
+		  <input type="hidden" id="evtContactName">
+		</div>
+
 		<svg class="caret" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 			<path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 		</svg>
@@ -460,6 +531,90 @@
     const $ = id => document.getElementById(id);
     const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
     const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
+	
+	const $ = (s, r=document) => r.querySelector(s);
+	const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+	const evtSearch   = () => $('#evtContactSearch');
+	const evtResults  = () => $('#evtContactResults');
+	const evtPicked   = () => $('#evtPicked');
+	const evtPickedNm = () => $('#evtPickedName');
+	const evtPhone    = () => $('#evtContactPhone');
+	const evtName     = () => $('#evtContactName');
+	const evtClearBtn = () => $('#evtPickedClear');
+	
+	const { phone: contactPhone, name: contactName } = getEvtContact();
+
+
+	function getAllContacts(){
+	  // usa tu fuente actual; normalmente ya tienes algo como window.contacts
+	  return (window.contacts || []);
+	}
+
+	// Pintar sugerencias
+	function renderEvtSuggestions(q){
+	  const list = getAllContacts();
+	  const ul = evtResults();
+	  ul.innerHTML = '';
+	  if(!q || !q.trim()) return;
+
+	  const term = q.trim().toLowerCase();
+	  const items = list.filter(c =>
+		(c.name||'').toLowerCase().includes(term) ||
+		(c.phone||'').replace(/\s+/g,'').includes(term.replace(/\s+/g,'')))
+		.slice(0,12);
+
+	  items.forEach(c => {
+		const li = document.createElement('li');
+		li.innerHTML = `
+		  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="opacity:.7">
+			<path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/>
+		  </svg>
+		  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+			<div style="font-weight:700">${c.name||'Sin nombre'}</div>
+			<div style="opacity:.65">${c.phone||''}</div>
+		  </div>`;
+		li.addEventListener('click', () => pickEvtContact(c));
+		ul.appendChild(li);
+	  });
+	}
+
+	// Seleccionar contacto
+	function pickEvtContact(c){
+	  evtPhone().value = c.phone || '';
+	  evtName().value  = c.name  || '';
+	  evtPickedNm().textContent = c.name || 'Sin nombre';
+	  evtPicked().style.display = 'flex';
+	  evtResults().innerHTML = '';
+	  evtSearch().value = '';
+	}
+
+	// Limpiar selección
+	function clearEvtContact(){
+	  evtPhone().value = '';
+	  evtName().value  = '';
+	  evtPicked().style.display = 'none';
+	}
+
+	// Inicializa buscador del modal (llámalo cuando abras el modal)
+	function initEvtContactSearch(){
+	  clearEvtContact();
+	  evtResults().innerHTML = '';
+	  evtSearch().value = '';
+	  evtSearch().addEventListener('input', onEvtSearchInput, { passive:true });
+	  evtClearBtn().onclick = clearEvtContact;
+	}
+
+	function onEvtSearchInput(e){
+	  renderEvtSuggestions(e.target.value);
+	}
+
+	// Helper para consumir desde la lógica existente
+	function getEvtContact(){
+	  return { phone: evtPhone().value || '', name: evtName().value || '' };
+	}
+
+
 
     async function derive(password, saltB64){
       const salt=saltB64?ubuf(saltB64):crypto.getRandomValues(new Uint8Array(16)).buffer;
@@ -1025,7 +1180,7 @@
       $('calPrev')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1); renderCalendar(); });
       $('calNext')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1); renderCalendar(); });
       $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
-      $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
+      $('btnNewEvent')?.addEventListener('click', ()=>{openEventModal(); initEvtContactSearch();});
 
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(id) deleteEvent(id); });
