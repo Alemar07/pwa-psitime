@@ -418,7 +418,7 @@
           </div>
 
           <!-- CONTACTOS + COPIAS -->
-          <div class="glass" style="display:grid; gap:18px">
+          <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
               <div class="grid2">
@@ -430,13 +430,14 @@
                 <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
               </div>
             </div>
-
+		  </div>
+		  <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
               <div style="display:flex; flex-wrap:wrap; gap:12px">
-                <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar copia cifrada (.json)</button>
-                <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar CSV</button>
-                <button id="btnImportApp" class="btn btn-outline" type="button">Importar copia…</button>
+                <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar contactos cifrados (.json)</button>
+                <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar contactos CSV</button>
+                <button id="btnImportApp" class="btn btn-outline" type="button">Importar contactos…</button>
               </div>
               <div class="toggle" style="margin-top:12px">
                 <input id="autoBackupToggle" type="checkbox" />
