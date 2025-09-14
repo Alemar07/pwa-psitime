@@ -82,6 +82,7 @@
     .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
     .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
     .btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
+	.btn-borderDate {border: 2px solid blue;}
 
     /* ====== LOGIN/SETUP centrados ====== */
     .login-hero{
@@ -856,8 +857,8 @@
             <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)} (${esc(evt.contactPhone||'')})`:''}</div>
           `;
           const actions=document.createElement('div'); actions.className='evt-actions';
-          const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline'; bEdit.textContent='Editar';
-          const bSend=document.createElement('button'); bSend.className='btn-small btn-outline'; bSend.textContent='Enviar cita';
+          const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline btn-borderDate'; bEdit.textContent='Editar';
+          const bSend=document.createElement('button'); bSend.className='btn-small btn-outline btn-borderDate'; bSend.textContent='Enviar cita';
           const bDel=document.createElement('button'); bDel.className='btn-small btn-danger'; bDel.textContent='Eliminar';
           bEdit.onclick=()=>openEventModal(evt);
           bSend.onclick=()=>sendEventByWhatsApp(evt);
