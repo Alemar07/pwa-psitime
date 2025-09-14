@@ -462,7 +462,12 @@
 			  <div id="autoCalBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
 				Copia de agenda creada. <button id="btnDownloadAutoCal" type="button" class="btn-small btn-outline">Descargar ahora</button>
 			  </div>
-
+			  
+			  <h5> Copia Completa </h5>
+			  <div style="display:flex; flex-wrap:wrap; gap:12px">
+				<button id="btnExportFull" class="btn btn-outline" type="button">Exportar copia completa cifrada (.json)</button>
+				<button id="btnImportFull" class="btn btn-outline" type="button">Importar copia completa…</button>
+              </div>
             </div>
           </div>
         </div>
@@ -725,7 +730,8 @@
       const name = evt.contactName || '';
       return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
-
+	
+	
     let pendingAutoBackup = null;
     function showAutoToast(show){ const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
     async function exportFixedBackup(auto=false){
@@ -817,6 +823,60 @@
 	// Toggle de auto-backup de agenda
 	function getAutoBackupCal(){ const st=S.state(); return !!(st && st.autoBackupCal); }
 	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); const t=$('autoBackupCalToggle'); if(t) t.checked = st.autoBackupCal; }
+
+
+		// ====== Copia COMPLETA (contactos + agenda) ======
+	async function exportFullFixed(){
+	  const st = S.state(); if(!st || !S.key){ alert('Inicia sesión para exportar.'); return; }
+	  const vault = await decryptJson(S.key, st.vault);
+	  const salt = crypto.getRandomValues(new Uint8Array(16));
+	  const {aesKey, saltB64} = await deriveFixed(b64(salt));
+	  const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]) });
+	  const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
+	  await saveJson('copia-completa.json', payload);
+	}
+
+	async function importFullFixedFromFile(file){
+	  const text = await file.text(); let data;
+	  try{ data = JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
+	  if(!data || data.format!=='mf-full-fixed-v1' || !data.ct || !data.iv || !data.saltB64){
+		alert('Copia completa no reconocida.'); return;
+	  }
+	  const {aesKey} = await deriveFixed(data.saltB64);
+	  let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
+	  if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){
+		alert('Contenido de copia inválido.'); return;
+	  }
+
+	  const st = S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
+	  const vault = await decryptJson(S.key, st.vault); ensureEvents(vault);
+
+	  // Fusionar contactos por teléfono
+	  const mapContacts = new Map((vault.list||[]).map(c=>[c.phone, c]));
+	  let addedC=0, skippedC=0;
+	  (obj.list||[]).forEach(c=>{
+		if(!c || !c.phone) return;
+		if(mapContacts.has(c.phone)) skippedC++; else { mapContacts.set(c.phone, c); addedC++; }
+	  });
+	  vault.list = Array.from(mapContacts.values());
+
+	  // Fusionar eventos por id
+	  const mapEvents = new Map((vault.events||[]).map(e=>[e.id, e]));
+	  let addedE=0, skippedE=0;
+	  (obj.events||[]).forEach(e=>{
+		if(!e || typeof e!=='object') return;
+		if(!e.id) e.id = makeId(); // robustez si falta id
+		if(mapEvents.has(e.id)) skippedE++; else { mapEvents.set(e.id, e); addedE++; }
+	  });
+	  vault.events = Array.from(mapEvents.values()).sort((a,b)=> new Date(a.start)-new Date(b.start));
+
+	  // Guardar y refrescar UI
+	  const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
+	  refreshContactsSelect(vault.list);
+	  paintEventDots(); renderDayList();
+
+	  alert(`Importación completa.\nContactos añadidos: ${addedC} (ya existentes: ${skippedC}).\nCitas añadidas: ${addedE} (ya existentes: ${skippedE}).`);
+	}
 
 
     const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
@@ -1197,6 +1257,29 @@
       });
 
       
+	  $('btnExportFull')?.addEventListener('click', ()=>exportFullFixed());
+
+	  $('btnImportFull')?.addEventListener('click', ()=>{
+		  const i = document.createElement('input');
+		  i.type = 'file';
+		  i.accept = 'application/json,.json';
+		  Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' });
+		  document.body.appendChild(i);
+
+		  const cleanup = ()=>{ try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); };
+		  const onFocus = ()=>{ setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); };
+		  window.addEventListener('focus', onFocus, true);
+
+		  i.addEventListener('change', async ()=>{
+			const f = i.files && i.files[0];
+			if (f) { await importFullFixedFromFile(f); }
+			cleanup();
+		  });
+		  i.click();
+	  });
+
+	  
+	  
 	  $('btnExportAgenda')?.addEventListener('click', ()=>exportAgendaFixed(false));
 
 	  $('btnImportAgenda')?.addEventListener('click', () => {
