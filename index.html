@@ -378,6 +378,13 @@
             <div class="cal-grid" id="calGrid"></div>
 
             <div class="day-toolbar">
+				<div class="toggle" id="gcalRow" style="display:flex; align-items:center; gap:10px; margin:6px 0 10px">
+				  <input id="gCalAutoToggle" type="checkbox" disabled />
+				  <span class="muted">Añadir nuevas citas a Google Calendar</span>
+				  <button id="btnGConnect" class="btn-small btn-outline" type="button" style="margin-left:auto">Conectar Google</button>
+				  <span id="gStatus" class="muted" style="opacity:.85"></span>
+				</div>
+
               <div class="section-title" id="dayTitle" style="margin:0">Hoy</div>
               <button class="btn-small btn-outline" id="btnNewEvent" type="button">Nueva cita</button>
             </div>
@@ -530,6 +537,9 @@
       </div>
     </form>
   </dialog>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
 
   <!-- ===== LÓGICA (sin cambios de funcionalidad) ===== -->
   <script>
@@ -1070,6 +1080,16 @@
       const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
       closeEventModal(); paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
+	  if (!id && getGCalAuto()){
+	  
+	  const evtForGoogle = {
+		id: evt.id,
+		title: evt.title,
+		start: evt.start,
+		end: evt.end,
+		note: evt.note || null
+	  };
+	  addEventToGoogle(evtForGoogle);
 	  
     }
 
@@ -1169,6 +1189,118 @@
         if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); }
       });
     }
+	
+	
+	/* ====== Google Calendar (OAuth + inserción de eventos) ====== */
+	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';  // 
+	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+
+	let googleTokenClient = null;
+	let googleAccessToken = null;
+	let googleTokenExpiry = 0;
+
+	function setGStatus(connected){
+	  const s=$('gStatus'), t=$('gCalAutoToggle'), b=$('btnGConnect');
+	  if (s) s.textContent = connected ? 'Conectado' : 'Sin conectar';
+	  if (t) t.disabled = !connected;
+	  if (b) b.textContent = connected ? 'Reconectar' : 'Conectar Google';
+	}
+
+	function getGCalAuto(){ const st=S.state(); return !!(st && st.gcalAuto); }
+	function setGCalAuto(v){ const st=S.state(); if(!st) return; st.gcalAuto = !!v; S.save(st); const t=$('gCalAutoToggle'); if(t) t.checked = st.gcalAuto; }
+
+	function setupGoogle(){
+	  if (!window.google || !google.accounts || !google.accounts.oauth2) return;
+	  googleTokenClient = google.accounts.oauth2.initTokenClient({
+		client_id: GOOGLE_CLIENT_ID,
+		scope: GCAL_SCOPE,
+		callback: (resp)=>{
+		  if (resp && resp.access_token){
+			googleAccessToken = resp.access_token;
+			googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000;
+			setGStatus(true);
+		  }
+		}
+	  });
+	  setGStatus(false);
+	  // intento silencioso si el usuario ya concedió permisos y tiene auto ON
+	  if (getGCalAuto()){
+		try { googleTokenClient.requestAccessToken({ prompt: '' }); } catch(_) {}
+	  }
+	}
+
+	async function ensureGoogleToken(silent=true){
+	  if (googleAccessToken && Date.now() < googleTokenExpiry - 60_000) return googleAccessToken;
+	  if (!googleTokenClient) throw new Error('Google no inicializado');
+	  const token = await new Promise((resolve,reject)=>{
+		googleTokenClient.callback = (resp)=>{
+		  if (resp && resp.access_token){
+			googleAccessToken = resp.access_token;
+			googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000;
+			setGStatus(true);
+			resolve(googleAccessToken);
+		  } else reject(new Error('No token'));
+		};
+		try {
+		  googleTokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
+		} catch(e){
+		  if (silent) {
+			try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); }
+			catch(err){ reject(err); }
+		  } else reject(e);
+		}
+	  });
+	  return token;
+	}
+
+	async function attachGoogleIdToEvent(localId, gcalId){
+	  const st=S.state(); if(!st||!S.key) return;
+	  const v = await decryptJson(S.key, st.vault);
+	  const i = (v.events||[]).findIndex(e=>e.id===localId);
+	  if (i>=0){ v.events[i].gcalId = gcalId; const pack=await encryptJson(S.key, v); st.vault=pack; S.save(st); }
+	}
+
+	async function addEventToGoogle(evt){
+	  try{
+		const token = await ensureGoogleToken(true); // intenta silencioso
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
+		const endISO = evt.end || new Date(new Date(evt.start).getTime()+60*60*1000).toISOString();
+		const payload = {
+		  summary: evt.title || 'Cita',
+		  description: evt.note || '',
+		  start: { dateTime: evt.start, timeZone: tz },
+		  end:   { dateTime: endISO,  timeZone: tz }
+		};
+		const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+		  method:'POST',
+		  headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+		  body: JSON.stringify(payload)
+		});
+		if (r.status===401){ // token caducado → reintento con prompt silencioso/consent
+		  googleAccessToken=null;
+		  const token2 = await ensureGoogleToken(false);
+		  const r2 = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+			method:'POST',
+			headers:{ 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' },
+			body: JSON.stringify(payload)
+		  });
+		  if (!r2.ok) throw new Error('Google Calendar error');
+		  const j2 = await r2.json(); await attachGoogleIdToEvent(evt.id, j2.id); return true;
+		}
+		if (!r.ok) throw new Error('Google Calendar error');
+		const j = await r.json();
+		await attachGoogleIdToEvent(evt.id, j.id);
+		return true;
+	  }catch(e){
+		console.warn('No se pudo añadir a Google Calendar:', e);
+		return false;
+	  }
+	}
+
+	
+	
+	
+	/*== WireEvents ======*/
 
     function wireEvents(){
       const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
@@ -1198,8 +1330,11 @@
           if(!vault.events) vault.events=[];
           S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
           show('appView');
+		  
           const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
 		  const tc=$('autoBackupCalToggle'); if(tc) tc.checked = !!state.autoBackupCal;
+		  const tg=$('gCalAutoToggle'); if(tg) tg.checked = !!state.gcalAuto;
+
           currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
         }catch(e){ alert('Error al descifrar datos'); }
       });
@@ -1259,6 +1394,18 @@
       });
 
       
+	  // Toggle auto-add a Google Calendar
+		$('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
+
+		// Botón conectar / reconectar
+		$('btnGConnect')?.addEventListener('click', ()=>{
+		  if (!googleTokenClient){ alert('Google aún no está listo.'); return; }
+		  
+		  try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); } catch(_){}
+		});
+
+	  
+	  
 	  $('btnExportFull')?.addEventListener('click', ()=>exportFullFixed());
 
 	  $('btnImportFull')?.addEventListener('click', ()=>{
@@ -1398,8 +1545,14 @@
       const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
       $('dt') && ($('dt').value=iso);
       wireEvents();
-      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal;
-	  }, 40);
+      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal;const tg=$('gCalAutoToggle'); if(tg && state) tg.checked = !!state.gcalAuto;
+		}, 40);
+		
+	  (function waitGIS(){
+		  if (window.google && google.accounts && google.accounts.oauth2) { setupGoogle(); }
+		  else { setTimeout(waitGIS, 300); }
+	  })();
+
     }
     document.addEventListener('DOMContentLoaded', init);
     window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
