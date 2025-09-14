@@ -434,6 +434,7 @@
 		  <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
+			  <h4> Contactos </h4>
               <div style="display:flex; flex-wrap:wrap; gap:12px">
                 <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar contactos cifrados (.json)</button>
                 <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar contactos CSV</button>
@@ -446,6 +447,22 @@
               <div id="autoBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
                 Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
               </div>
+			  
+			  <h4> Agenda </h4>
+              <div style="display:flex; flex-wrap:wrap; gap:12px">
+				<button id="btnExportAgenda" class="btn btn-outline" type="button">Exportar agenda cifrada (.json)</button>
+				<button id="btnImportAgenda" class="btn btn-outline" type="button">Importar agenda…</button>
+
+              </div>
+              <div class="toggle" style="margin-top:8px">
+				  <input id="autoBackupCalToggle" type="checkbox" />
+				  <span class="muted">Auto-descargar copia tras cambios en la agenda</span>
+			  </div>
+
+			  <div id="autoCalBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
+				Copia de agenda creada. <button id="btnDownloadAutoCal" type="button" class="btn-small btn-outline">Descargar ahora</button>
+			  </div>
+
             </div>
           </div>
         </div>
@@ -752,6 +769,56 @@
     function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
     function setAutoBackup(v){ const st=S.state(); if(!st) return; st.autoBackup = !!v; S.save(st); const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup; }
 
+	// ====== Copias de seguridad de la AGENDA (citas) ======
+	let pendingAutoCalBackup = null;
+	function showAutoCalToast(show){ const t=$('autoCalBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
+
+	// Exporta todas las citas cifradas con clave fija (compatibles entre dispositivos)
+	async function exportAgendaFixed(auto=false){
+	  const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
+	  const vault=await decryptJson(S.key, st.vault);
+	  const salt = crypto.getRandomValues(new Uint8Array(16));
+	  const {aesKey, saltB64} = await deriveFixed(b64(salt));
+	  const pack = await encryptJson(aesKey, { events: (vault.events||[]) });
+	  const payload = { format:'mf-agenda-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
+	  const name = auto ? ('autobackup-agenda-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-agenda.json';
+	  if (auto) { pendingAutoCalBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoCalToast(true); }
+	  else { await saveJson(name, payload); }
+	}
+
+	// Importa citas desde copia cifrada con clave fija; fusiona por id
+	async function importAgendaFixedFromFile(file){
+	  const text=await file.text(); let data;
+	  try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
+	  if(!data || data.format!=='mf-agenda-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia de agenda no reconocida.'); return; }
+	  const {aesKey} = await deriveFixed(data.saltB64);
+	  let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
+	  if(!obj || !Array.isArray(obj.events)){ alert('Contenido de copia inválido.'); return; }
+
+	  const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
+	  const vault=await decryptJson(S.key, st.vault); ensureEvents(vault);
+
+	  const byId = new Map((vault.events||[]).map(e=>[e.id, e]));
+	  let added=0, skipped=0;
+	  (obj.events||[]).forEach(e=>{
+		if(!e || typeof e!=='object') return;
+		if(!e.id) e.id = makeId(); // robustez por si alguna copia no trae id
+		if(byId.has(e.id)) skipped++; else { byId.set(e.id, e); added++; }
+	  });
+
+	  vault.events = Array.from(byId.values()).sort((a,b)=> new Date(a.start)-new Date(b.start));
+	  const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
+
+	  paintEventDots(); renderDayList();
+	  alert(`Importación de agenda completada. Añadidos: ${added}. Ya existentes: ${skipped}.`);
+	  if(getAutoBackupCal()) exportAgendaFixed(true);
+	}
+
+	// Toggle de auto-backup de agenda
+	function getAutoBackupCal(){ const st=S.state(); return !!(st && st.autoBackupCal); }
+	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); const t=$('autoBackupCalToggle'); if(t) t.checked = st.autoBackupCal; }
+
+
     const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
     const eyeOff = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
     function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
@@ -940,6 +1007,8 @@
       }
       const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
       closeEventModal(); paintEventDots(); renderDayList();
+	  if (getAutoBackupCal()) exportAgendaFixed(true);
+	  
     }
 
     async function deleteEvent(id){
@@ -949,6 +1018,7 @@
       vault.events = vault.events.filter(e=>e.id!==id);
       const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
       paintEventDots(); renderDayList();
+	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
 
     function sendEventByWhatsApp(evt){
@@ -1067,6 +1137,7 @@
           S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
           show('appView');
           const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+		  const tc=$('autoBackupCalToggle'); if(tc) tc.checked = !!state.autoBackupCal;
           currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
         }catch(e){ alert('Error al descifrar datos'); }
       });
@@ -1125,7 +1196,36 @@
         openExternal(url);
       });
 
-      $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
+      
+	  $('btnExportAgenda')?.addEventListener('click', ()=>exportAgendaFixed(false));
+
+	  $('btnImportAgenda')?.addEventListener('click', () => {
+		  const i = document.createElement('input');
+		  i.type = 'file';
+		  i.accept = 'application/json,.json';
+		  Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' });
+		  document.body.appendChild(i);
+
+		  const cleanup = () => { try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); };
+		  const onFocus = () => { setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); };
+		  window.addEventListener('focus', onFocus, true);
+
+		  i.addEventListener('change', async () => { const f = i.files && i.files[0]; if (f) { await importAgendaFixedFromFile(f); } cleanup(); });
+		  i.click();
+	  });
+
+	  $('autoBackupCalToggle')?.addEventListener('change', (e)=>setAutoBackupCal(e.target.checked));
+	  $('btnDownloadAutoCal')?.addEventListener('click', ()=>{
+		  if(pendingAutoCalBackup){
+			saveFileSmart(pendingAutoCalBackup.name, 'application/json', pendingAutoCalBackup.json);
+			pendingAutoCalBackup=null; showAutoCalToast(false);
+		  }
+	  });
+
+	  
+	  
+	  
+	  $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
       $('btnExportCsv')?.addEventListener('click', exportCSV);
 
       // Importar copia… (input oculto con limpieza en iOS/cancel)
@@ -1213,7 +1313,8 @@
       const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
       $('dt') && ($('dt').value=iso);
       wireEvents();
-      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; }, 40);
+      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal;
+	  }, 40);
     }
     document.addEventListener('DOMContentLoaded', init);
     window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
