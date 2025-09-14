@@ -1067,11 +1067,20 @@
       const st=S.state(); if(!st||!S.key) return;
       const vault=ensureEvents(await decryptJson(S.key, st.vault));
       const id = $('eventModal').getAttribute('data-id');
+	  
+	  const isNew = !id;
+
+	  let prevGid = null;
+	  if (!isNew){
+		const idxPrev = vault.events.findIndex(x=>x.id===id);
+		if (idxPrev >= 0) prevGid = vault.events[idxPrev].gcalId || null;
+	  }
+	  
       const evt = { id: id || makeId(), title:t, start:new Date(s).toISOString(),
                     end: e? new Date(e).toISOString():null,
                     contactPhone: contactPhone||null, contactName: contact.name||null,
-                    note: $('evtNote').value.trim()||null };
-      if(id){
+                    note: $('evtNote').value.trim()||null, gcalId: prevGid || null };
+      if(!isNew){
         const idx=vault.events.findIndex(x=>x.id===id);
         if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt);
       }else{
@@ -1080,16 +1089,17 @@
       const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
       closeEventModal(); paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
-	  if (!id && getGCalAuto()){
-
-	  const evtForGoogle = {
-		id: evt.id,
-		title: evt.title,
-		start: evt.start,
-		end: evt.end,
-		note: evt.note || null
-	  };
-	  addEventToGoogle(evtForGoogle);
+	  
+	  if (getGCalAuto()){
+		const evtForGoogle = {
+		  id: evt.id,
+		  gcalId: evt.gcalId || null,
+		  title: evt.title,
+		  start: evt.start,
+		  end: evt.end,
+		  note: evt.note || null
+		};
+		upsertGoogleEvent(evtForGoogle);
 	  }
 	  
     }
@@ -1098,8 +1108,35 @@
       if(!confirm('¿Eliminar esta cita?')) return;
       const st=S.state(); if(!st||!S.key) return;
       const vault=ensureEvents(await decryptJson(S.key, st.vault));
-      vault.events = vault.events.filter(e=>e.id!==id);
+	  const ev = (vault.events || []).find(e => e.id === id);
+	  
+	  if (ev && ev.gcalId && getGCalAuto()){
+		try{
+		  const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
+		  const url  = base + encodeURIComponent(ev.gcalId);
+
+		  // intento silencioso
+		  let token = await ensureGoogleToken(true);
+		  let r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
+
+		  // si el token está caducado → reintenta pidiendo consentimiento si hace falta
+		  if (r.status === 401){
+			googleAccessToken = null;
+			token = await ensureGoogleToken(false);
+			r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
+		  }
+
+		  // 404 (ya no existe en Google) lo ignoramos; 204/200 son OK
+		  if (!r.ok && r.status !== 404){
+			console.warn('Google Calendar delete error:', r.status);
+		  }
+		}catch(e){
+		  console.warn('No se pudo borrar en Google Calendar:', e);
+		}
+	  }
+	  vault.events = (vault.events || []).filter(e => e.id !== id);
       const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+	  try { closeEventModal(); } catch(_) {}
       paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
@@ -1261,42 +1298,68 @@
 	  if (i>=0){ v.events[i].gcalId = gcalId; const pack=await encryptJson(S.key, v); st.vault=pack; S.save(st); }
 	}
 
+
 	async function addEventToGoogle(evt){
 	  try{
-		const token = await ensureGoogleToken(true); // intenta silencioso
+		const token = await ensureGoogleToken(true);  // intenta silencioso
 		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
-		const endISO = evt.end || new Date(new Date(evt.start).getTime()+60*60*1000).toISOString();
+		const endISO = evt.end || new Date(new Date(evt.start).getTime() + 60*60*1000).toISOString();
+
 		const payload = {
-		  summary: evt.title || 'Cita',
-		  description: evt.note || '',
+		  summary:     evt.title || 'Cita',
+		  description: evt.note  || '',
 		  start: { dateTime: evt.start, timeZone: tz },
 		  end:   { dateTime: endISO,  timeZone: tz }
 		};
-		const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-		  method:'POST',
-		  headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+
+		const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+		let url = base;
+		let method = 'POST';
+		if (evt.gcalId){
+		  url = `${base}/${encodeURIComponent(evt.gcalId)}`;
+		  method = 'PATCH';
+		}
+
+		let r = await fetch(url, {
+		  method,
+		  headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
 		  body: JSON.stringify(payload)
 		});
-		if (r.status===401){ // token caducado → reintento con prompt silencioso/consent
-		  googleAccessToken=null;
+
+		// Token caducado → reintenta pidiendo consentimiento si hace falta
+		if (r.status === 401){
+		  googleAccessToken = null;
 		  const token2 = await ensureGoogleToken(false);
-		  const r2 = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-			method:'POST',
-			headers:{ 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' },
+		  r = await fetch(url, {
+			method,
+			headers: { 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' },
 			body: JSON.stringify(payload)
 		  });
-		  if (!r2.ok) throw new Error('Google Calendar error');
-		  const j2 = await r2.json(); await attachGoogleIdToEvent(evt.id, j2.id); return true;
 		}
-		if (!r.ok) throw new Error('Google Calendar error');
+
+		// Si el PATCH falla por 404 (evento borrado en Google) → crea uno nuevo
+		if (!r.ok && method === 'PATCH' && r.status === 404){
+		  const token3 = await ensureGoogleToken(true);
+		  r = await fetch(base, {
+			method:'POST',
+			headers: { 'Authorization':'Bearer '+token3, 'Content-Type':'application/json' },
+			body: JSON.stringify(payload)
+		  });
+		}
+
+		if (!r.ok) throw new Error('Google Calendar error: '+r.status);
 		const j = await r.json();
-		await attachGoogleIdToEvent(evt.id, j.id);
+
+		// Si fue creación, guarda el id de Google en el evento local
+		if (!evt.gcalId && j.id) await attachGoogleIdToEvent(evt.id, j.id);
+
 		return true;
 	  }catch(e){
-		console.warn('No se pudo añadir a Google Calendar:', e);
+		console.warn('No se pudo sincronizar con Google Calendar:', e);
 		return false;
 	  }
 	}
+
 
 	
 	
