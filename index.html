@@ -705,8 +705,10 @@
         sel.innerHTML='';
         if(!list || !list.length){
           const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
-        } else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
-      }
+        } 
+		//else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
+		else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name}`; sel.add(o); }); }
+	  }
       renderSearchResults($('contactSearch')?.value || '');
       const msel = $('evtContact');
       if (msel){
@@ -988,7 +990,7 @@
           const hour=new Date(evt.start).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
           card.innerHTML = `
             <div class="evt-title">${esc(evt.title||'Cita')}</div>
-            <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)} (${esc(evt.contactPhone||'')})`:''}</div>
+            <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)}`:''}</div>
           `;
           const actions=document.createElement('div'); actions.className='evt-actions';
           const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline btn-borderDate'; bEdit.textContent='Editar';
