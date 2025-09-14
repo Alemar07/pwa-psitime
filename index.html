@@ -588,7 +588,7 @@
     function show(id){
       ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
       $('logout') && ($('logout').style.display = id==='appView' ? 'inline' : 'none');
-      setHeaderTitle(id==='appView' ? 'Enviar cita' : 'Iniciar sesión');
+      setHeaderTitle(id==='appView' ? 'Gestionar citas' : 'Iniciar sesión');
       toggleResetVisibility();
       document.body.classList.toggle('login-mode', id==='loginView');
       document.body.classList.toggle('setup-mode', id==='setupView');
