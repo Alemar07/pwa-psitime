@@ -249,16 +249,12 @@
 	  pointer-events:none;
 	}
 
-    /* ======= Ajustes solicitados ======= */
-
-    /* 1) Espacio entre título del día y botón en móviles */
-    .day-toolbar{ gap:12px; } /* añade aire entre título y botón */
+    .day-toolbar{ gap:12px; } 
     @media (max-width:560px){
       .day-toolbar{ flex-wrap:wrap; row-gap:10px; }
       #btnNewEvent{ margin-left:auto; }
     }
 
-    /* 2) Modal: título centrado y botón Cerrar sin solaparse */
     #eventModal .modal-head{
       position: relative;
       display: flex;
@@ -282,7 +278,6 @@
       z-index: 2;
     }
 
-    /* 3) Estilos para el buscador de contactos dentro del modal (idénticos al panel lateral) */
     #evtSearch{
       width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
       padding:14px 44px 14px 44px; background:#fff; font-size:16px;
@@ -424,7 +419,7 @@
             </div>
           </div>
 
-          <!-- CONTACTOS + COPIAS -->
+          <!-- CONTACTOS -->
           <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
@@ -438,6 +433,8 @@
               </div>
             </div>
 		  </div>
+		  
+		  <!-- COPIAS SEGURIDAD -->
 		  <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
@@ -510,7 +507,6 @@
         </div>
       </div>
 
-      <!-- Sustituido: buscador de contactos dentro del modal (select oculto para mantener la lógica) -->
       <div class="contact-picker" style="margin-bottom:10px">
         <div class="search-wrap">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none">
@@ -541,7 +537,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 
-  <!-- ===== LÓGICA (sin cambios de funcionalidad) ===== -->
+  <!-- ===== LÓGICA ===== -->
   <script>
     const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
       state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
@@ -791,7 +787,7 @@
 	let pendingAutoCalBackup = null;
 	function showAutoCalToast(show){ const t=$('autoCalBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
 
-	// Exporta todas las citas cifradas con clave fija (compatibles entre dispositivos)
+	// Exporta todas las citas cifradas con clave fija 
 	async function exportAgendaFixed(auto=false){
 	  const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
 	  const vault=await decryptJson(S.key, st.vault);
@@ -804,7 +800,7 @@
 	  else { await saveJson(name, payload); }
 	}
 
-	// Importa citas desde copia cifrada con clave fija; fusiona por id
+	// Importa citas desde copia cifrada con clave fija
 	async function importAgendaFixedFromFile(file){
 	  const text=await file.text(); let data;
 	  try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
@@ -837,7 +833,7 @@
 	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); const t=$('autoBackupCalToggle'); if(t) t.checked = st.autoBackupCal; }
 
 
-		// ====== Copia COMPLETA (contactos + agenda) ======
+	// ====== Copia COMPLETA (contactos + agenda) ======
 	async function exportFullFixed(){
 	  const st = S.state(); if(!st || !S.key){ alert('Inicia sesión para exportar.'); return; }
 	  const vault = await decryptJson(S.key, st.vault);
@@ -1099,7 +1095,7 @@
 		  end: evt.end,
 		  note: evt.note || null
 		};
-		upsertGoogleEvent(evtForGoogle);
+		addEventToGoogle(evtForGoogle);
 	  }
 	  
     }
@@ -1115,11 +1111,10 @@
 		  const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
 		  const url  = base + encodeURIComponent(ev.gcalId);
 
-		  // intento silencioso
 		  let token = await ensureGoogleToken(true);
 		  let r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
 
-		  // si el token está caducado → reintenta pidiendo consentimiento si hace falta
+		  // si el token está caducado → reintentamos
 		  if (r.status === 401){
 			googleAccessToken = null;
 			token = await ensureGoogleToken(false);
