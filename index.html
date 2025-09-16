@@ -3,34 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>MF Gestor de Citas</title>
-  <meta name="theme-color" content="#5e5bff">
+  <meta name="theme-color" content="#0f1c36">
+  <meta name="theme-color" content="#0f1c36" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest?v=ui20">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
-  <link rel="apple-touch-icon" href="icons/icon-192v1.png">
-  <link rel="apple-touch-icon-precomposed" href="icons/icon-192v1.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon-precomposed" href="icons/icon-192.png">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height:100%; }
-    html{ -webkit-text-size-adjust:100%; }
-    :root{
-      --violet:#5e5bff; --cyan:#10b5ff;
-      --ink:#0b1220; --muted:#94a3b8; --soft:#eef2ff;
-      --glassBorder: rgba(255,255,255,.22);
-      --glassBg: rgba(8,12,24,.45);
-      --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
-      --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
-    }
+    html{
+	  background:
+		radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
+		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
+		background-color:#0f1c36; 
+	}
 
     body{
       margin:0; overflow-x:hidden;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
       color:#e5e7eb;
-      background:
-        radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
-        radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
-        linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
-      background-attachment: fixed;
+      background:transparent;
     }
 
     .card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
