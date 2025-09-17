@@ -469,7 +469,7 @@
                     <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
-                  <div class="muted"><strong>Listado</strong></div>
+                  <div class="muted"><strong>Selecciona un contacto</strong></div>
                   <div class="field"><select id="contactSelect"></select></div>
 				  <div id="selectedContactCard" class="contact-card" hidden>
 				  <div class="contact-row">
@@ -764,11 +764,19 @@
       if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectContact(c); }
     }
     function selectContact(c){
-      const sel=$('contactSelect'); if(sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
-      const input=$('contactSearch'); const box=$('contactResults'); input.value = `${c.name} (${c.phone})`; box.hidden = true; activeIndex=-1;
-	  updateSelectedContactCard(c.phone);
+	  const sel=$('contactSelect');
+	  if(sel){
+		for(let i=0;i<sel.options.length;i++){
+		  if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; }
+		}
+	  }
+	  const input=$('contactSearch'); const box=$('contactResults');
+	  input.value = `${c.name} (${c.phone})`;
+	  box.hidden = true; activeIndex=-1;
 
+	  updateSelectedContactCard(c.phone);
 	}
+
     function wireSearch(){
       const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
       if(!input || !box) return;
@@ -799,11 +807,40 @@
 	  card.hidden = false;
 
 	  $('scEdit').onclick = ()=>{
-		// Rellenar gestor de contactos para edición rápida
-		$('newName').value  = c.name || '';
-		$('newPhone').value = c.phone || '+34';
-		$('newName').focus();
-	  };
+		
+		  editingPhone = c.phone || null;
+
+		  
+		  $('newName').value  = c.name || '';
+		  $('newPhone').value = c.phone || '+34';
+		  $('newName').focus();
+
+		  
+		  const addBtn = $('btnAdd');
+		  if (addBtn){
+			addBtn.textContent = 'Guardar cambios';
+			addBtn.classList.add('btn-outline'); 
+		  }
+
+		  
+		  if (!$('btnCancelEdit')) {
+			const cancel = document.createElement('button');
+			cancel.id = 'btnCancelEdit';
+			cancel.type = 'button';
+			cancel.className = 'btn btn-ghost';
+			cancel.textContent = 'Cancelar edición';
+			cancel.style.marginLeft = '8px';
+			addBtn?.parentElement?.appendChild(cancel);
+			cancel.addEventListener('click', ()=>{
+			  editingPhone = null;
+			  $('newName').value = '';
+			  $('newPhone').value = '+34';
+			  if (addBtn){ addBtn.textContent = 'Añadir contacto'; addBtn.classList.remove('btn-outline'); }
+			  $('btnCancelEdit')?.remove();
+			});
+		  }
+		};
+
 
 	  $('scDelete').onclick = async ()=>{
 		const ok = confirm(`¿Eliminar a ${c.name} (${c.phone})?`);
@@ -825,32 +862,52 @@
 	  };
 	}
 
+	let editingPhone = null; 
 
+	function diacNoCase(s){ return (s||'').normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
+
+	function sortContacts(list){
+	  return (list||[]).slice().sort((a,b)=>{
+		const an = diacNoCase(a.name), bn = diacNoCase(b.name);
+		if (an < bn) return -1; if (an > bn) return 1;
+		return (a.phone||'').localeCompare(b.phone||'');
+	  });
+	}
     function refreshContactsSelect(list){
-	  window.__contacts = Array.isArray(list) ? list.slice() : [];
+	  const sorted = sortContacts(Array.isArray(list) ? list : []);
+	  window.__contacts = sorted.slice();
+
 	  const sel=$('contactSelect');
 	  if(sel){
 		sel.innerHTML='';
-		if(!list || !list.length){
+		if(sorted.length === 0){
 		  const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
+		  sel.selectedIndex = 0;
 		} else {
-		  list.forEach(c=>{
+		  // Placeholder inicial
+		  const ph=document.createElement('option'); ph.value=''; ph.text='— Seleccionar contacto —';
+		  ph.disabled = false; // dejamos que el usuario pueda volver a “vaciar” la selección si quiere
+		  sel.add(ph);
+		  // Opciones ordenadas
+		  sorted.forEach(c=>{
 			const o=document.createElement('option');
-			o.value=c.phone; o.text=c.name;
-			o.title=`${c.name} (${c.phone})`; // tooltip útil
+			o.value=c.phone; o.text=c.name; o.title=`${c.name} (${c.phone})`;
 			sel.add(o);
 		  });
+		  // Selección por defecto: placeholder
+		  sel.selectedIndex = 0;
 		}
 	  }
+
 	  renderSearchResults($('contactSearch')?.value || '');
 
 	  const msel=$('evtContact');
 	  if(msel){
 		msel.innerHTML='';
-		if(!list || !list.length){
+		if(sorted.length === 0){
 		  const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o);
 		} else {
-		  list.forEach(c=>{
+		  sorted.forEach(c=>{
 			const o=document.createElement('option');
 			o.value=c.phone; o.text=`${c.name} (${c.phone})`;
 			msel.add(o);
@@ -858,8 +915,19 @@
 		}
 	  }
 
+	 
+	  $('contactSelect')?.removeEventListener('change', __onContactSelectChange);
+	  $('contactSelect')?.addEventListener('change', __onContactSelectChange);
+
+
 	  updateSelectedContactCard(sel?.value || '');
 	}
+
+	function __onContactSelectChange(e){
+	  const phone = e.target.value || '';
+	  updateSelectedContactCard(phone);
+	}
+
 
 
     function buildMessage(){
@@ -1564,19 +1632,66 @@
       })();
 
       $('btnAdd')?.addEventListener('click', async ()=>{
-        const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
-        if(!name){ alert('Introduce un nombre'); return; }
-        if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
-        const vault=await loadVault();
-        if((vault.list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
-        vault.list = [...(vault.list||[]), {name, phone}];
-        await saveVault(vault);
-        refreshContactsSelect(vault.list);
-        if(getAutoBackup()) exportFixedBackup(true);
+	  const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
+	  if(!name){ alert('Introduce un nombre'); return; }
+	  if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
+
+	  const st=S.state(); if(!st||!S.key) return;
+	  const vault = await decryptJson(S.key, st.vault);
+	  const list  = Array.isArray(vault.list) ? vault.list.slice() : [];
+
+	  if (editingPhone){
+		// === MODO EDICIÓN ===
+		const idx = list.findIndex(x => x.phone === editingPhone);
+		if (idx < 0){ alert('No se encontró el contacto a editar.'); return; }
+
+		const phoneTaken = list.some((x,i)=> i!==idx && x.phone === phone);
+		if (phoneTaken){ alert('Ese teléfono ya existe en otro contacto.'); return; }
+
+
+		list[idx] = { name, phone };
+
+		if (Array.isArray(vault.events)){
+		  vault.events = vault.events.map(e=>{
+			if (e && e.contactPhone === editingPhone){
+			  return { ...e, contactPhone: phone, contactName: name };
+			}
+			return e;
+		  });
+		}
+
+	
+		vault.list = sortContacts(list);
+		const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+
+	
+		refreshContactsSelect(vault.list);
+		updateSelectedContactCard(phone);
+		if(getAutoBackup()) exportFixedBackup(true);
+
+		
+		editingPhone = null;
 		$('newName').value = '';
-	    $('newPhone').value = '+34';
-	    $('newName').focus();
-      });
+		$('newPhone').value = '+34';
+		const addBtn = $('btnAdd'); if (addBtn){ addBtn.textContent = 'Añadir contacto'; addBtn.classList.remove('btn-outline'); }
+		$('btnCancelEdit')?.remove();
+		return;
+	  }
+
+	  // === MODO ALTA NUEVO ===
+	  if((list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
+	  list.push({name, phone});
+	  vault.list = sortContacts(list);
+
+	  const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+	  refreshContactsSelect(vault.list);
+	  if(getAutoBackup()) exportFixedBackup(true);
+
+	  $('newName').value = '';
+	  $('newPhone').value = '+34';
+	  $('newName').focus();
+	});
+
 
       $('btnRemove')?.addEventListener('click', async ()=>{
         const sel=$('contactSelect'); const phone=sel?sel.value:'';
