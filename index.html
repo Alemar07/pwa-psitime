@@ -152,6 +152,23 @@
     .contact-picker{ display:grid; gap:10px }
     .search-wrap{ position:relative }
 	
+	.section-subtitle{
+	  margin: 6px 0 8px;
+	  font-weight: 800;
+	  color: #c7d2fe;
+	  font-size: 14px;
+	}
+
+	.gc-split { /* ya reutilizas .grid2, esto es por si quieres ajustes en desktop */
+	  align-items: start;
+	}
+
+	.gc-sep{
+	  margin-top: 12px;
+	  border-top: 1px solid rgba(255,255,255,.12);
+	  opacity: .9;
+	}
+	
 	.contact-card{
 	  margin-top:10px;
 	  border-radius:14px;
@@ -469,20 +486,6 @@
                     <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
-                  <div class="muted"><strong>Selecciona un contacto</strong></div>
-                  <div class="field"><select id="contactSelect"></select></div>
-				  <div id="selectedContactCard" class="contact-card" hidden>
-				  <div class="contact-row">
-					<div>
-					  <div class="contact-name" id="scName">—</div>
-					  <div class="contact-phone" id="scPhone">—</div>
-					</div>
-					<div class="contact-actions">
-					  <button id="scEdit"  class="btn-small btn-outline" type="button" aria-label="Editar contacto">Editar</button>
-					  <button id="scDelete" class="btn-small btn-danger"  type="button" aria-label="Eliminar contacto">Eliminar</button>
-					</div>
-				  </div>
-				</div>
                 </div>
               </div>
             </div>
@@ -500,16 +503,49 @@
           <!-- CONTACTOS -->
           <div class="glass">
             <div>
-              <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
-              <div class="grid2">
-                <div class="field"><input id="newName" placeholder="Nombre" /></div>
-                <div class="field"><input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done" pattern="^\\+\\d{6,15}$" placeholder="+34600111222" /></div>
-              </div>
-              <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
-                <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
-                <!--<button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>-->
-              </div>
-            </div>
+			  <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
+
+			  <!-- Split en dos columnas: edición (izq) + selección (dcha) -->
+			  <div class="grid2 gc-split">
+				<!-- Columna izquierda: edición/alta -->
+				<div>
+				  <div class="field"><input id="newName" placeholder="Nombre" /></div>
+				  <div class="field" style="margin-top:10px">
+					<input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="done"
+						   pattern="^\\+\\d{6,15}$" placeholder="+34600111222" />
+				  </div>
+
+				  <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
+					<button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
+					
+				  </div>
+				</div>
+
+				<!-- Columna derecha: seleccionar + tarjeta -->
+				<div>
+				  <div class="section-subtitle">Seleccionar un contacto</div>
+				  <div class="field"><select id="contactSelect"></select></div>
+
+				  <!-- Tarjeta de contacto seleccionado -->
+				  <div id="selectedContactCard" class="contact-card" hidden>
+					<div class="contact-row">
+					  <div>
+						<div class="contact-name" id="scName">—</div>
+						<div class="contact-phone" id="scPhone">—</div>
+					  </div>
+					  <div class="contact-actions">
+						<button id="scEdit"  class="btn-small btn-outline" type="button" aria-label="Editar contacto">Editar</button>
+						<button id="scDelete" class="btn-small btn-danger"  type="button" aria-label="Eliminar contacto">Eliminar</button>
+					  </div>
+					</div>
+				  </div>
+				</div>
+			  </div>
+
+			  <!-- Separador suave bajo la gestión -->
+			  <div class="gc-sep"></div>
+			</div>
+
 		  </div>
 		  
 		  <!-- COPIAS SEGURIDAD -->
