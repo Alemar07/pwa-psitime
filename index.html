@@ -151,6 +151,20 @@
     @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
     .contact-picker{ display:grid; gap:10px }
     .search-wrap{ position:relative }
+	
+	.contact-card{
+	  margin-top:10px;
+	  border-radius:14px;
+	  border:1px solid var(--glassBorder);
+	  background:#fff;
+	  box-shadow:0 10px 22px rgba(0,0,0,.14);
+	  padding:12px;
+	}
+	.contact-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+	.contact-name{ font-weight:800; color:#0b1220; }
+	.contact-phone{ color:#475569; font-variant-numeric:tabular-nums; font-size:14px; }
+	.contact-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+	
     #contactSearch{
       width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
       padding:14px 44px 14px 44px; background:#fff; font-size:16px;
@@ -457,6 +471,18 @@
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
                   <div class="muted"><strong>Listado</strong></div>
                   <div class="field"><select id="contactSelect"></select></div>
+				  <div id="selectedContactCard" class="contact-card" hidden>
+				  <div class="contact-row">
+					<div>
+					  <div class="contact-name" id="scName">—</div>
+					  <div class="contact-phone" id="scPhone">—</div>
+					</div>
+					<div class="contact-actions">
+					  <button id="scEdit"  class="btn-small btn-outline" type="button" aria-label="Editar contacto">Editar</button>
+					  <button id="scDelete" class="btn-small btn-danger"  type="button" aria-label="Eliminar contacto">Eliminar</button>
+					</div>
+				  </div>
+				</div>
                 </div>
               </div>
             </div>
@@ -481,7 +507,7 @@
               </div>
               <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap">
                 <button id="btnAdd" class="btn btn-outline" type="button">Añadir contacto</button>
-                <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
+                <!--<button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>-->
               </div>
             </div>
 		  </div>
@@ -740,7 +766,9 @@
     function selectContact(c){
       const sel=$('contactSelect'); if(sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
       const input=$('contactSearch'); const box=$('contactResults'); input.value = `${c.name} (${c.phone})`; box.hidden = true; activeIndex=-1;
-    }
+	  updateSelectedContactCard(c.phone);
+
+	}
     function wireSearch(){
       const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
       if(!input || !box) return;
@@ -757,24 +785,82 @@
       document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
     }
 
+	function findContactByPhone(phone){
+	  return (window.__contacts || []).find(c => c.phone === phone) || null;
+	}
+	function updateSelectedContactCard(phone){
+	  const card = $('selectedContactCard'); if(!card) return;
+	  const nameEl=$('scName'), phoneEl=$('scPhone');
+	  const c = phone ? findContactByPhone(phone) : null;
+
+	  if(!c){ card.hidden = true; return; }
+	  nameEl.textContent  = c.name || '—';
+	  phoneEl.textContent = c.phone || '—';
+	  card.hidden = false;
+
+	  $('scEdit').onclick = ()=>{
+		// Rellenar gestor de contactos para edición rápida
+		$('newName').value  = c.name || '';
+		$('newPhone').value = c.phone || '+34';
+		$('newName').focus();
+	  };
+
+	  $('scDelete').onclick = async ()=>{
+		const ok = confirm(`¿Eliminar a ${c.name} (${c.phone})?`);
+		if(!ok) return;
+
+		// Cargar/guardar vault como en tu btnRemove
+		const st=S.state(); if(!st||!S.key) return;
+		const v = await decryptJson(S.key, st.vault);
+		v.list = (v.list || []).filter(x => x.phone !== c.phone);
+
+		const pack = await encryptJson(S.key, v);
+		st.vault = pack; S.save(st);
+
+		refreshContactsSelect(v.list);
+		updateSelectedContactCard($('contactSelect')?.value || '');
+
+		if(getAutoBackup()) exportFixedBackup(true);
+		alert('Contacto eliminado.');
+	  };
+	}
+
+
     function refreshContactsSelect(list){
-      window.__contacts = Array.isArray(list) ? list.slice() : [];
-      const sel=$('contactSelect'); if(sel) {
-        sel.innerHTML='';
-        if(!list || !list.length){
-          const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
-        } 
-		//else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
-		else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name}`; sel.add(o); }); }
+	  window.__contacts = Array.isArray(list) ? list.slice() : [];
+	  const sel=$('contactSelect');
+	  if(sel){
+		sel.innerHTML='';
+		if(!list || !list.length){
+		  const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
+		} else {
+		  list.forEach(c=>{
+			const o=document.createElement('option');
+			o.value=c.phone; o.text=c.name;
+			o.title=`${c.name} (${c.phone})`; // tooltip útil
+			sel.add(o);
+		  });
+		}
 	  }
-      renderSearchResults($('contactSearch')?.value || '');
-      const msel = $('evtContact');
-      if (msel){
-        msel.innerHTML='';
-        if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o); }
-        else list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; msel.add(o); });
-      }
-    }
+	  renderSearchResults($('contactSearch')?.value || '');
+
+	  const msel=$('evtContact');
+	  if(msel){
+		msel.innerHTML='';
+		if(!list || !list.length){
+		  const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o);
+		} else {
+		  list.forEach(c=>{
+			const o=document.createElement('option');
+			o.value=c.phone; o.text=`${c.name} (${c.phone})`;
+			msel.add(o);
+		  });
+		}
+	  }
+
+	  updateSelectedContactCard(sel?.value || '');
+	}
+
 
     function buildMessage(){
       const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
@@ -1464,6 +1550,11 @@
 
       const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
       const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
+
+	  $('contactSelect')?.addEventListener('change', (e)=>{
+		updateSelectedContactCard(e.target.value || '');
+	  });
+
 
       (function setupPhoneInput(){
         const el = $('newPhone'); if(!el) return;
