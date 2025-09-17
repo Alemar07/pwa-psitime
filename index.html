@@ -75,12 +75,12 @@
     body.login-mode .auth-head, body.login-mode .hr,
     body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
     body:not(.login-mode):not(.setup-mode) .auth-head{
-      position:sticky; top:0; z-index:20;
-      backdrop-filter: blur(12px) saturate(120%);
-      background: rgba(8,12,24,.55);
-      border-bottom: 1px solid var(--glassBorder);
-    }
-    body:not(.login-mode):not(.setup-mode) .title{ color:#fff }
+	  position:sticky; top:0; z-index:20;
+	  backdrop-filter: blur(12px) saturate(120%);
+	  background: rgba(8,12,24,.30);
+	  border-bottom: 1px solid var(--glassBorder);
+	  padding-top: calc(14px + env(safe-area-inset-top));
+	}
 
     .field{ position:relative; }
     .field input, .field select, .field textarea, .field [type="datetime-local"]{
@@ -156,6 +156,8 @@
       padding:14px 44px 14px 44px; background:#fff; font-size:16px;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
     }
+	#contactSearch, #evtSearch { color: var(--ink); caret-color: var(--ink); }
+	::placeholder { color:#94a3b8; opacity:.9; }
     .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
     .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
     #contactResults{
@@ -318,6 +320,25 @@
       box-shadow: 0 12px 28px rgba(0,0,0,.18);
       max-height:260px; overflow:auto; padding:6px;
     }
+	
+	dialog.modal { border:none; padding:0; background:transparent; }
+	dialog.modal::backdrop {
+	  background: rgba(8,12,24,.25);
+	  backdrop-filter: blur(6px) saturate(120%);
+	}
+	.modal-card{
+	  position:relative;
+	  width:min(640px, 92vw);
+	  border-radius:24px;
+	  background: var(--glassBg);
+	  border:1px solid var(--glassBorder);
+	  box-shadow: var(--shadow);
+	  padding:16px;
+	}
+	.modal-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; } 
+
+	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+	
   </style>
 </head>
 <body>
@@ -989,22 +1010,23 @@
     }
 
     function paintEventDots(){
-      const st=S.state(); if(!st || !S.key) return;
-      decryptJson(S.key, st.vault).then(v=>{
-        ensureEvents(v);
-        const dotsNodes = document.querySelectorAll('.dots');
-        dotsNodes.forEach(n=>{
-          const day = new Date(n.dataset.date);
-          const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
-          n.innerHTML='';
-          events.slice(0,4).forEach((evt,idx)=>{
-            const d=document.createElement('span');
-            d.className='dot' + (idx===0?' green': idx===1?'':' yellow');
-            n.appendChild(d);
-          });
-        });
-      }).catch(()=>{});
-    }
+	  const st=S.state(); if(!st || !S.key) return;
+	  decryptJson(S.key, st.vault).then(v=>{
+		ensureEvents(v);
+		const dotsNodes = document.querySelectorAll('.dots');
+		dotsNodes.forEach(n=>{
+		  const day = new Date(n.dataset.date);
+		  const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
+		  n.innerHTML='';
+		  const palette = [' green',' yellow',' red',''];
+		  events.slice(0,4).forEach((evt,idx)=>{
+			const d=document.createElement('span');
+			d.className = 'dot' + (palette[idx] || '');
+			n.appendChild(d);
+		  });
+		});
+	  }).catch(()=>{});
+	}
 
     function renderDayList(){
       const st=S.state(); const list=$('dayList'); const head=$('dayTitle');
@@ -1459,6 +1481,9 @@
         await saveVault(vault);
         refreshContactsSelect(vault.list);
         if(getAutoBackup()) exportFixedBackup(true);
+		$('newName').value = '';
+	    $('newPhone').value = '+34';
+	    $('newName').focus();
       });
 
       $('btnRemove')?.addEventListener('click', async ()=>{
