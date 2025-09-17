@@ -6,34 +6,34 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>MF Gestor de Citas</title>
-  <meta name="theme-color" content="#0f1c36">
-  <meta name="theme-color" content="#0f1c36" media="(prefers-color-scheme: dark)">
+  <meta id="meta-theme-color" name="theme-color" content="#0f1c36">
   <link rel="manifest" href="manifest.webmanifest?v=ui19">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=ui19">
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { height:100%; }
-    html{ -webkit-text-size-adjust:100%;
-			background:#0a162d;	
-		}
-    :root{
-      --violet:#5e5bff; --cyan:#10b5ff;
-      --ink:#0b1220; --muted:#94a3b8; --soft:#eef2ff;
-      --glassBorder: rgba(255,255,255,.22);
-      --glassBg: rgba(8,12,24,.45);
-      --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
-      --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
-    }
+	html, body { height:100%; overscroll-behavior: none; }
+	html{ -webkit-text-size-adjust:100%; background:#0a162d; }
+	:root{
+	  --violet:#5e5bff; --cyan:#10b5ff;
+	  --ink:#0b1220; --muted:#94a3b8; --soft:#eef2ff;
+	  --glassBorder: rgba(255,255,255,.22);
+	  --glassBg: rgba(8,12,24,.45);
+	  --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
+	  --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
+	  --theme:#0f1c36;               /* para sincronizar theme-color */
+	  --headerGlassAlpha:.20;         /* opacidad de la topbar unificada */
+	  color-scheme: dark;             /* ayuda a iOS a pintar recursos sistema */
+	}
 
-    body{
-      margin:0; overflow-x:hidden;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
-      color:#e5e7eb;
-      background: transparent;
-       
-    }
-	
+	body{
+	  margin:0; overflow-x:hidden;
+	  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+	  color:#e5e7eb;
+	  background: transparent;
+	}
+
 	body::before{
 	  content:"";
 	  position:fixed;
@@ -44,312 +44,181 @@
 		radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
 		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
 		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
-	  
 	  transform:translateZ(0); 
+	  will-change: transform;           /* estabilidad en iOS */
 	}
-	
+
+	/* ===== Topbar (unificada) ===== */
+	.auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
+	body.login-mode .auth-head, body.login-mode .hr,
+	body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
+
 	body:not(.login-mode):not(.setup-mode) .auth-head{
 	  position:sticky; top:0; z-index:20;
 	  backdrop-filter: blur(12px) saturate(120%);
-	  background: rgba(8,12,24,.20);         /* antes .55: baja opacidad para que se vea el gradiente */
+	  background: rgba(8,12,24,var(--headerGlassAlpha));
 	  border-bottom: 1px solid var(--glassBorder);
 	  padding-top: calc(14px + env(safe-area-inset-top));
 	}
-	
 	@supports not (padding: max(0px)) {
-	  body:not(.login-mode):not(.setup-mode) .auth-head{
-		padding-top: calc(14px + constant(safe-area-inset-top));
-	  }
+	  body:not(.login-mode):not(.setup-mode) .auth-head{ padding-top: calc(14px + constant(safe-area-inset-top)); }
 	}
+	body:not(.login-mode):not(.setup-mode) .title{ color:#fff }
 
-    .card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
-    .main{ padding:0; }
-    .stage{ display:none; }
+	.card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
+	.main{ padding:0; }
+	.stage{ display:none; }
 
-    .auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
-    .logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
-    .logo-box img{ width:100%; height:100%; object-fit:cover; background:#fff }
-    .title{ margin:0; font-size:clamp(22px,2.2vw,28px); font-weight:900 }
-    .subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
-    .hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
-    body.login-mode .auth-head, body.login-mode .hr,
-    body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
-    body:not(.login-mode):not(.setup-mode) .auth-head{
-      position:sticky; top:0; z-index:20;
-      backdrop-filter: blur(12px) saturate(120%);
-      background: rgba(8,12,24,.55);
-      border-bottom: 1px solid var(--glassBorder);
-    }
-    body:not(.login-mode):not(.setup-mode) .title{ color:#fff }
+	.logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
+	.logo-box img{ width:100%; height:100%; object-fit:cover; background:#fff }
+	.title{ margin:0; font-size:clamp(22px,2.2vw,28px); font-weight:900 }
+	.subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
+	.hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
 
-    .field{ position:relative; }
-    .field input, .field select, .field textarea, .field [type="datetime-local"]{
-      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
-      padding:16px 48px 16px 44px; background:#ffffff;
-      font-size:17px; color:var(--ink);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
-    }
-    .field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; min-height:56px; padding-right:14px; }
-    .field select{ min-height:56px; }
-    .field textarea{ min-height:140px; resize:vertical; }
-    .icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
-    .icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
+	.field{ position:relative; }
+	.field input, .field select, .field textarea, .field [type="datetime-local"]{
+	  width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
+	  padding:16px 48px 16px 44px; background:#ffffff;
+	  font-size:17px; color:var(--ink);
+	  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 14px 30px rgba(0,0,0,.16);
+	}
+	.field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; min-height:56px; padding-right:14px; }
+	.field select{ min-height:56px; }
+	.field textarea{ min-height:140px; resize:vertical; }
+	.icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085 }
+	.icon-left{ left:14px } .icon-right{ right:14px; cursor:pointer }
 
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
-      padding:18px 18px; width:100%;
-      background: linear-gradient(90deg, var(--cyan), var(--violet));
-      box-shadow: 0 18px 34px rgba(16,181,255,.28), 0 18px 34px rgba(94,91,255,.28);
-      letter-spacing:.2px; text-align:center;
-    }
-    .btn-ghost{
-      appearance:none; background:#fff; border:1px dashed rgba(255,255,255,.35);
-      color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
-      display:inline-flex; align-items:center; justify-content:center; text-align:center;
-      box-shadow:0 10px 26px rgba(0,0,0,.16);
-    }
-    .btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
-    .btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
-    .btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
+	.btn{
+	  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+	  border:none; cursor:pointer; border-radius:22px; font-weight:800; color:white;
+	  padding:18px 18px; width:100%;
+	  background: linear-gradient(90deg, var(--cyan), var(--violet));
+	  box-shadow: 0 18px 34px rgba(16,181,255,.28), 0 18px 34px rgba(94,91,255,.28);
+	  letter-spacing:.2px; text-align:center;
+	}
+	.btn-ghost{
+	  appearance:none; background:#fff; border:1px dashed rgba(255,255,255,.35);
+	  color:#0b1220; padding:14px 16px; border-radius:18px; font-weight:800; width:100%;
+	  display:inline-flex; align-items:center; justify-content:center; text-align:center;
+	  box-shadow:0 10px 26px rgba(0,0,0,.16);
+	}
+	.btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
+	.btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
+	.btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
 	.btn-borderDate {border: 2px solid blue;}
 
-    /* ====== LOGIN/SETUP centrados ====== */
-    .login-hero{
-      min-height:100dvh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:24px 20px 40px;
-    }
-    .login-card{
-      width:min(560px, 100%); border-radius:26px; padding:24px 20px 20px;
-      backdrop-filter: blur(18px) saturate(120%); background: var(--glassBg);
-      border: 1px solid var(--glassBorder); box-shadow: var(--shadow);
-      position:relative;
-    }
-    .login-logo-wrap{ display:grid; place-items:center; margin-top:-40px; }
-    .login-logo-circle{
-      width:86px; height:86px; border-radius:50%;
-      display:grid; place-items:center;
-      background: radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.85), transparent 60%), linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85));
-      padding:4px; box-shadow:0 18px 36px rgba(0,0,0,.35);
-    }
-    .login-logo-circle img{ width:100%; height:100%; border-radius:50%; display:block; background:#fff; padding:10px }
-    .login-title{ color:#fff; text-align:center; margin:12px 0 2px; font-size:clamp(22px, 2.6vw, 28px); letter-spacing:.3px; font-weight:900 }
-    .login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
-    .login-fields{ display:grid; gap:16px }
-    .login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
+	/* Accesibilidad utilidades */
+	.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-    /* ====== APP ====== */
-    .app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
-    @media (min-width:980px){ .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px } }
-    .glass{ backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px; }
-    .span-2{ grid-column: 1 / -1; }
-    .section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
-    @media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
-    .contact-picker{ display:grid; gap:10px }
-    .search-wrap{ position:relative }
-    #contactSearch{
-      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
-      padding:14px 44px 14px 44px; background:#fff; font-size:16px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
-    }
-    .search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
-    .clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
-    #contactResults{
-      border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-      max-height:260px; overflow:auto; padding:6px;
-    }
-    .result-item{ display:flex; align-items:center; gap:8px; width:100%; padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; font-size:16px; text-align:left; }
-    .result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
-    .result-name{ color:#0b1220; font-weight:700 }
-    .result-phone{ color:#475569; font-variant-numeric: tabular-nums }
-    .muted{ color:#cbd5e1; font-size:14px }
-    mark{ background:#fff5b1; padding:0 2px; border-radius:4px }
-    .footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
-    .logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
+	/* ====== LOGIN/SETUP centrados ====== */
+	.login-hero{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px 40px; }
+	.login-card{ width:min(560px, 100%); border-radius:26px; padding:24px 20px 20px; backdrop-filter: blur(18px) saturate(120%); background: var(--glassBg); border: 1px solid var(--glassBorder); box-shadow: var(--shadow); position:relative; }
+	.login-logo-wrap{ display:grid; place-items:center; margin-top:-40px; }
+	.login-logo-circle{ width:86px; height:86px; border-radius:50%; display:grid; place-items:center; background: radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,.85), transparent 60%), linear-gradient(135deg, rgba(255,106,162,.85), rgba(16,181,255,.85)); padding:4px; box-shadow:0 18px 36px rgba(0,0,0,.35); }
+	.login-logo-circle img{ width:100%; height:100%; border-radius:50%; display:block; background:#fff; padding:10px }
+	.login-title{ color:#fff; text-align:center; margin:12px 0 2px; font-size:clamp(22px, 2.6vw, 28px); letter-spacing:.3px; font-weight:900 }
+	.login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
+	.login-fields{ display:grid; gap:16px }
+	.login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
 
-    /* ====== CALENDAR (Agenda) ====== */
-    .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px }
-    .cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
-    .cal-nav{ display:flex; gap:8px }
-    .chip{ border:1px solid rgba(255,255,255,.3); border-radius:12px; padding:8px 10px; background:#fff; color:#0b1220; font-weight:700; cursor:pointer }
+	/* ====== APP ====== */
+	.app-wrap{ width:min(1200px,100%); margin:0 auto; padding:20px 16px 40px; display:grid; gap:20px }
+	@media (min-width:980px){ .app-wrap{ grid-template-columns: 1.1fr .9fr; align-items:start; gap:24px } }
+	.glass{ backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px; }
+	.span-2{ grid-column: 1 / -1; }
+	.section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
+	.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+	@media (max-width:760px){ .grid2{ grid-template-columns:1fr } }
+	.contact-picker{ display:grid; gap:10px }
+	.search-wrap{ position:relative }
+	#contactSearch{ width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px; padding:14px 44px 14px 44px; background:#fff; font-size:16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16); }
+	.search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
+	.clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
+	#contactResults{ border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff; box-shadow: 0 12px 28px rgba(0,0,0,.18); max-height:260px; overflow:auto; padding:6px; }
+	.result-item{ display:flex; align-items:center; gap:8px; width:100%; padding:12px 10px; border-radius:12px; cursor:pointer; border:1px solid transparent; background:transparent; font-size:16px; text-align:left; }
+	.result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
+	.result-name{ color:#0b1220; font-weight:700 }
+	.result-phone{ color:#475569; font-variant-numeric: tabular-nums }
+	.muted{ color:#cbd5e1; font-size:14px }
+	mark{ background:#fff5b1; padding:0 2px; border-radius:4px }
+	.footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
+	.logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
 
-    .cal-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; align-items:stretch }
-    .cal-dow{
-      text-align:center; font-weight:800; color:#c7d2fe;
-      padding:4px 0 6px; font-size:clamp(11px, 2.6vw, 13px)
-    }
-    .cal-cell{
-      position:relative; background:rgba(255,255,255,.94); color:#0b1220;
-      border-radius:14px; aspect-ratio:1/1; padding:6px 6px 12px; min-height:0;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 22px rgba(0,0,0,.14);
-      display:block; cursor:pointer; touch-action:manipulation
-    }
-    .cal-cell:active{ transform:translateY(1px) scale(.995) }
-    .cal-num{
-      position:absolute; top:6px; left:8px; font-weight:900; opacity:.9;
-      font-size:clamp(12px, 3.1vw, 15px); letter-spacing:.1px
-    }
-    .cal-cell.cal-other{
-	  background: rgba(255,255,255,.60);
-	  color: #64748b;                 /* gris clarito en el contenido */
-	}
-	.cal-cell.cal-other .cal-num{
-	  opacity: .55;                   /* número más tenue */
-	}
-    .cal-today{ outline:2px solid var(--violet); outline-offset:2px; }
-    .cal-cell.cal-selected{ outline:3px solid var(--cyan); outline-offset:2px }
+	/* ====== CALENDAR (Agenda) ====== */
+	.cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px }
+	.cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
+	.cal-nav{ display:flex; gap:8px }
+	.chip{ border:1px solid rgba(255,255,255,.3); border-radius:12px; padding:8px 10px; background:#fff; color:#0b1220; font-weight:700; cursor:pointer }
+	.cal-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; align-items:stretch }
+	.cal-dow{ text-align:center; font-weight:800; color:#c7d2fe; padding:4px 0 6px; font-size:clamp(11px, 2.6vw, 13px) }
+	.cal-cell{ position:relative; background:rgba(255,255,255,.94); color:#0b1220; border-radius:14px; aspect-ratio:1/1; padding:6px 6px 12px; min-height:0; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 22px rgba(0,0,0,.14); display:block; cursor:pointer; touch-action:manipulation }
+	.cal-cell:active{ transform:translateY(1px) scale(.995) }
+	.cal-num{ position:absolute; top:6px; left:8px; font-weight:900; opacity:.9; font-size:clamp(12px, 3.1vw, 15px); letter-spacing:.1px }
+	.cal-cell.cal-other{ background: rgba(255,255,255,.60); color: #64748b; }
+	.cal-cell.cal-other .cal-num{ opacity: .55; }
+	.cal-today{ outline:2px solid var(--violet); outline-offset:2px; }
+	.cal-cell.cal-selected{ outline:3px solid var(--cyan); outline-offset:2px }
+	.dots{ position:absolute; left:6px; right:6px; bottom:6px; display:flex; justify-content:center; gap:4px; flex-wrap:nowrap }
+	.dot{ width:6px; height:6px; border-radius:50%; background:var(--violet); opacity:.95 }
+	.dot.green{ background:var(--ok) } .dot.yellow{ background:var(--warning) } .dot.red{ background:var(--danger) }
+	@media (min-width:480px){ .cal-grid{ gap:8px } .cal-cell{ border-radius:16px; padding:8px 8px 12px } .dot{ width:7px; height:7px } }
+	@media (min-width:768px){ .cal-cell{ aspect-ratio: 1 / .9; padding:10px 10px 14px; border-radius:16px } .cal-num{ font-size:clamp(13px, 1.6vw, 16px) } .dot{ width:7px; height:7px } }
+	@media (min-width:1100px){ .cal-cell{ aspect-ratio: 1 / .85 } }
 
-    .dots{
-      position:absolute; left:6px; right:6px; bottom:6px;
-      display:flex; justify-content:center; gap:4px; flex-wrap:nowrap
-    }
-    .dot{ width:6px; height:6px; border-radius:50%; background:var(--violet); opacity:.95 }
-    .dot.green{ background:var(--ok) } .dot.yellow{ background:var(--warning) } .dot.red{ background:var(--danger) }
+	/* === Mejora agenda (espacios y foco + separadores) === */
+	.day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; margin-bottom:14px; gap:12px; }
+	.day-list{ display:grid; gap:14px; margin-top:6px; }
+	.evt-item{ position:relative; background:#fff; color:#0b1220; border-radius:14px; padding:12px 12px; box-shadow: 0 10px 22px rgba(0,0,0,.18); }
+	.evt-actions{ display:flex; gap:12px; flex-wrap:wrap; }
+	.evt-sep{ height:1px; background:rgba(255,255,255,.12); margin:4px 8px; border-radius:1px; }
+	@keyframes glowTitle { 0% { text-shadow: 0 0 0 rgba(16,181,255,0); } 50% { text-shadow: 0 0 16px rgba(16,181,255,.6); } 100% { text-shadow: 0 0 0 rgba(16,181,255,0); } }
+	.flash { animation: glowTitle 360ms ease-out; }
 
-    @media (min-width:480px){
-      .cal-grid{ gap:8px }
-      .cal-cell{ border-radius:16px; padding:8px 8px 12px }
-      .dot{ width:7px; height:7px }
-    }
-    @media (min-width:768px){
-      .cal-cell{ aspect-ratio: 1 / .9; padding:10px 10px 14px; border-radius:16px }
-      .cal-num{ font-size:clamp(13px, 1.6vw, 16px) }
-      .dot{ width:7px; height:7px }
-    }
-    @media (min-width:1100px){
-      .cal-cell{ aspect-ratio: 1 / .85 }
-    }
-
-    /* === Mejora agenda (espacios y foco + separadores) === */
-    .day-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; margin-bottom:14px; }
-    .day-list{ display:grid; gap:14px; margin-top:6px; }
-    .evt-item{
-      position:relative;
-      background:#fff; color:#0b1220;
-      border-radius:14px; padding:12px 12px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.18);
-    }
-    .evt-actions{ display:flex; gap:12px; flex-wrap:wrap; }
-    .evt-sep{ height:1px; background:rgba(255,255,255,.12); margin:4px 8px; border-radius:1px; }
-
-    /* Título del día con animación sutil al cambiar */
-    @keyframes glowTitle { 
-      0% { text-shadow: 0 0 0 rgba(16,181,255,0); }
-      50% { text-shadow: 0 0 16px rgba(16,181,255,.6); }
-      100% { text-shadow: 0 0 0 rgba(16,181,255,0); }
-    }
-    .flash { animation: glowTitle 360ms ease-out; }
-	
-	
-	/* Modal: botón Cerrar arriba a la derecha */
+	/* Modal */
 	.modal-card{ position:relative; }
-	#evtClose{
-	  position:absolute;
-	  top:10px;
-	  right:10px;
-	  z-index:10;
-	}
+	#evtClose{ position:absolute; top:10px; right:10px; z-index:10; }
+	#eventModal .field.select-field .icon-left{ left:16px; pointer-events:none; z-index:1; }
+	#eventModal .field.select-field select{ -webkit-appearance:none; appearance:none; padding-left:64px; padding-right:44px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+	#eventModal .field.select-field .caret{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:.6; pointer-events:none; }
+	@media (max-width:560px){ .day-toolbar{ flex-wrap:wrap; row-gap:10px; } #btnNewEvent{ margin-left:auto; } }
+	#eventModal .modal-head{ position: relative; display: flex; align-items: center; justify-content: center; padding: 12px 16px; margin-bottom: 10px; min-height: 56px; }
+	#eventModal .modal-title{ margin: 0; font-weight: 900; text-align: center; font-size: clamp(18px, 2.2vw, 20px); padding: 0 80px; }
+	#eventModal #evtClose{ position: absolute; top: 10px; right: 10px; z-index: 2; }
+	#evtSearch{ width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px; padding:14px 44px 14px 44px; background:#fff; font-size:16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16); }
+	#evtResults{ border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff; box-shadow: 0 12px 28px rgba(0,0,0,.18); max-height:260px; overflow:auto; padding:6px; }
 
-	/* Campo Contacto dentro del modal: icono + texto sin solape y con elipsis */
-	#eventModal .field.select-field .icon-left{
-	  left:16px;
-	  pointer-events:none;
-	  z-index:1;
-	}
-	#eventModal .field.select-field select{
-	  -webkit-appearance:none; appearance:none;
-	  padding-left:64px;          /* deja sitio para el icono */
-	  padding-right:44px;         /* deja sitio para la “flecha” */
-	  overflow:hidden;
-	  text-overflow:ellipsis;     /* elipsis si es largo */
-	  white-space:nowrap;
-	}
-	#eventModal .field.select-field .caret{
-	  position:absolute;
-	  right:14px;
-	  top:50%;
-	  transform:translateY(-50%);
-	  width:18px; height:18px;
-	  opacity:.6;
-	  pointer-events:none;
-	}
-
-    .day-toolbar{ gap:12px; } 
-    @media (max-width:560px){
-      .day-toolbar{ flex-wrap:wrap; row-gap:10px; }
-      #btnNewEvent{ margin-left:auto; }
-    }
-
-    #eventModal .modal-head{
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 16px;
-      margin-bottom: 10px;
-      min-height: 56px;
-    }
-    #eventModal .modal-title{
-      margin: 0;
-      font-weight: 900;
-      text-align: center;
-      font-size: clamp(18px, 2.2vw, 20px);
-      padding: 0 80px; /* reserva espacio para el botón */
-    }
-    #eventModal #evtClose{
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 2;
-    }
-
-    #evtSearch{
-      width:100%; border:1px solid rgba(255,255,255,.25); border-radius:18px;
-      padding:14px 44px 14px 44px; background:#fff; font-size:16px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
-    }
-    #evtResults{
-      border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-      max-height:260px; overflow:auto; padding:6px;
-    }
   </style>
 </head>
 <body>
   <div class="card">
     <!-- Topbar (oculto en login y setup) -->
-    <div class="auth-head">
+    <div class="auth-head" role="banner">
       <div class="logo-box"><img src="icons/icon-192.png" alt="Logo" /></div>
       <div>
         <h1 id="hdrTitle" class="title">Iniciar sesión</h1>
         <p class="subtitle">MF Gestor de Citas</p>
       </div>
     </div>
-    <div class="hr"></div>
+    <div class="hr" aria-hidden="true"></div>
 
-    <main id="main" class="main">
+    <main id="main" class="main" role="main">
       <!-- === SETUP (Crear y acceder) === -->
-      <section id="setupView" class="stage">
+      <section id="setupView" class="stage" aria-labelledby="setupTitle">
         <div class="login-hero">
           <div class="login-card">
             <div class="login-logo-wrap">
               <div class="login-logo-circle"><img src="icons/icon-192.png" alt="MF"></div>
             </div>
-            <h2 class="login-title">Iniciar sesión</h2>
+            <h2 id="setupTitle" class="login-title">Iniciar sesión</h2>
             <p class="login-sub">MF Gestor de Citas</p>
 
             <div class="login-fields">
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
+                <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
                 <input id="setupUser" placeholder="Usuario" autocomplete="username">
               </div>
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
+                <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
                 <input id="setupPass" type="password" placeholder="Contraseña" autocomplete="new-password">
                 <svg id="toggleSetup" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
@@ -360,22 +229,22 @@
       </section>
 
       <!-- === LOGIN === -->
-      <section id="loginView" class="stage">
+      <section id="loginView" class="stage" aria-labelledby="loginTitle">
         <div class="login-hero">
           <div class="login-card">
             <div class="login-logo-wrap">
               <div class="login-logo-circle"><img src="icons/icon-192.png" alt="MF"></div>
             </div>
-            <h2 class="login-title">Iniciar sesión</h2>
+            <h2 id="loginTitle" class="login-title">Iniciar sesión</h2>
             <p class="login-sub">MF Gestor de Citas</p>
 
             <div class="login-fields">
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
+                <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-5.33 0-8 2.67-8 6v1h16v-1c0-3.33-2.67-6-8-6Z" fill="currentColor"/></svg>
                 <input id="loginUser" placeholder="Usuario" autocomplete="username">
               </div>
               <div class="field login-field">
-                <svg class="icon-left" viewBox="0 0 24 24" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
+                <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M7 11V8a5 5 0 0 1 10 0v3"></path></g></svg>
                 <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password">
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
@@ -394,21 +263,21 @@
           <div class="glass span-2" id="agendaCard">
             <div class="cal-head">
               <div class="cal-title" id="calTitle">Agenda</div>
-              <div class="cal-nav">
-                <button class="chip" id="calPrev" type="button">◀︎</button>
+              <div class="cal-nav" role="group" aria-label="Navegación por meses">
+                <button class="chip" id="calPrev" type="button" aria-label="Mes anterior">◀︎</button>
                 <button class="chip" id="calToday" type="button">Hoy</button>
-                <button class="chip" id="calNext" type="button">▶︎</button>
+                <button class="chip" id="calNext" type="button" aria-label="Mes siguiente">▶︎</button>
               </div>
             </div>
-            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-grid" id="calGrid" aria-live="polite"></div>
 
             <div class="day-toolbar">
-				<div class="toggle" id="gcalRow" style="display:flex; align-items:center; gap:10px; margin:6px 0 10px">
-				  <input id="gCalAutoToggle" type="checkbox" disabled />
-				  <span class="muted">Añadir nuevas citas a Google Calendar</span>
-				  <button id="btnGConnect" class="btn-small btn-outline" type="button" style="margin-left:auto">Conectar Google</button>
-				  <span id="gStatus" class="muted" style="opacity:.85"></span>
-				</div>
+              <div class="toggle" id="gcalRow" style="display:flex; align-items:center; gap:10px; margin:6px 0 10px">
+                <input id="gCalAutoToggle" type="checkbox" disabled aria-describedby="gcalHelp" />
+                <span id="gcalHelp" class="muted">Añadir nuevas citas a Google Calendar</span>
+                <button id="btnGConnect" class="btn-small btn-outline" type="button" style="margin-left:auto">Conectar Google</button>
+                <span id="gStatus" class="muted" style="opacity:.85"></span>
+              </div>
 
               <div class="section-title" id="dayTitle" style="margin:0">Hoy</div>
               <button class="btn-small btn-outline" id="btnNewEvent" type="button">Nueva cita</button>
@@ -421,16 +290,16 @@
             <h3 class="section-title">Enviar cita</h3>
             <div class="grid2">
               <div>
-                <label>Fecha y hora del recordatorio</label>
+                <label for="dt">Fecha y hora del recordatorio</label>
                 <div class="field"><input id="dt" type="datetime-local" /></div>
               </div>
               <div>
-                <label>Contacto</label>
+                <label for="contactSearch">Contacto</label>
                 <div class="contact-picker">
-                  <div class="search-wrap">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
-                    <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
-                    <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+                  <div class="search-wrap" role="combobox" aria-expanded="false" aria-owns="contactResults" aria-haspopup="listbox">
+                    <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
+                    <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" aria-controls="contactResults" />
+                    <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
                   <div class="muted"><strong>Listado</strong></div>
@@ -440,7 +309,7 @@
             </div>
 
             <div style="margin-top:14px">
-              <label>Mensaje</label>
+              <label for="msg">Mensaje</label>
               <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
             </div>
 
@@ -462,13 +331,13 @@
                 <button id="btnRemove" class="btn btn-danger" type="button">Eliminar contacto</button>
               </div>
             </div>
-		  </div>
-		  
-		  <!-- COPIAS SEGURIDAD -->
-		  <div class="glass">
+          </div>
+          
+          <!-- COPIAS SEGURIDAD -->
+          <div class="glass">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
-			  <h4> Contactos </h4>
+              <h4> Contactos </h4>
               <div style="display:flex; flex-wrap:wrap; gap:12px">
                 <button id="btnExportFixed" class="btn btn-outline" type="button">Exportar contactos cifrados (.json)</button>
                 <button id="btnExportCsv" class="btn btn-outline" type="button">Exportar contactos CSV</button>
@@ -481,26 +350,25 @@
               <div id="autoBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
                 Copia creada. <button id="btnDownloadAuto" type="button" class="btn-small btn-outline">Descargar ahora</button>
               </div>
-			  
-			  <h4> Agenda </h4>
+              
+              <h4> Agenda </h4>
               <div style="display:flex; flex-wrap:wrap; gap:12px">
-				<button id="btnExportAgenda" class="btn btn-outline" type="button">Exportar agenda cifrada (.json)</button>
-				<button id="btnImportAgenda" class="btn btn-outline" type="button">Importar agenda…</button>
-
+                <button id="btnExportAgenda" class="btn btn-outline" type="button">Exportar agenda cifrada (.json)</button>
+                <button id="btnImportAgenda" class="btn btn-outline" type="button">Importar agenda…</button>
               </div>
               <div class="toggle" style="margin-top:8px">
-				  <input id="autoBackupCalToggle" type="checkbox" />
-				  <span class="muted">Auto-descargar copia tras cambios en la agenda</span>
-			  </div>
+                <input id="autoBackupCalToggle" type="checkbox" />
+                <span class="muted">Auto-descargar copia tras cambios en la agenda</span>
+              </div>
 
-			  <div id="autoCalBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
-				Copia de agenda creada. <button id="btnDownloadAutoCal" type="button" class="btn-small btn-outline">Descargar ahora</button>
-			  </div>
-			  
-			  <h5> Copia Completa </h5>
-			  <div style="display:flex; flex-wrap:wrap; gap:12px">
-				<button id="btnExportFull" class="btn btn-outline" type="button">Exportar copia completa cifrada (.json)</button>
-				<button id="btnImportFull" class="btn btn-outline" type="button">Importar copia completa…</button>
+              <div id="autoCalBackupToast" class="muted" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(16,181,255,.08); border:1px solid rgba(16,181,255,.25)">
+                Copia de agenda creada. <button id="btnDownloadAutoCal" type="button" class="btn-small btn-outline">Descargar ahora</button>
+              </div>
+              
+              <h5> Copia Completa </h5>
+              <div style="display:flex; flex-wrap:wrap; gap:12px">
+                <button id="btnExportFull" class="btn btn-outline" type="button">Exportar copia completa cifrada (.json)</button>
+                <button id="btnImportFull" class="btn btn-outline" type="button">Importar copia completa…</button>
               </div>
             </div>
           </div>
@@ -514,36 +382,36 @@
   </div>
 
   <!-- ===== MODAL EVENTO ===== -->
-  <dialog id="eventModal" class="modal">
+  <dialog id="eventModal" class="modal" aria-labelledby="evtModalTitle">
     <form method="dialog" class="modal-card" id="evtForm" onsubmit="return false;">
       <div class="modal-head">
         <div class="modal-title" id="evtModalTitle">Nueva cita</div>
-        <button type="button" id="evtClose" class="chip">Cerrar</button>
+        <button type="button" id="evtClose" class="chip" aria-label="Cerrar">Cerrar</button>
       </div>
 
       <div class="field" style="margin-bottom:10px">
-        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M6 7h12M6 12h12M6 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <input id="evtTitle" placeholder="Título de la cita" />
       </div>
 
       <div class="grid2" style="margin-bottom:10px">
         <div class="field">
-          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input id="evtStart" type="datetime-local" />
         </div>
         <div class="field">
-          <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M7 2v3M17 2v3M3.5 9h17M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input id="evtEnd" type="datetime-local" />
         </div>
       </div>
 
       <div class="contact-picker" style="margin-bottom:10px">
-        <div class="search-wrap">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+        <div class="search-wrap" role="combobox" aria-expanded="false" aria-owns="evtResults" aria-haspopup="listbox">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none">
             <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/>
           </svg>
-          <input id="evtSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
-          <svg id="evtClear" class="clear-icon" viewBox="0 0 24 24" fill="none">
+          <input id="evtSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" aria-controls="evtResults" />
+          <svg id="evtClear" class="clear-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none">
             <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/>
           </svg>
         </div>
@@ -552,7 +420,7 @@
       </div>
 
       <div class="field">
-        <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14l-8-4-8 4V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icon-left" viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M4 5h16v14l-8-4-8 4V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <textarea id="evtNote" rows="3" placeholder="Notas"></textarea>
       </div>
 
@@ -564,260 +432,270 @@
     </form>
   </dialog>
 
+  <!-- Región para anuncios accesibles (aria-live) -->
+  <div id="ariaLive" class="sr-only" aria-live="polite"></div>
+
+  <!-- Google Identity Services (OAuth) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- App logic -->
+  <script type="module" src="app.js?v=ui19" defer></script>
+</body>
 
 
   <!-- ===== LÓGICA ===== -->
   <script>
-    const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
-      state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
-      save(o){ localStorage.setItem(this.stateKey, JSON.stringify(o)); },
-      clear(){ localStorage.removeItem(this.stateKey); } };
-    const $ = id => document.getElementById(id);
-    const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
-    const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
+    // ===== Utilidades de estado/cifrado =====
+	const S = { key:null, user:null, stateKey:'wa-reminders-app-v1',
+	  state(){ const v=localStorage.getItem(this.stateKey); return v?JSON.parse(v):null; },
+	  save(o){ localStorage.setItem(this.stateKey, JSON.stringify(o)); },
+	  clear(){ localStorage.removeItem(this.stateKey); }
+	};
+	const $ = id => document.getElementById(id);
+	const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+	const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
 
-    async function derive(password, saltB64){
-      const salt=saltB64?ubuf(saltB64):crypto.getRandomValues(new Uint8Array(16)).buffer;
-      const baseKey=await crypto.subtle.importKey('raw', new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-      const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},baseKey,256);
-      const keyBytes=new Uint8Array(bits);
-      const pwHash=await crypto.subtle.digest('SHA-256', keyBytes);
-      const aesKey=await crypto.subtle.importKey('raw', keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt']);
-      return {aesKey, pwHashB64:b64(pwHash), saltB64:b64(salt)};
-    }
-    async function encryptJson(aesKey,obj){ const iv=crypto.getRandomValues(new Uint8Array(12)); const data=new TextEncoder().encode(JSON.stringify(obj)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,data); return {iv:b64(iv),ct:b64(ct)}; }
-    async function decryptJson(aesKey,pack){ const iv=ubuf(pack.iv), ct=ubuf(pack.ct); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(iv)},aesKey,ct); return JSON.parse(new TextDecoder().decode(pt)); }
+	async function derive(password, saltB64){
+	  const salt=saltB64?ubuf(saltB64):crypto.getRandomValues(new Uint8Array(16)).buffer;
+	  const baseKey=await crypto.subtle.importKey('raw', new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
+	  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},baseKey,256);
+	  const keyBytes=new Uint8Array(bits);
+	  const pwHash=await crypto.subtle.digest('SHA-256', keyBytes);
+	  const aesKey=await crypto.subtle.importKey('raw', keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt']);
+	  return {aesKey, pwHashB64:b64(pwHash), saltB64:b64(salt)};
+	}
+	async function encryptJson(aesKey,obj){ const iv=crypto.getRandomValues(new Uint8Array(12)); const data=new TextEncoder().encode(JSON.stringify(obj)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},aesKey,data); return {iv:b64(iv),ct:b64(ct)}; }
+	async function decryptJson(aesKey,pack){ const iv=ubuf(pack.iv), ct=ubuf(pack.ct); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(iv)},aesKey,ct); return JSON.parse(new TextDecoder().decode(pt)); }
 
-    const FIXED_PASS = 'MFGestorCitas';
-    async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
+	const FIXED_PASS = 'MFGestorCitas';
+	async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
 
-    async function saveFileSmart(filename, mime, content){
-      let blob;
-      if (typeof content === 'string') blob = new Blob([content], {type: mime});
-      else if (content instanceof ArrayBuffer) blob = new Blob([new Uint8Array(content)], {type: mime});
-      else blob = new Blob([content], {type: mime});
+	async function saveFileSmart(filename, mime, content){
+	  let blob;
+	  if (typeof content === 'string') blob = new Blob([content], {type: mime});
+	  else if (content instanceof ArrayBuffer) blob = new Blob([new Uint8Array(content)], {type: mime});
+	  else blob = new Blob([content], {type: mime});
 
-      try {
-        if (navigator.canShare && 'share' in navigator) {
-          const file = new File([blob], filename, {type: mime});
-          if (navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: filename}); return true; }
-        }
-      } catch(e) {}
+	  try { // Web Share Target
+		if (navigator.canShare && 'share' in navigator) {
+		  const file = new File([blob], filename, {type: mime});
+		  if (navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: filename}); return true; }
+		}
+	  } catch(e) {}
 
-      try {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.rel='noopener';
-        document.body.appendChild(a); a.click();
-        setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){ } a.remove(); }, 1200);
-        return true;
-      } catch(e) {}
+	  try { // Descarga clásico
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url; a.download = filename; a.rel='noopener';
+		document.body.appendChild(a); a.click();
+		setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){ } a.remove(); }, 1200);
+		return true;
+	  } catch(e) {}
 
-      try {
-        const buf = await blob.arrayBuffer();
-        let binary = ''; const bytes = new Uint8Array(buf);
-        for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
-        const base64 = btoa(binary);
-        const dataUrl = 'data:' + mime + ';base64,' + base64;
-        window.open(dataUrl, '_blank');
-        return true;
-      } catch(e) {}
+	  try { // Data URL fallback
+		const buf = await blob.arrayBuffer();
+		let binary = ''; const bytes = new Uint8Array(buf);
+		for (let i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
+		const base64 = btoa(binary);
+		const dataUrl = 'data:' + mime + ';base64,' + base64;
+		window.open(dataUrl, '_blank');
+		return true;
+	  } catch(e) {}
 
-      try {
-        if (typeof content === 'string' && navigator.clipboard) {
-          await navigator.clipboard.writeText(content);
-          alert('No se pudo descargar. He copiado el contenido al portapapeles.');
-          return true;
-        }
-      } catch(e) {}
-      alert('No se pudo descargar el archivo en este navegador.');
-      return false;
-    }
-    const saveJson = (name, obj) => saveFileSmart(name, 'application/json', JSON.stringify(obj, null, 2));
-    const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
+	  try { // Último recurso: portapapeles si es texto
+		if (typeof content === 'string' && navigator.clipboard) {
+		  await navigator.clipboard.writeText(content);
+		  alert('No se pudo descargar. He copiado el contenido al portapapeles.');
+		  return true;
+		}
+	  } catch(e) {}
+	  alert('No se pudo descargar el archivo en este navegador.');
+	  return false;
+	}
+	const saveJson = (name, obj) => saveFileSmart(name, 'application/json', JSON.stringify(obj, null, 2));
+	const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
-    function openExternal(url){
-      const isStandalone =
-        (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-        (typeof window.navigator.standalone === 'boolean' && window.navigator.standalone);
-      if (isStandalone) { window.location.href = url; }
-      else {
-        const a = document.createElement('a');
-        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-        document.body.appendChild(a); a.click(); a.remove();
-      }
-    }
+	function openExternal(url){
+	  const isStandalone =
+		(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+		(typeof window.navigator.standalone === 'boolean' && window.navigator.standalone);
+	  if (isStandalone) { window.location.href = url; }
+	  else {
+		const a = document.createElement('a');
+		a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+		document.body.appendChild(a); a.click(); a.remove();
+	  }
+	}
 
-    function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
-    function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
-    function show(id){
-      ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
-      $('logout') && ($('logout').style.display = id==='appView' ? 'inline' : 'none');
-      setHeaderTitle(id==='appView' ? 'Gestionar citas' : 'Iniciar sesión');
-      toggleResetVisibility();
-      document.body.classList.toggle('login-mode', id==='loginView');
-      document.body.classList.toggle('setup-mode', id==='setupView');
-      window.scrollTo(0,0);
-    }
+	function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
+	function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
+	function show(id){
+	  ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
+	  $('logout') && ($('logout').style.display = id==='appView' ? 'inline' : 'none');
+	  setHeaderTitle(id==='appView' ? 'Gestionar citas' : 'Iniciar sesión');
+	  toggleResetVisibility();
+	  document.body.classList.toggle('login-mode', id==='loginView');
+	  document.body.classList.toggle('setup-mode', id==='setupView');
+	  window.scrollTo(0,0);
+	}
 
-    const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
+	// ===== Helpers =====
+	const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
+	const diac = s => s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase();
+	function scoreContact(q, c){
+	  if(!q) return 1;
+	  const name = diac(c.name||''), phone = (c.phone||'').replace(/\s+/g,'');
+	  const qn = diac(q), qd = q.replace(/\D+/g,'');
+	  let score = -Infinity;
+	  const ni = name.indexOf(qn); if(ni>=0) score = Math.max(score, 100 - ni);
+	  if(name.startsWith(qn)) score = Math.max(score, 140);
+	  const pi = phone.indexOf(qd); if(qd && pi>=0) score = Math.max(score, 120 - pi);
+	  if(qd && phone.startsWith(qd)) score = Math.max(score, 150);
+	  return score;
+	}
+	const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]);
+	function highlight(text, query){
+	  if(!query) return esc(text);
+	  const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')','ig');
+	  return esc(text).replace(re,'<mark>$1</mark>');
+	}
 
-    function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
-    function scoreContact(q, c){
-      if(!q) return 1;
-      const name = diac(c.name||''), phone = (c.phone||'').replace(/\s+/g,'');
-      const qn = diac(q), qd = q.replace(/\D+/g,'');
-      let score = -Infinity;
-      const ni = name.indexOf(qn); if(ni>=0) score = Math.max(score, 100 - ni);
-      if(name.startsWith(qn)) score = Math.max(score, 140);
-      const pi = phone.indexOf(qd); if(qd && pi>=0) score = Math.max(score, 120 - pi);
-      if(qd && phone.startsWith(qd)) score = Math.max(score, 150);
-      return score;
-    }
-    function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]); }
-    function highlight(text, query){
-      if(!query) return esc(text);
-      const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + ')','ig');
-      return esc(text).replace(re,'<mark>$1</mark>');
-    }
-    let activeIndex = -1;
-    function renderSearchResults(query){
-      const box = $('contactResults'); const input=$('contactSearch'); const clear=$('clearSearch');
-      if(!box || !input) return;
-      const q = query.trim(); clear.style.display = q ? 'block' : 'none';
-      const list = (window.__contacts||[]);
-      const items = list.map(c => ({ c, s: scoreContact(q, c) }))
-        .filter(o => o.s > -Infinity).sort((a,b)=>b.s - a.s).slice(0,60);
-      box.innerHTML = ''; activeIndex = -1;
-      if(!q){ box.hidden = true; return; }
-      if(!items.length){ box.hidden=false; const el=document.createElement('div'); el.className='muted'; el.style.padding='10px'; el.textContent='Sin resultados'; box.appendChild(el); return; }
-      items.forEach((o, idx)=>{
-        const btn=document.createElement('button');
-        btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
-        btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
-        btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
-        btn.addEventListener('click', ()=>selectContact(o.c));
-        btn.addEventListener('mousemove', ()=>setActive(idx));
-        box.appendChild(btn);
-      });
-      box.hidden = false;
-    }
-    function setActive(idx){
-      const box=$('contactResults'); if(!box) return;
-      const items=[...box.querySelectorAll('.result-item')];
-      items.forEach(el=>el.setAttribute('aria-selected','false'));
-      activeIndex = Math.max(0, Math.min(idx, items.length-1));
-      const el = items[activeIndex]; if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); }
-    }
-    function chooseActive(){
-      const box=$('contactResults'); if(!box) return;
-      const el = box.querySelector('.result-item[aria-selected="true"]');
-      if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectContact(c); }
-    }
-    function selectContact(c){
-      const sel=$('contactSelect'); if(sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
-      const input=$('contactSearch'); const box=$('contactResults'); input.value = `${c.name} (${c.phone})`; box.hidden = true; activeIndex=-1;
-    }
-    function wireSearch(){
-      const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
-      if(!input || !box) return;
-      const onInput = ()=>renderSearchResults(input.value);
-      input.addEventListener('input', onInput);
-      input.addEventListener('focus', ()=>{ if(input.value.trim()) renderSearchResults(input.value); });
-      input.addEventListener('keydown', (e)=>{
-        if(e.key==='ArrowDown'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<0?0:activeIndex+1); }
-        else if(e.key==='ArrowUp'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<=0?0:activeIndex-1); }
-        else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActive(); } }
-        else if(e.key==='Escape'){ box.hidden=true; activeIndex=-1; }
-      });
-      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndex=-1; input.focus(); renderSearchResults(''); });
-      document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
-    }
+	// ===== Contactos (picker principal) =====
+	let activeIndex = -1;
+	function renderSearchResults(query){
+	  const box = $('contactResults'); const input=$('contactSearch'); const clear=$('clearSearch');
+	  if(!box || !input) return;
+	  const q = query.trim(); if (clear) clear.style.display = q ? 'block' : 'none';
+	  const list = (window.__contacts||[]);
+	  const items = list.map(c => ({ c, s: scoreContact(q, c) }))
+		.filter(o => o.s > -Infinity).sort((a,b)=>b.s - a.s).slice(0,60);
+	  box.innerHTML = ''; activeIndex = -1;
+	  const combo = input.closest('[role="combobox"]'); if (combo) combo.setAttribute('aria-expanded', q ? 'true' : 'false');
+	  if(!q){ box.hidden = true; return; }
+	  if(!items.length){ box.hidden=false; const el=document.createElement('div'); el.className='muted'; el.style.padding='10px'; el.textContent='Sin resultados'; box.appendChild(el); return; }
+	  items.forEach((o, idx)=>{
+		const btn=document.createElement('button');
+		btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
+		btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
+		btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
+		btn.addEventListener('click', ()=>selectContact(o.c));
+		btn.addEventListener('mousemove', ()=>setActive(idx));
+		box.appendChild(btn);
+	  });
+	  box.hidden = false;
+	}
+	function setActive(idx){
+	  const box=$('contactResults'); if(!box) return;
+	  const items=[...box.querySelectorAll('.result-item')];
+	  items.forEach(el=>el.setAttribute('aria-selected','false'));
+	  activeIndex = Math.max(0, Math.min(idx, items.length-1));
+	  const el = items[activeIndex]; if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); }
+	}
+	function chooseActive(){
+	  const box=$('contactResults'); if(!box) return;
+	  const el = box.querySelector('.result-item[aria-selected="true"]');
+	  if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectContact(c); }
+	}
+	function selectContact(c){
+	  const sel=$('contactSelect'); if(sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
+	  const input=$('contactSearch'); const box=$('contactResults'); if (input){ input.value = `${c.name} (${c.phone})`; }
+	  if (box) box.hidden = true; activeIndex=-1;
+	  const live = $('ariaLive'); if (live) live.textContent = `Contacto seleccionado: ${c.name}`;
+	}
+	function wireSearch(){
+	  const input=$('contactSearch'); const box=$('contactResults'); const clear=$('clearSearch');
+	  if(!input || !box) return;
+	  const onInput = ()=>renderSearchResults(input.value);
+	  input.addEventListener('input', onInput);
+	  input.addEventListener('focus', ()=>{ if(input.value.trim()) renderSearchResults(input.value); });
+	  input.addEventListener('keydown', (e)=>{
+		if(e.key==='ArrowDown'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<0?0:activeIndex+1); }
+		else if(e.key==='ArrowUp'){ e.preventDefault(); setActive(isNaN(activeIndex)||activeIndex<=0?0:activeIndex-1); }
+		else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActive(); } }
+		else if(e.key==='Escape'){ box.hidden=true; activeIndex=-1; }
+	  });
+	  clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndex=-1; input.focus(); renderSearchResults(''); });
+	  document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
+	}
 
-    function refreshContactsSelect(list){
-      window.__contacts = Array.isArray(list) ? list.slice() : [];
-      const sel=$('contactSelect'); if(sel) {
-        sel.innerHTML='';
-        if(!list || !list.length){
-          const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o);
-        } 
-		//else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; sel.add(o); }); }
+	function refreshContactsSelect(list){
+	  window.__contacts = Array.isArray(list) ? list.slice() : [];
+	  const sel=$('contactSelect'); if(sel) {
+		sel.innerHTML='';
+		if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; sel.add(o); }
 		else { list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name}`; sel.add(o); }); }
 	  }
-      renderSearchResults($('contactSearch')?.value || '');
-      const msel = $('evtContact');
-      if (msel){
-        msel.innerHTML='';
-        if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o); }
-        else list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; msel.add(o); });
-      }
-    }
+	  renderSearchResults($('contactSearch')?.value || '');
+	  const msel = $('evtContact');
+	  if (msel){
+		msel.innerHTML='';
+		if(!list || !list.length){ const o=document.createElement('option'); o.value=''; o.text='— Sin contactos —'; msel.add(o); }
+		else list.forEach(c=>{ const o=document.createElement('option'); o.value=c.phone; o.text=`${c.name} (${c.phone})`; msel.add(o); });
+	  }
+	}
 
-    function buildMessage(){
-      const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
-      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
-    }
-    function buildEventMessage(evt){
-      const when = new Date(evt.start);
-      const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-      const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      const title = evt.title ? `“${evt.title}”` : 'la cita';
-      const name = evt.contactName || '';
-      return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
-    }
-	
-	
-    let pendingAutoBackup = null;
-    function showAutoToast(show){ const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
-    async function exportFixedBackup(auto=false){
-      const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      const {aesKey, saltB64} = await deriveFixed(b64(salt));
-      const pack = await encryptJson(aesKey, { list: vault.list || [] });
-      const payload = { format: 'mf-contacts-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
-      const name = auto ? ('autobackup-contactos-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-contactos.json';
-      if (auto) { pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoToast(true); }
-      else { await saveJson(name, payload); }
-    }
-    async function importFixedBackupFromFile(file){
-      const text=await file.text(); let data;
-      try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
-      if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia no reconocida.'); return; }
-      const {aesKey} = await deriveFixed(data.saltB64);
-      let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
-      if(!obj || !Array.isArray(obj.list)){ alert('Contenido de copia inválido.'); return; }
-      const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const map = new Map(); (vault.list||[]).forEach(c=>map.set(c.phone, c));
-      let added=0, skipped=0; obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
-      vault.list = Array.from(map.values());
-      const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
-      refreshContactsSelect(vault.list);
-      alert(`Importación completa. Añadidos: ${added}. Ya existentes: ${skipped}.`);
-      if(getAutoBackup()) exportFixedBackup(true);
-    }
+	function buildMessage(){
+	  const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
+	  const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+	  const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+	  return `¡Hola! 👋 Tienes un recordatorio para el ${d} a las ${t}.`;
+	}
+	function buildEventMessage(evt){
+	  const when = new Date(evt.start);
+	  const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+	  const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+	  const title = evt.title ? `“${evt.title}”` : 'la cita';
+	  const name = evt.contactName || '';
+	  return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
+	}
 
-    async function exportCSV(){
-      if(!S.key){ alert('Inicia sesión para exportar CSV.'); return; }
-      const st=S.state(); if(!st){ alert('No hay datos.'); return; }
-      const vault=await decryptJson(S.key, st.vault);
-      const rows=[['nombre','telefono'], ...(vault.list||[]).map(c=>[c.name, c.phone])];
-      const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-      saveCsv('contactos.csv', csv);
-    }
+	// ===== Backups (Contactos) =====
+	let pendingAutoBackup = null;
+	function showAutoToast(show){ const t=$('autoBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
+	async function exportFixedBackup(auto=false){
+	  const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
+	  const vault=await decryptJson(S.key, st.vault);
+	  const salt = crypto.getRandomValues(new Uint8Array(16));
+	  const {aesKey, saltB64} = await deriveFixed(b64(salt));
+	  const pack = await encryptJson(aesKey, { list: vault.list || [] });
+	  const payload = { format: 'mf-contacts-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
+	  const name = auto ? ('autobackup-contactos-' + new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14) + '.json') : 'copia-contactos.json';
+	  if (auto) { pendingAutoBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoToast(true); }
+	  else { await saveJson(name, payload); }
+	}
+	async function importFixedBackupFromFile(file){
+	  const text=await file.text(); let data;
+	  try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
+	  if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia no reconocida.'); return; }
+	  const {aesKey} = await deriveFixed(data.saltB64);
+	  let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
+	  if(!obj || !Array.isArray(obj.list)){ alert('Contenido de copia inválido.'); return; }
+	  const st=S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
+	  const vault=await decryptJson(S.key, st.vault);
+	  const map = new Map(); (vault.list||[]).forEach(c=>map.set(c.phone, c));
+	  let added=0, skipped=0; obj.list.forEach(c=>{ if(!map.has(c.phone)){ map.set(c.phone, c); added++; } else { skipped++; } });
+	  vault.list = Array.from(map.values());
+	  const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
+	  refreshContactsSelect(vault.list);
+	  alert(`Importación completa. Añadidos: ${added}. Ya existentes: ${skipped}.`);
+	  if(getAutoBackup()) exportFixedBackup(true);
+	}
 
-    function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
-    function setAutoBackup(v){ const st=S.state(); if(!st) return; st.autoBackup = !!v; S.save(st); const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup; }
+	async function exportCSV(){
+	  if(!S.key){ alert('Inicia sesión para exportar CSV.'); return; }
+	  const st=S.state(); if(!st){ alert('No hay datos.'); return; }
+	  const vault=await decryptJson(S.key, st.vault);
+	  const rows=[["nombre","telefono"], ...(vault.list||[]).map(c=>[c.name, c.phone])];
+	  const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+	  saveCsv('contactos.csv', csv);
+	}
 
-	// ====== Copias de seguridad de la AGENDA (citas) ======
+	function getAutoBackup(){ const st=S.state(); return !!(st && st.autoBackup); }
+	function setAutoBackup(v){ const st=S.state(); if(!st) return; st.autoBackup = !!v; S.save(st); const t=$('autoBackupToggle'); if(t) t.checked = st.autoBackup; }
+
+	// ===== Backups Agenda =====
 	let pendingAutoCalBackup = null;
 	function showAutoCalToast(show){ const t=$('autoCalBackupToast'); if(t) t.style.display = show ? 'block' : 'none'; }
-
-	// Exporta todas las citas cifradas con clave fija 
 	async function exportAgendaFixed(auto=false){
 	  const st=S.state(); if(!st || !S.key){ if(!auto) alert('Inicia sesión para exportar.'); return; }
 	  const vault=await decryptJson(S.key, st.vault);
@@ -829,8 +707,6 @@
 	  if (auto) { pendingAutoCalBackup = { name, json: JSON.stringify(payload, null, 2) }; showAutoCalToast(true); }
 	  else { await saveJson(name, payload); }
 	}
-
-	// Importa citas desde copia cifrada con clave fija
 	async function importAgendaFixedFromFile(file){
 	  const text=await file.text(); let data;
 	  try{ data=JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
@@ -846,7 +722,7 @@
 	  let added=0, skipped=0;
 	  (obj.events||[]).forEach(e=>{
 		if(!e || typeof e!=='object') return;
-		if(!e.id) e.id = makeId(); // robustez por si alguna copia no trae id
+		if(!e.id) e.id = makeId();
 		if(byId.has(e.id)) skipped++; else { byId.set(e.id, e); added++; }
 	  });
 
@@ -857,13 +733,10 @@
 	  alert(`Importación de agenda completada. Añadidos: ${added}. Ya existentes: ${skipped}.`);
 	  if(getAutoBackupCal()) exportAgendaFixed(true);
 	}
-
-	// Toggle de auto-backup de agenda
 	function getAutoBackupCal(){ const st=S.state(); return !!(st && st.autoBackupCal); }
 	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); const t=$('autoBackupCalToggle'); if(t) t.checked = st.autoBackupCal; }
 
-
-	// ====== Copia COMPLETA (contactos + agenda) ======
+	// ===== Copia completa =====
 	async function exportFullFixed(){
 	  const st = S.state(); if(!st || !S.key){ alert('Inicia sesión para exportar.'); return; }
 	  const vault = await decryptJson(S.key, st.vault);
@@ -873,42 +746,27 @@
 	  const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
 	  await saveJson('copia-completa.json', payload);
 	}
-
 	async function importFullFixedFromFile(file){
 	  const text = await file.text(); let data;
 	  try{ data = JSON.parse(text); }catch(_){ alert('Archivo no válido'); return; }
-	  if(!data || data.format!=='mf-full-fixed-v1' || !data.ct || !data.iv || !data.saltB64){
-		alert('Copia completa no reconocida.'); return;
-	  }
+	  if(!data || data.format!=='mf-full-fixed-v1' || !data.ct || !data.iv || !data.saltB64){ alert('Copia completa no reconocida.'); return; }
 	  const {aesKey} = await deriveFixed(data.saltB64);
 	  let obj; try{ obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ alert('No se pudo descifrar la copia.'); return; }
-	  if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){
-		alert('Contenido de copia inválido.'); return;
-	  }
+	  if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){ alert('Contenido de copia inválido.'); return; }
 
 	  const st = S.state(); if(!st || !S.key){ alert('Inicia sesión para importar.'); return; }
 	  const vault = await decryptJson(S.key, st.vault); ensureEvents(vault);
 
-	  // Fusionar contactos por teléfono
 	  const mapContacts = new Map((vault.list||[]).map(c=>[c.phone, c]));
 	  let addedC=0, skippedC=0;
-	  (obj.list||[]).forEach(c=>{
-		if(!c || !c.phone) return;
-		if(mapContacts.has(c.phone)) skippedC++; else { mapContacts.set(c.phone, c); addedC++; }
-	  });
+	  (obj.list||[]).forEach(c=>{ if(!c || !c.phone) return; if(mapContacts.has(c.phone)) skippedC++; else { mapContacts.set(c.phone, c); addedC++; } });
 	  vault.list = Array.from(mapContacts.values());
 
-	  // Fusionar eventos por id
 	  const mapEvents = new Map((vault.events||[]).map(e=>[e.id, e]));
 	  let addedE=0, skippedE=0;
-	  (obj.events||[]).forEach(e=>{
-		if(!e || typeof e!=='object') return;
-		if(!e.id) e.id = makeId(); // robustez si falta id
-		if(mapEvents.has(e.id)) skippedE++; else { mapEvents.set(e.id, e); addedE++; }
-	  });
+	  (obj.events||[]).forEach(e=>{ if(!e || typeof e!=='object') return; if(!e.id) e.id = makeId(); if(mapEvents.has(e.id)) skippedE++; else { mapEvents.set(e.id, e); addedE++; } });
 	  vault.events = Array.from(mapEvents.values()).sort((a,b)=> new Date(a.start)-new Date(b.start));
 
-	  // Guardar y refrescar UI
 	  const newPack = await encryptJson(S.key, vault); st.vault = newPack; S.save(st);
 	  refreshContactsSelect(vault.list);
 	  paintEventDots(); renderDayList();
@@ -916,744 +774,418 @@
 	  alert(`Importación completa.\nContactos añadidos: ${addedC} (ya existentes: ${skippedC}).\nCitas añadidas: ${addedE} (ya existentes: ${skippedE}).`);
 	}
 
+	// ===== Ojos (mostrar/ocultar pass) =====
+	const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
+	const eyeOff  = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
+	function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
 
-    const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
-    const eyeOff = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle><path d="M3 3L21 21"></path></g>`;
-    function setEyeIcon(el, visible){ if(!el) return; el.innerHTML = visible ? eyeOff : eyeOpen; }
+	// ===== Calendario =====
+	const toLocalInput = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+	const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; }
+	const isSameDay = (a,b) => startOfDay(a).getTime()===startOfDay(b).getTime();
+	const addDays = (d, k) => { const x=new Date(d); x.setDate(x.getDate()+k); return x; }
+	const firstDayGrid = (d) => { const x=new Date(d.getFullYear(), d.getMonth(), 1); const day=(x.getDay()+6)%7; return addDays(x, -day); };
 
-    /* ====== CALENDAR HELPERS ====== */
-    const toLocalInput = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-    const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; }
-    const isSameDay = (a,b) => startOfDay(a).getTime()===startOfDay(b).getTime();
-    const addDays = (d, k) => { const x=new Date(d); x.setDate(x.getDate()+k); return x; }
-    const firstDayGrid = (d) => {
-      const x=new Date(d.getFullYear(), d.getMonth(), 1);
-      const day=(x.getDay()+6)%7; // lunes
-      return addDays(x, -day);
-    };
+	let currentMonth = new Date();
+	let selectedDay = new Date();
 
-    let currentMonth = new Date();
-    let selectedDay = new Date();
+	function ensureEvents(vault){ if(!vault.events) vault.events = []; return vault; }
+	function monthLabel(date){ return date.toLocaleDateString(undefined, {month:'long', year:'numeric'}); }
 
-    function ensureEvents(vault){ if(!vault.events) vault.events = []; return vault; }
-    function monthLabel(date){ return date.toLocaleDateString(undefined, {month:'long', year:'numeric'}); }
+	function highlightSelected(dateKey){
+	  const key = dateKey || selectedDay.toISOString().slice(0,10);
+	  document.querySelectorAll('.cal-cell.cal-selected').forEach(el=>el.classList.remove('cal-selected'));
+	  const target = document.querySelector(`.cal-cell[data-date="${key}"]`);
+	  if (target) target.classList.add('cal-selected');
+	}
 
-    function highlightSelected(dateKey){
-      const key = dateKey || selectedDay.toISOString().slice(0,10);
-      document.querySelectorAll('.cal-cell.cal-selected').forEach(el=>el.classList.remove('cal-selected'));
-      const target = document.querySelector(`.cal-cell[data-date="${key}"]`);
-      if (target) target.classList.add('cal-selected');
-    }
+	function renderCalendar(){
+	  const grid=$('calGrid'); const title=$('calTitle');
+	  if(!grid||!title) return;
+	  grid.innerHTML='';
+	  title.textContent = `Agenda · ${monthLabel(currentMonth)}`;
 
-    function renderCalendar(){
-      const grid=$('calGrid'); const title=$('calTitle');
-      if(!grid||!title) return;
-      grid.innerHTML='';
-      title.textContent = `Agenda · ${monthLabel(currentMonth)}`;
+	  const dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+	  dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
 
-      const dows = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-      dows.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+	  const start = firstDayGrid(currentMonth);
+	  const today = new Date();
 
-      const start = firstDayGrid(currentMonth);
-      const today = new Date();
+	  for(let i=0;i<42;i++){
+		const day = addDays(start, i);
+		const cell=document.createElement('div');
+		cell.className='cal-cell';
+		const number=document.createElement('div'); number.className='cal-num'; number.textContent=String(day.getDate());
+		if(day.getMonth()!==currentMonth.getMonth()) cell.classList.add('cal-other');
+		if(isSameDay(day,today)) cell.classList.add('cal-today');
 
-      for(let i=0;i<42;i++){
-        const day = addDays(start, i);
-        const cell=document.createElement('div');
-        cell.className='cal-cell';
-        const number=document.createElement('div'); number.className='cal-num'; number.textContent=String(day.getDate());
-        if(day.getMonth()!==currentMonth.getMonth()) cell.classList.add('cal-other');
-        if(isSameDay(day,today)) cell.classList.add('cal-today');
+		const dateKey = day.toISOString().slice(0,10);
+		cell.dataset.date = dateKey;
 
-        const dateKey = day.toISOString().slice(0,10);
-        cell.dataset.date = dateKey;
+		const dots=document.createElement('div'); dots.className='dots'; dots.dataset.date = day.toISOString();
 
-        const dots=document.createElement('div'); dots.className='dots'; dots.dataset.date = day.toISOString();
+		cell.appendChild(number); cell.appendChild(dots);
 
-        cell.appendChild(number); cell.appendChild(dots);
+		cell.addEventListener('click', ()=>{
+		  selectedDay = day;
+		  renderDayList();
+		  highlightSelected(dateKey);
+		  cell.tabIndex = -1;
+		  try { cell.focus({preventScroll:true}); } catch(_){ }
+		  cell.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+		});
 
-        cell.addEventListener('click', ()=>{
-          selectedDay = day;
-          renderDayList();
-          highlightSelected(dateKey);
-          cell.tabIndex = -1;
-          try { cell.focus({preventScroll:true}); } catch(_){}
-          cell.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
-        });
-
-        grid.appendChild(cell);
-      }
-      paintEventDots();
-      highlightSelected(selectedDay.toISOString().slice(0,10));
-      renderDayList();
-    }
-
-    function paintEventDots(){
-      const st=S.state(); if(!st || !S.key) return;
-      decryptJson(S.key, st.vault).then(v=>{
-        ensureEvents(v);
-        const dotsNodes = document.querySelectorAll('.dots');
-        dotsNodes.forEach(n=>{
-          const day = new Date(n.dataset.date);
-          const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
-          n.innerHTML='';
-          events.slice(0,4).forEach((evt,idx)=>{
-            const d=document.createElement('span');
-            d.className='dot' + (idx===0?' green': idx===1?'':' yellow');
-            n.appendChild(d);
-          });
-        });
-      }).catch(()=>{});
-    }
-
-    function renderDayList(){
-      const st=S.state(); const list=$('dayList'); const head=$('dayTitle');
-      if(!st || !S.key || !list || !head) return;
-      head.textContent = selectedDay.toLocaleDateString(undefined,{weekday:'long', day:'2-digit', month:'long', year:'numeric'});
-      head.classList.remove('flash'); void head.offsetWidth; head.classList.add('flash');
-
-      decryptJson(S.key, st.vault).then(v=>{
-        ensureEvents(v);
-        const evts = v.events.filter(e=> isSameDay(selectedDay, new Date(e.start)) )
-          .sort((a,b)=> new Date(a.start)-new Date(b.start));
-        list.innerHTML = '';
-        if(!evts.length){
-          const empty=document.createElement('div'); empty.className='muted'; empty.textContent='Sin citas en este día.';
-          list.appendChild(empty); return;
-        }
-        evts.forEach((evt, idx)=>{
-          const card=document.createElement('div'); card.className='evt-item';
-          const hour=new Date(evt.start).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-          card.innerHTML = `
-            <div class="evt-title">${esc(evt.title||'Cita')}</div>
-            <div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)}`:''}</div>
-          `;
-          const actions=document.createElement('div'); actions.className='evt-actions';
-          const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline btn-borderDate'; bEdit.textContent='Editar';
-          const bSend=document.createElement('button'); bSend.className='btn-small btn-outline btn-borderDate'; bSend.textContent='Enviar cita';
-          const bDel=document.createElement('button'); bDel.className='btn-small btn-danger'; bDel.textContent='Eliminar';
-          bEdit.onclick=()=>openEventModal(evt);
-          bSend.onclick=()=>sendEventByWhatsApp(evt);
-          bDel.onclick=()=>deleteEvent(evt.id);
-          actions.append(bEdit,bSend,bDel);
-          card.appendChild(actions);
-          list.appendChild(card);
-
-          if (idx < evts.length - 1){
-            const sep = document.createElement('div');
-            sep.className = 'evt-sep';
-            list.appendChild(sep);
-          }
-        });
-      }).catch(()=>{});
-    }
-
-    function openEventModal(evt){
-      const dlg=$('eventModal'); if(!dlg) return;
-      const title=$('evtModalTitle');
-      const t=$('evtTitle'), s=$('evtStart'), e=$('evtEnd'), c=$('evtContact'), n=$('evtNote'), del=$('evtDelete');
-      if(!evt){
-        title.textContent='Nueva cita';
-        t.value=''; const base=new Date(selectedDay); base.setHours(10,0,0,0);
-        s.value = toLocalInput(base); e.value='';
-        c.selectedIndex=0; n.value='';
-        del.style.display='none';
-        dlg.setAttribute('data-id','');
-      }else{
-        title.textContent='Editar cita';
-        t.value=evt.title||'';
-        s.value = toLocalInput(new Date(evt.start));
-        e.value = evt.end ? toLocalInput(new Date(evt.end)) : '';
-        for(let i=0;i<c.options.length;i++){ if(c.options[i].value===evt.contactPhone){ c.selectedIndex=i; break; } }
-        n.value=evt.note||'';
-        del.style.display='inline-flex';
-        dlg.setAttribute('data-id', evt.id);
-      }
-      /* Sincroniza la barra de búsqueda del modal con el contacto actual */
-      const sbox = $('evtSearch'); const rbox = $('evtResults');
-      if (sbox){
-        if(evt && (evt.contactPhone || evt.contactName)){
-          sbox.value = evt.contactName ? `${evt.contactName} (${evt.contactPhone||''})` : (evt.contactPhone||'');
-        } else { sbox.value = ''; }
-      }
-      if (rbox) rbox.hidden = true;
-
-      dlg.showModal();
-    }
-    function closeEventModal(){ $('eventModal')?.close(); }
-
-    function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
-    async function saveEvent(){
-      const t=$('evtTitle').value.trim();
-      const s=$('evtStart').value; const e=$('evtEnd').value;
-      const contactPhone=$('evtContact').value||'';
-      const contact = (window.__contacts||[]).find(x=>x.phone===contactPhone)||{};
-      if(!s){ alert('Indica fecha y hora de inicio'); return; }
-      const st=S.state(); if(!st||!S.key) return;
-      const vault=ensureEvents(await decryptJson(S.key, st.vault));
-      const id = $('eventModal').getAttribute('data-id');
-	  
-	  const isNew = !id;
-
-	  let prevGid = null;
-	  if (!isNew){
-		const idxPrev = vault.events.findIndex(x=>x.id===id);
-		if (idxPrev >= 0) prevGid = vault.events[idxPrev].gcalId || null;
+		grid.appendChild(cell);
 	  }
-	  
-      const evt = { id: id || makeId(), title:t, start:new Date(s).toISOString(),
-                    end: e? new Date(e).toISOString():null,
-                    contactPhone: contactPhone||null, contactName: contact.name||null,
-                    note: $('evtNote').value.trim()||null, gcalId: prevGid || null };
-      if(!isNew){
-        const idx=vault.events.findIndex(x=>x.id===id);
-        if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt);
-      }else{
-        vault.events.push(evt);
-      }
-      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
-      closeEventModal(); paintEventDots(); renderDayList();
+	  paintEventDots();
+	  highlightSelected(selectedDay.toISOString().slice(0,10));
+	  renderDayList();
+	}
+
+	function paintEventDots(){
+	  const st=S.state(); if(!st || !S.key) return;
+	  decryptJson(S.key, st.vault).then(v=>{
+		ensureEvents(v);
+		const dotsNodes = document.querySelectorAll('.dots');
+		dotsNodes.forEach(n=>{
+		  const day = new Date(n.dataset.date);
+		  const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
+		  n.innerHTML='';
+		  events.slice(0,4).forEach((evt,idx)=>{
+			const d=document.createElement('span');
+			d.className='dot' + (idx===0?' green': idx===1?'':' yellow');
+			n.appendChild(d);
+		  });
+		});
+	  }).catch(()=>{});
+	}
+
+	function renderDayList(){
+	  const st=S.state(); const list=$('dayList'); const head=$('dayTitle');
+	  if(!st || !S.key || !list || !head) return;
+	  head.textContent = selectedDay.toLocaleDateString(undefined,{weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+	  head.classList.remove('flash'); void head.offsetWidth; head.classList.add('flash');
+
+	  decryptJson(S.key, st.vault).then(v=>{
+		ensureEvents(v);
+		const evts = v.events.filter(e=> isSameDay(selectedDay, new Date(e.start)) ).sort((a,b)=> new Date(a.start)-new Date(b.start));
+		list.innerHTML = '';
+		if(!evts.length){ const empty=document.createElement('div'); empty.className='muted'; empty.textContent='Sin citas en este día.'; list.appendChild(empty); return; }
+		evts.forEach((evt, idx)=>{
+		  const card=document.createElement('div'); card.className='evt-item';
+		  const hour=new Date(evt.start).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+		  card.innerHTML = `
+			<div class="evt-title">${esc(evt.title||'Cita')}</div>
+			<div class="evt-meta">${hour}${evt.contactName?` · ${esc(evt.contactName)}`:''}</div>
+		  `;
+		  const actions=document.createElement('div'); actions.className='evt-actions';
+		  const bEdit=document.createElement('button'); bEdit.className='btn-small btn-outline btn-borderDate'; bEdit.textContent='Editar';
+		  const bSend=document.createElement('button'); bSend.className='btn-small btn-outline btn-borderDate'; bSend.textContent='Enviar cita';
+		  const bDel=document.createElement('button'); bDel.className='btn-small btn-danger'; bDel.textContent='Eliminar';
+		  bEdit.onclick=()=>openEventModal(evt);
+		  bSend.onclick=()=>sendEventByWhatsApp(evt);
+		  bDel.onclick=()=>deleteEvent(evt.id);
+		  actions.append(bEdit,bSend,bDel);
+		  card.appendChild(actions);
+		  list.appendChild(card);
+
+		  if (idx < evts.length - 1){ const sep = document.createElement('div'); sep.className = 'evt-sep'; list.appendChild(sep); }
+		});
+	  }).catch(()=>{});
+	}
+
+	function openEventModal(evt){
+	  const dlg=$('eventModal'); if(!dlg) return;
+	  const title=$('evtModalTitle');
+	  const t=$('evtTitle'), s=$('evtStart'), e=$('evtEnd'), c=$('evtContact'), n=$('evtNote'), del=$('evtDelete');
+	  if(!evt){
+		title.textContent='Nueva cita';
+		t.value=''; const base=new Date(selectedDay); base.setHours(10,0,0,0);
+		s.value = toLocalInput(base); e.value='';
+		c.selectedIndex=0; n.value='';
+		del.style.display='none';
+		dlg.setAttribute('data-id','');
+	  }else{
+		title.textContent='Editar cita';
+		t.value=evt.title||'';
+		s.value = toLocalInput(new Date(evt.start));
+		e.value = evt.end ? toLocalInput(new Date(evt.end)) : '';
+		for(let i=0;i<c.options.length;i++){ if(c.options[i].value===evt.contactPhone){ c.selectedIndex=i; break; } }
+		n.value=evt.note||'';
+		del.style.display='inline-flex';
+		dlg.setAttribute('data-id', evt.id);
+	  }
+	  const sbox = $('evtSearch'); const rbox = $('evtResults');
+	  if (sbox){ if(evt && (evt.contactPhone || evt.contactName)){ sbox.value = evt.contactName ? `${evt.contactName} (${evt.contactPhone||''})` : (evt.contactPhone||''); } else { sbox.value = ''; } }
+	  if (rbox) rbox.hidden = true;
+	  dlg.showModal();
+	}
+	function closeEventModal(){ $('eventModal')?.close(); }
+
+	function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+	async function saveEvent(){
+	  const t=$('evtTitle').value.trim();
+	  const s=$('evtStart').value; const e=$('evtEnd').value;
+	  const contactPhone=$('evtContact').value||'';
+	  const contact = (window.__contacts||[]).find(x=>x.phone===contactPhone)||{};
+	  if(!s){ alert('Indica fecha y hora de inicio'); return; }
+	  const st=S.state(); if(!st||!S.key) return;
+	  const vault=ensureEvents(await decryptJson(S.key, st.vault));
+	  const id = $('eventModal').getAttribute('data-id');
+
+	  const isNew = !id;
+	  let prevGid = null;
+	  if (!isNew){ const idxPrev = vault.events.findIndex(x=>x.id===id); if (idxPrev >= 0) prevGid = vault.events[idxPrev].gcalId || null; }
+
+	  const evt = { id: id || makeId(), title:t, start:new Date(s).toISOString(), end: e? new Date(e).toISOString():null, contactPhone: contactPhone||null, contactName: contact.name||null, note: $('evtNote').value.trim()||null, gcalId: prevGid || null };
+	  if(!isNew){ const idx=vault.events.findIndex(x=>x.id===id); if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt); }
+	  else{ vault.events.push(evt); }
+	  const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+	  closeEventModal(); paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
-	  
+
 	  if (getGCalAuto()){
-		const evtForGoogle = {
-		  id: evt.id,
-		  gcalId: evt.gcalId || null,
-		  title: evt.title,
-		  start: evt.start,
-		  end: evt.end,
-		  note: evt.note || null
-		};
+		const evtForGoogle = { id: evt.id, gcalId: evt.gcalId || null, title: evt.title, start: evt.start, end: evt.end, note: evt.note || null };
 		addEventToGoogle(evtForGoogle);
 	  }
-	  
-    }
+	}
 
-    async function deleteEvent(id){
-      if(!confirm('¿Eliminar esta cita?')) return;
-      const st=S.state(); if(!st||!S.key) return;
-      const vault=ensureEvents(await decryptJson(S.key, st.vault));
+	async function deleteEvent(id){
+	  if(!confirm('¿Eliminar esta cita?')) return;
+	  const st=S.state(); if(!st||!S.key) return;
+	  const vault=ensureEvents(await decryptJson(S.key, st.vault));
 	  const ev = (vault.events || []).find(e => e.id === id);
-	  
+
 	  if (ev && ev.gcalId && getGCalAuto()){
 		try{
 		  const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
 		  const url  = base + encodeURIComponent(ev.gcalId);
-
 		  let token = await ensureGoogleToken(true);
 		  let r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
-
-		  // si el token está caducado → reintentamos
-		  if (r.status === 401){
-			googleAccessToken = null;
-			token = await ensureGoogleToken(false);
-			r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
-		  }
-
-		  // 404 (ya no existe en Google) lo ignoramos; 204/200 son OK
-		  if (!r.ok && r.status !== 404){
-			console.warn('Google Calendar delete error:', r.status);
-		  }
-		}catch(e){
-		  console.warn('No se pudo borrar en Google Calendar:', e);
-		}
+		  if (r.status === 401){ googleAccessToken = null; token = await ensureGoogleToken(false); r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } }); }
+		  if (!r.ok && r.status !== 404){ console.warn('Google Calendar delete error:', r.status); }
+		}catch(e){ console.warn('No se pudo borrar en Google Calendar:', e); }
 	  }
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
-      const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+	  const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
 	  try { closeEventModal(); } catch(_) {}
-      paintEventDots(); renderDayList();
+	  paintEventDots(); renderDayList();
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
-    }
-
-    function sendEventByWhatsApp(evt){
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ alert('La cita no tiene un contacto válido'); return; }
-      const text = encodeURIComponent(buildEventMessage(evt));
-      const url=`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${text}`;
-      openExternal(url);
-    }
-
-    /* ===== Buscador de contactos dentro del modal ===== */
-    let activeIndexEvt = -1;
-
-    function selectModalContact(c){
-      const sel = $('evtContact');
-      if (sel){
-        for(let i=0;i<sel.options.length;i++){
-          if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; }
-        }
-      }
-      const input = $('evtSearch'); const box = $('evtResults');
-      if (input){ input.value = `${c.name} (${c.phone})`; }
-      if (box){ box.hidden = true; }
-      activeIndexEvt = -1;
-    }
-
-    function setActiveEvt(idx){
-      const box=$('evtResults'); if(!box) return;
-      const items=[...box.querySelectorAll('.result-item')];
-      items.forEach(el=>el.setAttribute('aria-selected','false'));
-      activeIndexEvt = Math.max(0, Math.min(idx, items.length-1));
-      const el = items[activeIndexEvt];
-      if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); }
-    }
-
-    function chooseActiveEvt(){
-      const box=$('evtResults'); if(!box) return;
-      const el = box.querySelector('.result-item[aria-selected="true"]');
-      if(el){
-        const phone=el.dataset.phone;
-        const c = (window.__contacts||[]).find(x=>x.phone===phone);
-        if(c) selectModalContact(c);
-      }
-    }
-
-    function renderEvtResults(query){
-      const box = $('evtResults'); const input=$('evtSearch'); const clear=$('evtClear');
-      if(!box || !input) return;
-      const q = (query||'').trim();
-      if (clear) clear.style.display = q ? 'block' : 'none';
-      const list = (window.__contacts||[]);
-      const items = list.map(c => ({ c, s: scoreContact(q, c) }))
-        .filter(o => o.s > -Infinity).sort((a,b)=>b.s - a.s).slice(0,60);
-      box.innerHTML = ''; activeIndexEvt = -1;
-      if(!q){ box.hidden = true; return; }
-      if(!items.length){
-        box.hidden=false; const el=document.createElement('div');
-        el.className='muted'; el.style.padding='10px'; el.textContent='Sin resultados';
-        box.appendChild(el); return;
-      }
-      items.forEach((o, idx)=>{
-        const btn=document.createElement('button');
-        btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
-        btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
-        btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
-        btn.addEventListener('click', ()=>selectModalContact(o.c));
-        btn.addEventListener('mousemove', ()=>setActiveEvt(idx));
-        box.appendChild(btn);
-      });
-      box.hidden = false;
-    }
-
-    function wireModalSearch(){
-      const input=$('evtSearch'); const box=$('evtResults'); const clear=$('evtClear');
-      if(!input || !box) return;
-      const onInput = ()=>renderEvtResults(input.value);
-      input.addEventListener('input', onInput);
-      input.addEventListener('focus', ()=>{ if(input.value.trim()) renderEvtResults(input.value); });
-      input.addEventListener('keydown', (e)=>{
-        if(e.key==='ArrowDown'){ e.preventDefault(); setActiveEvt(isNaN(activeIndexEvt)||activeIndexEvt<0?0:activeIndexEvt+1); }
-        else if(e.key==='ArrowUp'){ e.preventDefault(); setActiveEvt(isNaN(activeIndexEvt)||activeIndexEvt<=0?0:activeIndexEvt-1); }
-        else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActiveEvt(); } }
-        else if(e.key==='Escape'){ box.hidden=true; activeIndexEvt=-1; }
-      });
-      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndexEvt=-1; input.focus(); renderEvtResults(''); });
-      document.addEventListener('click', (e)=>{
-        if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); }
-      });
-    }
-	
-	
-	/* ====== Google Calendar (OAuth + inserción de eventos) ====== */
-	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';  // 
-	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
-
-	let googleTokenClient = null;
-	let googleAccessToken = null;
-	let googleTokenExpiry = 0;
-
-	function setGStatus(connected){
-	  const s=$('gStatus'), t=$('gCalAutoToggle'), b=$('btnGConnect');
-	  if (s) s.textContent = connected ? 'Conectado' : 'Sin conectar';
-	  if (t) t.disabled = !connected;
-	  if (b) b.textContent = connected ? 'Reconectar' : 'Conectar Google';
 	}
 
+	function sendEventByWhatsApp(evt){
+	  if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ alert('La cita no tiene un contacto válido'); return; }
+	  const text = encodeURIComponent(buildEventMessage(evt));
+	  const url=`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${text}`;
+	  openExternal(url);
+	}
+
+	// ===== Buscador dentro del modal =====
+	let activeIndexEvt = -1;
+	function selectModalContact(c){
+	  const sel = $('evtContact'); if (sel){ for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.phone){ sel.selectedIndex=i; break; } } }
+	  const input = $('evtSearch'); const box = $('evtResults'); if (input){ input.value = `${c.name} (${c.phone})`; }
+	  if (box){ box.hidden = true; }
+	  activeIndexEvt = -1;
+	}
+	function setActiveEvt(idx){ const box=$('evtResults'); if(!box) return; const items=[...box.querySelectorAll('.result-item')]; items.forEach(el=>el.setAttribute('aria-selected','false')); activeIndexEvt = Math.max(0, Math.min(idx, items.length-1)); const el = items[activeIndexEvt]; if(el){ el.setAttribute('aria-selected','true'); el.scrollIntoView({block:'nearest'}); } }
+	function chooseActiveEvt(){ const box=$('evtResults'); if(!box) return; const el = box.querySelector('.result-item[aria-selected="true"]'); if(el){ const phone=el.dataset.phone; const c = (window.__contacts||[]).find(x=>x.phone===phone); if(c) selectModalContact(c); } }
+	function renderEvtResults(query){
+	  const box = $('evtResults'); const input=$('evtSearch'); const clear=$('evtClear');
+	  if(!box || !input) return;
+	  const q = (query||'').trim();
+	  if (clear) clear.style.display = q ? 'block' : 'none';
+	  const list = (window.__contacts||[]);
+	  const items = list.map(c => ({ c, s: scoreContact(q, c) })).filter(o => o.s > -Infinity).sort((a,b)=>b.s - a.s).slice(0,60);
+	  box.innerHTML = ''; activeIndexEvt = -1;
+	  const combo = input.closest('[role="combobox"]'); if (combo) combo.setAttribute('aria-expanded', q ? 'true' : 'false');
+	  if(!q){ box.hidden = true; return; }
+	  if(!items.length){ box.hidden=false; const el=document.createElement('div'); el.className='muted'; el.style.padding='10px'; el.textContent='Sin resultados'; box.appendChild(el); return; }
+	  items.forEach((o, idx)=>{
+		const btn=document.createElement('button');
+		btn.type='button'; btn.className='result-item'; btn.setAttribute('role','option');
+		btn.dataset.phone=o.c.phone; btn.dataset.index=String(idx);
+		btn.innerHTML = `<span class="result-name">${highlight(o.c.name, q)}</span> <span class="result-phone">${highlight(o.c.phone, q)}</span>`;
+		btn.addEventListener('click', ()=>selectModalContact(o.c));
+		btn.addEventListener('mousemove', ()=>setActiveEvt(idx));
+		box.appendChild(btn);
+	  });
+	  box.hidden = false;
+	}
+	function wireModalSearch(){
+	  const input=$('evtSearch'); const box=$('evtResults'); const clear=$('evtClear');
+	  if(!input || !box) return;
+	  const onInput = ()=>renderEvtResults(input.value);
+	  input.addEventListener('input', onInput);
+	  input.addEventListener('focus', ()=>{ if(input.value.trim()) renderEvtResults(input.value); });
+	  input.addEventListener('keydown', (e)=>{
+		if(e.key==='ArrowDown'){ e.preventDefault(); setActiveEvt(isNaN(activeIndexEvt)||activeIndexEvt<0?0:activeIndexEvt+1); }
+		else if(e.key==='ArrowUp'){ e.preventDefault(); setActiveEvt(isNaN(activeIndexEvt)||activeIndexEvt<=0?0:activeIndexEvt-1); }
+		else if(e.key==='Enter'){ if(!box.hidden){ e.preventDefault(); chooseActiveEvt(); } }
+		else if(e.key==='Escape'){ box.hidden=true; activeIndexEvt=-1; }
+	  });
+	  clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; activeIndexEvt=-1; input.focus(); renderEvtResults(''); });
+	  document.addEventListener('click', (e)=>{ if(!box.hidden && !box.contains(e.target) && e.target!==input){ setTimeout(()=>{ box.hidden=true; }, 80); } });
+	}
+
+	// ===== Google Calendar OAuth + API =====
+	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';
+	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+	let googleTokenClient = null; let googleAccessToken = null; let googleTokenExpiry = 0;
+	function setGStatus(connected){ const s=$('gStatus'), t=$('gCalAutoToggle'), b=$('btnGConnect'); if (s) s.textContent = connected ? 'Conectado' : 'Sin conectar'; if (t) t.disabled = !connected; if (b) b.textContent = connected ? 'Reconectar' : 'Conectar Google'; }
 	function getGCalAuto(){ const st=S.state(); return !!(st && st.gcalAuto); }
 	function setGCalAuto(v){ const st=S.state(); if(!st) return; st.gcalAuto = !!v; S.save(st); const t=$('gCalAutoToggle'); if(t) t.checked = st.gcalAuto; }
+	function setupGoogle(){ if (!window.google || !google.accounts || !google.accounts.oauth2) return; googleTokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: GCAL_SCOPE, callback: (resp)=>{ if (resp && resp.access_token){ googleAccessToken = resp.access_token; googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000; setGStatus(true); } } }); setGStatus(false); if (getGCalAuto()){ try { googleTokenClient.requestAccessToken({ prompt: '' }); } catch(_) {} } }
+	async function ensureGoogleToken(silent=true){ if (googleAccessToken && Date.now() < googleTokenExpiry - 60_000) return googleAccessToken; if (!googleTokenClient) throw new Error('Google no inicializado'); const token = await new Promise((resolve,reject)=>{ googleTokenClient.callback = (resp)=>{ if (resp && resp.access_token){ googleAccessToken = resp.access_token; googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000; setGStatus(true); resolve(googleAccessToken); } else reject(new Error('No token')); }; try { googleTokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' }); } catch(e){ if (silent) { try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); } catch(err){ reject(err); } } else reject(e); } }); return token; }
+	async function attachGoogleIdToEvent(localId, gcalId){ const st=S.state(); if(!st||!S.key) return; const v = await decryptJson(S.key, st.vault); const i = (v.events||[]).findIndex(e=>e.id===localId); if (i>=0){ v.events[i].gcalId = gcalId; const pack=await encryptJson(S.key, v); st.vault=pack; S.save(st); } }
+	async function addEventToGoogle(evt){ try{ const token = await ensureGoogleToken(true); const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid'; const endISO = evt.end || new Date(new Date(evt.start).getTime() + 60*60*1000).toISOString(); const payload = { summary: evt.title || 'Cita', description: evt.note  || '', start: { dateTime: evt.start, timeZone: tz }, end: { dateTime: endISO,  timeZone: tz } }; const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'; let url = base; let method = 'POST'; if (evt.gcalId){ url = `${base}/${encodeURIComponent(evt.gcalId)}`; method = 'PATCH'; } let r = await fetch(url, { method, headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify(payload) }); if (r.status === 401){ googleAccessToken = null; const token2 = await ensureGoogleToken(false); r = await fetch(url, { method, headers: { 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' }, body: JSON.stringify(payload) }); } if (!r.ok && method === 'PATCH' && r.status === 404){ const token3 = await ensureGoogleToken(true); r = await fetch(base, { method:'POST', headers: { 'Authorization':'Bearer '+token3, 'Content-Type':'application/json' }, body: JSON.stringify(payload) }); } if (!r.ok) throw new Error('Google Calendar error: '+r.status); const j = await r.json(); if (!evt.gcalId && j.id) await attachGoogleIdToEvent(evt.id, j.id); return true; }catch(e){ console.warn('No se pudo sincronizar con Google Calendar:', e); return false; } }
 
-	function setupGoogle(){
-	  if (!window.google || !google.accounts || !google.accounts.oauth2) return;
-	  googleTokenClient = google.accounts.oauth2.initTokenClient({
-		client_id: GOOGLE_CLIENT_ID,
-		scope: GCAL_SCOPE,
-		callback: (resp)=>{
-		  if (resp && resp.access_token){
-			googleAccessToken = resp.access_token;
-			googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000;
-			setGStatus(true);
-		  }
-		}
+	// ===== Wire general =====
+	function wireEvents(){
+	  const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
+	  setEyeIcon($('toggleLogin'), false); setEyeIcon($('toggleSetup'), false);
+	  $('toggleLogin')?.addEventListener('click', ()=>toggle('loginPass','toggleLogin'));
+	  $('toggleSetup')?.addEventListener('click', ()=>toggle('setupPass','toggleSetup'));
+
+	  $('btnSetup')?.addEventListener('click', async ()=>{
+		const user=$('setupUser').value.trim(), pass=$('setupPass').value;
+		if(!user){ alert('Introduce un usuario'); return; }
+		if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
+		try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
+		  const pack=await encryptJson(S.key,{list:[], events:[]});
+		  S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
+		  refreshContactsSelect([]); show('appView'); renderCalendar();
+		}catch(e){ alert('Error creando el almacén'); }
 	  });
-	  setGStatus(false);
-	  // intento silencioso si el usuario ya concedió permisos y tiene auto ON
-	  if (getGCalAuto()){
-		try { googleTokenClient.requestAccessToken({ prompt: '' }); } catch(_) {}
-	  }
-	}
 
-	async function ensureGoogleToken(silent=true){
-	  if (googleAccessToken && Date.now() < googleTokenExpiry - 60_000) return googleAccessToken;
-	  if (!googleTokenClient) throw new Error('Google no inicializado');
-	  const token = await new Promise((resolve,reject)=>{
-		googleTokenClient.callback = (resp)=>{
-		  if (resp && resp.access_token){
-			googleAccessToken = resp.access_token;
-			googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000;
-			setGStatus(true);
-			resolve(googleAccessToken);
-		  } else reject(new Error('No token'));
-		};
-		try {
-		  googleTokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
-		} catch(e){
-		  if (silent) {
-			try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); }
-			catch(err){ reject(err); }
-		  } else reject(e);
-		}
-	  });
-	  return token;
-	}
-
-	async function attachGoogleIdToEvent(localId, gcalId){
-	  const st=S.state(); if(!st||!S.key) return;
-	  const v = await decryptJson(S.key, st.vault);
-	  const i = (v.events||[]).findIndex(e=>e.id===localId);
-	  if (i>=0){ v.events[i].gcalId = gcalId; const pack=await encryptJson(S.key, v); st.vault=pack; S.save(st); }
-	}
-
-
-	async function addEventToGoogle(evt){
-	  try{
-		const token = await ensureGoogleToken(true);  // intenta silencioso
-		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
-		const endISO = evt.end || new Date(new Date(evt.start).getTime() + 60*60*1000).toISOString();
-
-		const payload = {
-		  summary:     evt.title || 'Cita',
-		  description: evt.note  || '',
-		  start: { dateTime: evt.start, timeZone: tz },
-		  end:   { dateTime: endISO,  timeZone: tz }
-		};
-
-		const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-		let url = base;
-		let method = 'POST';
-		if (evt.gcalId){
-		  url = `${base}/${encodeURIComponent(evt.gcalId)}`;
-		  method = 'PATCH';
-		}
-
-		let r = await fetch(url, {
-		  method,
-		  headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-		  body: JSON.stringify(payload)
-		});
-
-		// Token caducado → reintenta pidiendo consentimiento si hace falta
-		if (r.status === 401){
-		  googleAccessToken = null;
-		  const token2 = await ensureGoogleToken(false);
-		  r = await fetch(url, {
-			method,
-			headers: { 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' },
-			body: JSON.stringify(payload)
-		  });
-		}
-
-		// Si el PATCH falla por 404 (evento borrado en Google) → crea uno nuevo
-		if (!r.ok && method === 'PATCH' && r.status === 404){
-		  const token3 = await ensureGoogleToken(true);
-		  r = await fetch(base, {
-			method:'POST',
-			headers: { 'Authorization':'Bearer '+token3, 'Content-Type':'application/json' },
-			body: JSON.stringify(payload)
-		  });
-		}
-
-		if (!r.ok) throw new Error('Google Calendar error: '+r.status);
-		const j = await r.json();
-
-		// Si fue creación, guarda el id de Google en el evento local
-		if (!evt.gcalId && j.id) await attachGoogleIdToEvent(evt.id, j.id);
-
-		return true;
-	  }catch(e){
-		console.warn('No se pudo sincronizar con Google Calendar:', e);
-		return false;
-	  }
-	}
-
-
-	
-	
-	
-	/*== WireEvents ======*/
-
-    function wireEvents(){
-      const toggle = (inputId, svgId) => { const i=$(inputId), s=$(svgId); if(!i || !s) return; i.type = i.type==='password' ? 'text' : 'password'; setEyeIcon(s, i.type==='text'); };
-      setEyeIcon($('toggleLogin'), false); setEyeIcon($('toggleSetup'), false);
-      $('toggleLogin')?.addEventListener('click', ()=>toggle('loginPass','toggleLogin'));
-      $('toggleSetup')?.addEventListener('click', ()=>toggle('setupPass','toggleSetup'));
-
-      $('btnSetup')?.addEventListener('click', async ()=>{
-        const user=$('setupUser').value.trim(), pass=$('setupPass').value;
-        if(!user){ alert('Introduce un usuario'); return; }
-        if(pass.length<6){ alert('La contraseña debe tener al menos 6 caracteres'); return; }
-        try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
-          const pack=await encryptJson(S.key,{list:[], events:[]});
-          S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
-          refreshContactsSelect([]); show('appView'); renderCalendar();
-        }catch(e){ alert('Error creando el almacén'); }
-      });
-
-      $('btnLogin')?.addEventListener('click', async ()=>{
-        const user=$('loginUser').value.trim(), pass=$('loginPass').value;
-        const state=S.state(); if(!state){ show('setupView'); return; }
-        if(user!==state.user){ alert('Usuario incorrecto'); return; }
-        try{
-          const r=await derive(pass, state.saltB64);
-          if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
-          const vault=await decryptJson(r.aesKey, state.vault);
-          if(!vault.events) vault.events=[];
-          S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
-          show('appView');
-		  
-          const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
+	  $('btnLogin')?.addEventListener('click', async ()=>{
+		const user=$('loginUser').value.trim(), pass=$('loginPass').value;
+		const state=S.state(); if(!state){ show('setupView'); return; }
+		if(user!==state.user){ alert('Usuario incorrecto'); return; }
+		try{
+		  const r=await derive(pass, state.saltB64);
+		  if(r.pwHashB64!==state.pwHashB64){ alert('Contraseña incorrecta'); return; }
+		  const vault=await decryptJson(r.aesKey, state.vault);
+		  if(!vault.events) vault.events=[];
+		  S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
+		  show('appView');
+		  const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
 		  const tc=$('autoBackupCalToggle'); if(tc) tc.checked = !!state.autoBackupCal;
 		  const tg=$('gCalAutoToggle'); if(tg) tg.checked = !!state.gcalAuto;
-
-          currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
-        }catch(e){ alert('Error al descifrar datos'); }
-      });
-
-      $('btnReset')?.addEventListener('click', ()=>{
-        if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){
-          S.clear();
-          try{ document.activeElement && document.activeElement.blur(); }catch(_){}
-          show('setupView');
-          window.scrollTo(0,0);
-        }
-      });
-
-      $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
-
-      const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
-      const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
-
-      (function setupPhoneInput(){
-        const el = $('newPhone'); if(!el) return;
-        el.type='tel'; el.inputMode='tel'; el.autocomplete='tel'; el.enterKeyHint='done'; el.pattern='^\\+\\d{6,15}$';
-        el.addEventListener('focus', ()=>{ if(!el.value || el.value==='+') el.value='+34'; setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length);}catch(_){}} ,0); });
-        el.addEventListener('input', ()=>{ const v=el.value; const cleaned='+'+v.replace(/^\+?/, '').replace(/[^\d]/g,''); if(v!==cleaned){ el.value=cleaned; try{ el.setSelectionRange(cleaned.length, cleaned.length);}catch(_){}} });
-      })();
-
-      $('btnAdd')?.addEventListener('click', async ()=>{
-        const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
-        if(!name){ alert('Introduce un nombre'); return; }
-        if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
-        const vault=await loadVault();
-        if((vault.list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
-        vault.list = [...(vault.list||[]), {name, phone}];
-        await saveVault(vault);
-        refreshContactsSelect(vault.list);
-        if(getAutoBackup()) exportFixedBackup(true);
-      });
-
-      $('btnRemove')?.addEventListener('click', async ()=>{
-        const sel=$('contactSelect'); const phone=sel?sel.value:'';
-        if(!phone){ alert('No hay contacto seleccionado'); return; }
-        const vault=await loadVault(); const before=(vault.list||[]).length;
-        vault.list = (vault.list||[]).filter(c=>c.phone!==phone);
-        await saveVault(vault);
-        refreshContactsSelect(vault.list);
-        if(before===vault.list.length) alert('No se encontró el contacto');
-        if(getAutoBackup()) exportFixedBackup(true);
-      });
-
-      $('dt')?.addEventListener('change', ()=>{ const m=$('msg'); if(m) m.value=buildMessage(); });
-
-      $('btnSend')?.addEventListener('click', ()=>{
-        const sel=$('contactSelect'); const phone=sel?sel.value:'';
-        if(!isPhoneValid(phone)){ alert('Selecciona un contacto válido'); return; }
-        const text=encodeURIComponent(($('msg')?.value||buildMessage()).trim());
-        const url=`https://wa.me/${phone.replace('+','')}/?text=${text}`;
-        openExternal(url);
-      });
-
-      
-	  // Toggle auto-add a Google Calendar
-		$('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
-
-		// Botón conectar / reconectar
-		$('btnGConnect')?.addEventListener('click', ()=>{
-		  if (!googleTokenClient){ alert('Google aún no está listo.'); return; }
-		  
-		  try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); } catch(_){}
-		});
-
-	  
-	  
-	  $('btnExportFull')?.addEventListener('click', ()=>exportFullFixed());
-
-	  $('btnImportFull')?.addEventListener('click', ()=>{
-		  const i = document.createElement('input');
-		  i.type = 'file';
-		  i.accept = 'application/json,.json';
-		  Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' });
-		  document.body.appendChild(i);
-
-		  const cleanup = ()=>{ try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); };
-		  const onFocus = ()=>{ setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); };
-		  window.addEventListener('focus', onFocus, true);
-
-		  i.addEventListener('change', async ()=>{
-			const f = i.files && i.files[0];
-			if (f) { await importFullFixedFromFile(f); }
-			cleanup();
-		  });
-		  i.click();
+		  currentMonth = new Date(); selectedDay = new Date(); renderCalendar();
+		}catch(e){ alert('Error al descifrar datos'); }
 	  });
 
-	  
-	  
-	  $('btnExportAgenda')?.addEventListener('click', ()=>exportAgendaFixed(false));
-
-	  $('btnImportAgenda')?.addEventListener('click', () => {
-		  const i = document.createElement('input');
-		  i.type = 'file';
-		  i.accept = 'application/json,.json';
-		  Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' });
-		  document.body.appendChild(i);
-
-		  const cleanup = () => { try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); };
-		  const onFocus = () => { setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); };
-		  window.addEventListener('focus', onFocus, true);
-
-		  i.addEventListener('change', async () => { const f = i.files && i.files[0]; if (f) { await importAgendaFixedFromFile(f); } cleanup(); });
-		  i.click();
+	  $('btnReset')?.addEventListener('click', ()=>{
+		if(confirm('Esto borrará TODA la app (usuario, contactos). ¿Continuar?')){ S.clear(); try{ document.activeElement && document.activeElement.blur(); }catch(_){ } show('setupView'); window.scrollTo(0,0); }
 	  });
 
-	  $('autoBackupCalToggle')?.addEventListener('change', (e)=>setAutoBackupCal(e.target.checked));
-	  $('btnDownloadAutoCal')?.addEventListener('click', ()=>{
-		  if(pendingAutoCalBackup){
-			saveFileSmart(pendingAutoCalBackup.name, 'application/json', pendingAutoCalBackup.json);
-			pendingAutoCalBackup=null; showAutoCalToast(false);
-		  }
-	  });
+	  $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
 
-	  
-	  
-	  
-	  $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
-      $('btnExportCsv')?.addEventListener('click', exportCSV);
+	  const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
+	  const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
 
-      // Importar copia… (input oculto con limpieza en iOS/cancel)
-      $('btnImportApp')?.addEventListener('click', () => {
-        const i = document.createElement('input');
-        i.type = 'file';
-        i.accept = 'application/json,.json';
-        Object.assign(i.style, {
-          position: 'fixed', left: '-9999px', top: '-9999px',
-          opacity: '0', width: '0.1px', height: '0.1px', zIndex: '-1'
-        });
-        document.body.appendChild(i);
-
-        const cleanup = () => {
-          try { i.value = ''; } catch(_) {}
-          i.remove();
-          window.removeEventListener('focus', onFocus, true);
-        };
-
-        const onFocus = () => {
-          setTimeout(() => {
-            if (!i.files || !i.files.length) cleanup();
-          }, 300);
-        };
-
-        window.addEventListener('focus', onFocus, true);
-
-        i.addEventListener('change', async () => {
-          const f = i.files && i.files[0];
-          if (f) { await importFixedBackupFromFile(f); }
-          cleanup();
-        });
-
-        i.click();
-      });
-
-      $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
-      $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
-
-      wireSearch();
-      wireModalSearch();
-
-      // Calendar wiring
-      $('calPrev')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1); renderCalendar(); });
-      $('calNext')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1); renderCalendar(); });
-      $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
-      $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
-
-      $('evtSave')?.addEventListener('click', saveEvent);
-      $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(id) deleteEvent(id); });
-      $('evtSend')?.addEventListener('click', ()=>{
-        const id=$('eventModal').getAttribute('data-id');
-        if(!id){
-          const tmp = {
-            title: $('evtTitle').value.trim(),
-            start: new Date($('evtStart').value).toISOString(),
-            end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
-            contactPhone: $('evtContact').value || null,
-            contactName: (window.__contacts||[]).find(x=>x.phone===$('evtContact').value)?.name || null
-          };
-          sendEventByWhatsApp(tmp);
-        } else {
-          decryptJson(S.key, S.state().vault).then(v=>{
-            const e=v.events.find(x=>x.id===id); if(e) sendEventByWhatsApp(e);
-          });
-        }
-      });
-      $('evtClose')?.addEventListener('click', closeEventModal);
-
-      ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{
-        const el=$(id); el&&el.addEventListener('keydown',e=>{
-          if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }
-        });
-      });
-    }
-
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    function toTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
-
-    function init(){
-      const state=S.state();
-      show(state? 'loginView' : 'setupView');
-      const m=$('msg'); if(m) m.value=buildMessage();
-      const d=new Date(Date.now()+60*60*1000);
-      const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-      $('dt') && ($('dt').value=iso);
-      wireEvents();
-      setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal;const tg=$('gCalAutoToggle'); if(tg && state) tg.checked = !!state.gcalAuto;
-		}, 40);
-		
-	  (function waitGIS(){
-		  if (window.google && google.accounts && google.accounts.oauth2) { setupGoogle(); }
-		  else { setTimeout(waitGIS, 300); }
+	  (function setupPhoneInput(){
+		const el = $('newPhone'); if(!el) return;
+		el.type='tel'; el.inputMode='tel'; el.autocomplete='tel'; el.enterKeyHint='done'; el.pattern='^\\+\\d{6,15}$';
+		el.addEventListener('focus', ()=>{ if(!el.value || el.value==='+') el.value='+34'; setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length);}catch(_){}} ,0); });
+		el.addEventListener('input', ()=>{ const v=el.value; const cleaned='+'+v.replace(/^\+?/, '').replace(/[^\d]/g,''); if(v!==cleaned){ el.value=cleaned; try{ el.setSelectionRange(cleaned.length, cleaned.length);}catch(_){}} });
 	  })();
 
-    }
-    document.addEventListener('DOMContentLoaded', init);
-    window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
-    window.addEventListener('orientationchange', ()=>setTimeout(toTop, 60));
-  </script>
+	  $('btnAdd')?.addEventListener('click', async ()=>{
+		const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
+		if(!name){ alert('Introduce un nombre'); return; }
+		if(!isPhoneValid(phone)){ alert('Teléfono inválido. Usa formato internacional: +34600111222'); return; }
+		const vault=await loadVault();
+		if((vault.list||[]).some(c=>c.phone===phone)){ alert('Ese teléfono ya existe'); return; }
+		vault.list = [...(vault.list||[]), {name, phone}];
+		await saveVault(vault);
+		refreshContactsSelect(vault.list);
+		$('newName').value=''; // limpieza UX
+		const p=$('newPhone'); if(p){ p.value='+34'; p.focus(); }
+		if(getAutoBackup()) exportFixedBackup(true);
+	  });
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js?v=ui19').catch(()=>{});
-      });
-    }
+	  $('btnRemove')?.addEventListener('click', async ()=>{
+		const sel=$('contactSelect'); const phone=sel?sel.value:'';
+		if(!phone){ alert('No hay contacto seleccionado'); return; }
+		const vault=await loadVault(); const before=(vault.list||[]).length;
+		vault.list = (vault.list||[]).filter(c=>c.phone!==phone);
+		await saveVault(vault);
+		refreshContactsSelect(vault.list);
+		if(before===vault.list.length) alert('No se encontró el contacto');
+		if(getAutoBackup()) exportFixedBackup(true);
+	  });
+
+	  $('dt')?.addEventListener('change', ()=>{ const m=$('msg'); if(m) m.value=buildMessage(); });
+	  $('btnSend')?.addEventListener('click', ()=>{ const sel=$('contactSelect'); const phone=sel?sel.value:''; if(!isPhoneValid(phone)){ alert('Selecciona un contacto válido'); return; } const text=encodeURIComponent(($('msg')?.value||buildMessage()).trim()); const url=`https://wa.me/${phone.replace('+','')}/?text=${text}`; openExternal(url); });
+
+	  $('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
+	  $('btnGConnect')?.addEventListener('click', ()=>{ if (!googleTokenClient){ alert('Google aún no está listo.'); return; } try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); } catch(_){} });
+
+	  $('btnExportFull')?.addEventListener('click', ()=>exportFullFixed());
+	  $('btnImportFull')?.addEventListener('click', ()=>{ const i = document.createElement('input'); i.type = 'file'; i.accept = 'application/json,.json'; Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' }); document.body.appendChild(i); const cleanup = ()=>{ try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); }; const onFocus = ()=>{ setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); }; window.addEventListener('focus', onFocus, true); i.addEventListener('change', async ()=>{ const f = i.files && i.files[0]; if (f) { await importFullFixedFromFile(f); } cleanup(); }); i.click(); });
+
+	  $('btnExportAgenda')?.addEventListener('click', ()=>exportAgendaFixed(false));
+	  $('btnImportAgenda')?.addEventListener('click', ()=>{ const i = document.createElement('input'); i.type = 'file'; i.accept = 'application/json,.json'; Object.assign(i.style, { position:'fixed', left:'-9999px', top:'-9999px', opacity:'0', width:'0.1px', height:'0.1px', zIndex:'-1' }); document.body.appendChild(i); const cleanup = ()=> { try{ i.value=''; }catch(_){ } i.remove(); window.removeEventListener('focus', onFocus, true); }; const onFocus = ()=> { setTimeout(()=>{ if (!i.files || !i.files.length) cleanup(); }, 300); }; window.addEventListener('focus', onFocus, true); i.addEventListener('change', async ()=> { const f = i.files && i.files[0]; if (f) { await importAgendaFixedFromFile(f); } cleanup(); }); i.click(); });
+
+	  $('autoBackupCalToggle')?.addEventListener('change', (e)=>setAutoBackupCal(e.target.checked));
+	  $('btnDownloadAutoCal')?.addEventListener('click', ()=>{ if(pendingAutoCalBackup){ saveFileSmart(pendingAutoCalBackup.name, 'application/json', pendingAutoCalBackup.json); pendingAutoCalBackup=null; showAutoCalToast(false); } });
+
+	  $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
+	  $('btnExportCsv')?.addEventListener('click', exportCSV);
+	  $('btnImportApp')?.addEventListener('click', () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'application/json,.json'; Object.assign(i.style, { position: 'fixed', left: '-9999px', top: '-9999px', opacity: '0', width: '0.1px', height: '0.1px', zIndex: '-1' }); document.body.appendChild(i); const cleanup = () => { try { i.value = ''; } catch(_) {} i.remove(); window.removeEventListener('focus', onFocus, true); }; const onFocus = () => { setTimeout(() => { if (!i.files || !i.files.length) cleanup(); }, 300); }; window.addEventListener('focus', onFocus, true); i.addEventListener('change', async () => { const f = i.files && i.files[0]; if (f) { await importFixedBackupFromFile(f); } cleanup(); }); i.click(); });
+
+	  $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
+	  $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
+
+	  wireSearch();
+	  wireModalSearch();
+
+	  // Calendar wiring
+	  $('calPrev')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1); renderCalendar(); });
+	  $('calNext')?.addEventListener('click', ()=>{ currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1); renderCalendar(); });
+	  $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
+	  $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
+
+	  $('evtSave')?.addEventListener('click', saveEvent);
+	  $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(id) deleteEvent(id); });
+	  $('evtSend')?.addEventListener('click', ()=>{ const id=$('eventModal').getAttribute('data-id'); if(!id){ const tmp = { title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(), end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null, contactPhone: $('evtContact').value || null, contactName: (window.__contacts||[]).find(x=>x.phone===$('evtContact').value)?.name || null }; sendEventByWhatsApp(tmp); } else { decryptJson(S.key, S.state().vault).then(v=>{ const e=v.events.find(x=>x.id===id); if(e) sendEventByWhatsApp(e); }); } });
+	  $('evtClose')?.addEventListener('click', closeEventModal);
+
+	  ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ const el=$(id); el&&el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); } }); });
+	}
+
+	// ===== Varios =====
+	if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+	function toTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+	function syncThemeColor(){ const meta = document.querySelector('meta[name="theme-color"]') || document.getElementById('meta-theme-color'); if (meta){ const s = getComputedStyle(document.documentElement).getPropertyValue('--theme')?.trim() || '#0f1c36'; meta.setAttribute('content', s); } }
+
+	function init(){
+	  const state=S.state();
+	  show(state? 'loginView' : 'setupView');
+	  const m=$('msg'); if(m) m.value=buildMessage();
+	  const d=new Date(Date.now()+60*60*1000);
+	  const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+	  $('dt') && ($('dt').value=iso);
+	  wireEvents();
+	  setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal; const tg=$('gCalAutoToggle'); if(tg && state) tg.checked = !!state.gcalAuto; }, 40);
+	  (function waitGIS(){ if (window.google && google.accounts && google.accounts.oauth2) { setupGoogle(); } else { setTimeout(waitGIS, 300); } })();
+	  syncThemeColor();
+	}
+
+	document.addEventListener('DOMContentLoaded', init);
+	window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
+	window.addEventListener('orientationchange', ()=>setTimeout(toTop, 60));
+
+	// Service Worker (PWA)
+	if ('serviceWorker' in navigator) {
+	  window.addEventListener('load', function() {
+		navigator.serviceWorker.register('./service-worker.js?v=ui19').catch(()=>{});
+	  });
+	}
+
   </script>
 </body>
 </html>
