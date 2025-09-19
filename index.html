@@ -490,60 +490,6 @@
 	  #agendaCard.span-2{ grid-column: 1 / -1; }
 	}
 
-
-	/* ===== Barra inferior SIEMPRE pegada y opaca en móvil ===== */
-	:root{ --bn-h: 64px; } /* alto visible de la barra (sin área segura) */
-
-	@media (max-width:980px){
-	  /* Evita rubber-banding que “empuja” elementos fijos */
-	  html, body{ overscroll-behavior-y: none; }
-
-	  .bottom-nav{
-		/* fija de verdad al viewport */
-		position: fixed !important;
-		inset: auto 0 0 0;             /* left:0; right:0; bottom:0 */
-		z-index: 9999;
-
-		/* alto estable = barra + área segura */
-		height: calc(var(--bn-h) + env(safe-area-inset-bottom));
-		padding: 8px 10px 8px;         /* sin env aquí; ya va en height */
-
-		/* layout de los botones */
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 6px;
-		align-items: center;
-
-		/* fondo OPACO para que no se vea nada debajo */
-		background: #0b1220;
-		border-top: 1px solid var(--glassBorder);
-		backdrop-filter: blur(12px) saturate(120%);
-
-		/* desactiva cualquier “truco” de transform que pueda provocar saltos */
-		transform: none !important;
-		backface-visibility: hidden;
-		will-change: auto;
-	  }
-
-	  /* Rellena el “notch area” inferior con el mismo color, por si acaso */
-	  .bottom-nav::before{
-		content: "";
-		position: absolute;
-		left: 0; right: 0; bottom: 0;
-		height: env(safe-area-inset-bottom);
-		background: #0b1220; /* mismo color que la barra */
-		pointer-events: none;
-	  }
-
-	  /* Alto de cada botón (queda centrado dentro de la barra) */
-	  .bottom-nav .nav-btn{ height: 48px; }
-
-	  /* Contenido: deja hueco EXACTO para la barra, sin que se vea corte */
-	  .app-wrap{
-		padding-bottom: calc(var(--bn-h) + env(safe-area-inset-bottom) + 8px) !important;
-	  }
-	}
-
 	
   </style>
 </head>
