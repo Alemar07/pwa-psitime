@@ -371,6 +371,73 @@
 
 	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
 	
+	/* ===== Navegación inferior (móvil) ===== */
+	.bottom-nav{
+	  position: fixed;
+	  left: 0; right: 0; bottom: 0;
+	  z-index: 50;
+	  display: none; /* desktop oculto */
+	  background: rgba(8,12,24,.45);
+	  border-top: 1px solid var(--glassBorder);
+	  backdrop-filter: blur(12px) saturate(120%);
+	  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+	  display: grid;
+	  grid-template-columns: repeat(4, 1fr);
+	  gap: 6px;
+	}
+	.bottom-nav .nav-btn{
+	  appearance: none; border: 0; cursor: pointer;
+	  width: 100%; height: 48px;
+	  display: grid; place-items: center;
+	  border-radius: 14px;
+	  color: #e5e7eb;
+	  background: rgba(255,255,255,.08);
+	  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+	}
+	.bottom-nav .nav-btn.is-active{
+	  outline: 2px solid var(--cyan);
+	  outline-offset: 0;
+	}
+	.bottom-nav .nav-btn.is-primary{
+	  transform: translateY(-2px) scale(1.06);
+	  background: linear-gradient(90deg, var(--cyan), var(--violet));
+	  color: white;
+	  box-shadow: 0 12px 28px rgba(16,181,255,.22), 0 12px 28px rgba(94,91,255,.22);
+	}
+
+	/* Espacio para que el contenido no quede bajo la barra */
+	.app-wrap { padding-bottom: 20px; }
+	@supports(padding:max(0px)){
+	  .app-wrap { padding-bottom: max(20px, calc(60px + env(safe-area-inset-bottom))); }
+	}
+
+	/* ===== Disposición móvil: mostrar 1 sección por vista ===== */
+	@media (max-width: 980px){
+	  .bottom-nav{ display: grid; } /* visible en móvil */
+
+	  /* Oculta todas las secciones por defecto */
+	  .app-section{ display: none !important; }
+
+	  /* Muestra la sección activa según el tab en <body> */
+	  body[data-tab="agenda"]   [data-section="agenda"]{ display:block !important; }
+	  body[data-tab="send"]     [data-section="send"]{ display:block !important; }
+	  body[data-tab="contacts"] [data-section="contacts"]{ display:block !important; }
+	  body[data-tab="backups"]  [data-section="backups"]{ display:block !important; }
+
+	  /* La agenda ocupa ancho completo en móvil */
+	  #agendaCard.span-2{ grid-column: 1 / -1; }
+
+	  .app-wrap{ gap: 16px; }
+	}
+
+	/* ===== Desktop: todo como antes ===== */
+	@media (min-width: 981px){
+	  .bottom-nav{ display: none !important; } /* oculta barra en desktop */
+	  /* El layout existente se mantiene tal cual */
+	}
+
+	
+	
   </style>
 </head>
 <body>
@@ -444,7 +511,7 @@
         <div class="app-wrap">
 
           <!-- AGENDA -->
-          <div class="glass span-2" id="agendaCard">
+          <div class="glass span-2 app-section" id="agendaCard" data-section="agenda">
             <div class="cal-head">
               <div class="cal-title" id="calTitle">Agenda</div>
               <div class="cal-nav">
@@ -470,7 +537,7 @@
           </div>
 
           <!-- ENVIAR CITA -->
-          <div class="glass">
+          <div class="glass app-section" data-section="send">
             <h3 class="section-title">Enviar cita</h3>
             <div class="grid2">
               <div>
@@ -501,7 +568,7 @@
           </div>
 
           <!-- CONTACTOS -->
-          <div class="glass">
+          <div class="glass app-section" data-section="contacts">
             <div>
 			  <h3 class="section-title" style="margin-bottom:10px">Gestionar contactos</h3>
 
@@ -549,7 +616,7 @@
 		  </div>
 		  
 		  <!-- COPIAS SEGURIDAD -->
-		  <div class="glass">
+		  <div class="glass app-section" data-section="backups">
             <div>
               <h3 class="section-title" style="margin-bottom:10px">Copias de seguridad</h3>
 			  <h4> Contactos </h4>
@@ -589,6 +656,35 @@
             </div>
           </div>
         </div>
+		<!-- Bottom navigation (solo móvil) -->
+		<nav class="bottom-nav" id="bottomNav" aria-label="Secciones">
+		  <button class="nav-btn" data-tab="contacts" aria-label="Contactos" title="Contactos">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+			  <path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-7 2.2-7 5v1h14v-1c0-2.8-2.6-5-7-5Z"/>
+			</svg>
+		  </button>
+
+		  <button class="nav-btn is-primary" data-tab="agenda" aria-label="Agenda" title="Agenda">
+			<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true">
+			  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+				<path d="M7 2v3M17 2v3M3.5 9h17"/>
+				<rect x="3.5" y="5" width="17" height="16" rx="2"/>
+			  </g>
+			</svg>
+		  </button>
+
+		  <button class="nav-btn" data-tab="send" aria-label="Enviar" title="Enviar cita">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+			  <path fill="currentColor" d="m2 21 20-9L2 3v6l14 3L2 15z"/>
+			</svg>
+		  </button>
+
+		  <button class="nav-btn" data-tab="backups" aria-label="Copias" title="Copias de seguridad">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+			  <path fill="currentColor" d="M12 6a6 6 0 1 1-5.3 3.1l1.3.75A4.5 4.5 0 1 0 12 7.5V10l4-3-4-3v2Z"/>
+			</svg>
+		  </button>
+		</nav>
 
         <div class="footer">
           <span id="logout" class="logout" style="display:none">Cerrar sesión</span>
@@ -1680,7 +1776,7 @@
         try{ const r=await derive(pass); S.key=r.aesKey; S.user=user;
           const pack=await encryptJson(S.key,{list:[], events:[]});
           S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
-          refreshContactsSelect([]); show('appView'); renderCalendar();
+          refreshContactsSelect([]); show('appView'); setActiveTab('agenda'); renderCalendar();
         }catch(e){ alert('Error creando el almacén'); }
       });
 
@@ -1695,7 +1791,8 @@
           if(!vault.events) vault.events=[];
           S.key=r.aesKey; S.user=user; refreshContactsSelect(vault.list);
           show('appView');
-		  
+		  setActiveTab('agenda');
+
           const t=$('autoBackupToggle'); if(t) t.checked = !!state.autoBackup;
 		  const tc=$('autoBackupCalToggle'); if(tc) tc.checked = !!state.autoBackupCal;
 		  const tg=$('gCalAutoToggle'); if(tg) tg.checked = !!state.gcalAuto;
@@ -1953,7 +2050,34 @@
 
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     function toTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+	
+	/* ===== Tabs móviles (sin afectar la funcionalidad existente) ===== */
+	function setActiveTab(tab){
+	  const allowed = new Set(['agenda','send','contacts','backups']);
+	  const t = allowed.has(tab) ? tab : 'agenda';
+	  document.body.setAttribute('data-tab', t);
+	  document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn=>{
+		btn.classList.toggle('is-active', btn.dataset.tab === t);
+	  });
+	}
 
+	function wireBottomNav(){
+	  const nav = document.getElementById('bottomNav');
+	  if(!nav) return;
+	  nav.addEventListener('click', (e)=>{
+		const btn = e.target.closest('.nav-btn');
+		if(!btn) return;
+		setActiveTab(btn.dataset.tab);
+	  });
+	}
+
+	function initMobileTabsOnLoad(){
+	  if(!document.body.hasAttribute('data-tab')){
+		setActiveTab('agenda'); // pestaña por defecto
+	  }
+	}
+
+	
     function init(){
       const state=S.state();
       show(state? 'loginView' : 'setupView');
@@ -1962,6 +2086,9 @@
       const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
       $('dt') && ($('dt').value=iso);
       wireEvents();
+	  wireBottomNav();
+	  initMobileTabsOnLoad();
+
       setTimeout(()=>{ toTop(); const t=$('autoBackupToggle'); if(t && state) t.checked = !!state.autoBackup; const tc=$('autoBackupCalToggle'); if(tc && state) tc.checked = !!state.autoBackupCal;const tg=$('gCalAutoToggle'); if(tg && state) tg.checked = !!state.gcalAuto;
 		}, 40);
 		
@@ -1969,7 +2096,7 @@
 		  if (window.google && google.accounts && google.accounts.oauth2) { setupGoogle(); }
 		  else { setTimeout(waitGIS, 300); }
 	  })();
-
+		
     }
     document.addEventListener('DOMContentLoaded', init);
     window.addEventListener('pageshow', e=>{ if(e.persisted) toTop(); });
