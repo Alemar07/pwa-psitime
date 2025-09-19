@@ -436,7 +436,60 @@
 	  /* El layout existente se mantiene tal cual */
 	}
 
-	
+	/* ===== Barra inferior 100% fija y estable en móvil ===== */
+	.bottom-nav{
+	  position: fixed !important;
+	  left: 0; right: 0; bottom: 0;
+	  z-index: 999; /* más alto para que quede por encima de todo */
+	  transform: translateZ(0);      /* capa GPU para estabilidad iOS */
+	  backface-visibility: hidden;
+	  will-change: transform;
+	}
+
+	/* Evita que el contenido quede oculto bajo la barra en móvil */
+	@media (max-width: 980px){
+	  .app-wrap{
+		padding-bottom: max(20px, calc(72px + env(safe-area-inset-bottom)));
+	  }
+	}
+
+	/* ===== Logout arriba a la derecha (móvil) ===== */
+	.logout-top{
+	  display: none;             /* oculto por defecto (desktop) */
+	  margin-left: auto;
+	}
+
+	/* En móvil y solo en app (no login/setup), muéstralo en la barra superior */
+	@media (max-width: 980px){
+	  body:not(.login-mode):not(.setup-mode) .logout-top{
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		/* visual consistente con chips */
+		border: 1px solid rgba(255,255,255,.35);
+		background: #fff;
+		color: #0b1220;
+		font-weight: 800;
+		padding: 8px 10px;
+		border-radius: 12px;
+	  }
+
+	  /* En móvil, ocultamos el logout del footer para no duplicar */
+	  .footer #logout{
+		display: none !important;
+	  }
+	}
+
+	/* (Recordatorio) Visibilidad de secciones por pestaña en móvil */
+	@media (max-width: 980px){
+	  .app-section{ display: none !important; }
+	  body[data-tab="agenda"]   [data-section="agenda"]{ display:block !important; }
+	  body[data-tab="send"]     [data-section="send"]{ display:block !important; }
+	  body[data-tab="contacts"] [data-section="contacts"]{ display:block !important; }
+	  body[data-tab="backups"]  [data-section="backups"]{ display:block !important; }
+	  #agendaCard.span-2{ grid-column: 1 / -1; }
+	}
+
 	
   </style>
 </head>
@@ -449,6 +502,19 @@
         <h1 id="hdrTitle" class="title">Iniciar sesión</h1>
         <p class="subtitle">MF Gestor de Citas</p>
       </div>
+	  
+	  
+		<button id="logoutTop" class="chip logout-top" type="button" aria-label="Cerrar sesión" title="Cerrar sesión">
+		  <!-- icono logout -->
+		  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+			<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			  <path d="M10 7V5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2" />
+			  <path d="M15 12H3m4-4-4 4 4 4" />
+			</g>
+		  </svg>
+		</button>
+
+	  
     </div>
     <div class="hr"></div>
 
@@ -1811,6 +1877,7 @@
       });
 
       $('logout')?.addEventListener('click', ()=>{ show('loginView'); const lp=$('loginPass'); if(lp) lp.value=''; toggleResetVisibility(); });
+	  $('logoutTop')?.addEventListener('click', () => { $('logout')?.click(); });
 
       const loadVault = async ()=>{ const st=S.state(); return st?await decryptJson(S.key, st.vault):{list:[], events:[]}; };
       const saveVault = async v=>{ const pack=await encryptJson(S.key,v); const st=S.state(); st.vault=pack; S.save(st); };
