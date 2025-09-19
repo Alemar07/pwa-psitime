@@ -1148,6 +1148,69 @@
     let selectedDay = new Date();
 
     function ensureEvents(vault){ if(!vault.events) vault.events = []; return vault; }
+	
+
+	async function propagateContactEdit(oldPhone, newPhone, newName){
+	  const st = S.state(); 
+	  if(!st || !S.key) return false;
+
+	  const vault = await decryptJson(S.key, st.vault);
+	  ensureEvents(vault);
+
+	  // 1) Actualiza todas las citas que apunten al teléfono antiguo
+	  let touched = false;
+	  (vault.events || []).forEach(e=>{
+		if (e && e.contactPhone === oldPhone){
+		  e.contactPhone = newPhone;
+		  if (newName) e.contactName = newName;
+		  touched = true;
+		}
+	  });
+
+	  // 2) Guarda si hubo cambios y refresca Agenda
+	  if (touched){
+		const pack = await encryptJson(S.key, vault);
+		st.vault = pack; 
+		S.save(st);
+		// refresco visual inmediato
+		paintEventDots(); 
+		renderDayList();
+	  }
+
+	  // 3) Sincroniza DOM/UI abiertas para evitar que se siga viendo el viejo
+	  //   a) <select> del modal de cita
+	  const evtSel = $('evtContact');
+	  if (evtSel){
+		// Actualiza opción existente si coincide por valor
+		for (let i=0;i<evtSel.options.length;i++){
+		  if (evtSel.options[i].value === oldPhone){
+			evtSel.options[i].value = newPhone;
+			evtSel.options[i].text  = `${newName} (${newPhone})`;
+		  }
+		}
+		// Si el usuario lo tenía seleccionado, sustitúyelo
+		if (evtSel.value === oldPhone) evtSel.value = newPhone;
+	  }
+
+	  //   b) Caja de búsqueda del modal (texto mostrado)
+	  const evtSearch = $('evtSearch');
+	  if (evtSearch && evtSearch.value && evtSearch.value.includes(oldPhone)){
+		evtSearch.value = `${newName} (${newPhone})`;
+	  }
+
+	  //   c) Buscador principal bajo "Enviar cita" (si quedó texto)
+	  const contactSearch = $('contactSearch');
+	  if (contactSearch && contactSearch.value && contactSearch.value.includes(oldPhone)){
+		contactSearch.value = `${newName} (${newPhone})`;
+	  }
+
+	  //   d) Tarjeta contextual de contacto seleccionado
+	  updateSelectedContactCard(newPhone);
+
+	  return touched;
+	}
+
+	
     function monthLabel(date){ return date.toLocaleDateString(undefined, {month:'long', year:'numeric'}); }
 
     function highlightSelected(dateKey){
@@ -1686,39 +1749,27 @@
 
 
 		list[idx] = { name, phone };
-
-		if (Array.isArray(vault.events)){
-			let touched = false;
-			vault.events = vault.events.map(e=>{
-			  if (e && e.contactPhone === editingPhone){
-				touched = true;
-				return {
-				  ...e,
-				  contactPhone: phone,
-				  contactName: name || e.contactName || null
-				};
-			  }
-			  return e;
-			});
-			if (touched){
-			  // Refresca la UI de agenda
-			  setTimeout(()=>{ paintEventDots(); renderDayList(); }, 0);
-			}
-		}
-
-		// Ordena y guarda
 		vault.list = sortContacts(list);
-		const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
+		
+		
+		const pack=await encryptJson(S.key, vault); 
+		st.vault=pack; 
+		S.save(st);
 
+		// 3) Propaga a eventos y sincroniza UI abierta
+		await propagateContactEdit(editingPhone, phone, name);
+
+		// 4) Refresca selects/buscadores (se alimentan de window.__contacts)
 		refreshContactsSelect(vault.list);
-		updateSelectedContactCard(phone);
+
 		if(getAutoBackup()) exportFixedBackup(true);
 
-		// Reset edición
+		// 5) Reset de modo edición y formulario
 		editingPhone = null;
 		$('newName').value = '';
 		$('newPhone').value = '+34';
-		const addBtn = $('btnAdd'); if (addBtn){ addBtn.textContent = 'Añadir contacto'; addBtn.classList.remove('btn-outline'); }
+		const addBtn = $('btnAdd'); 
+		if (addBtn){ addBtn.textContent = 'Añadir contacto'; addBtn.classList.remove('btn-outline'); }
 		$('btnCancelEdit')?.remove();
 		return;
 	  }
