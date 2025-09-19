@@ -1688,24 +1688,33 @@
 		list[idx] = { name, phone };
 
 		if (Array.isArray(vault.events)){
-		  vault.events = vault.events.map(e=>{
-			if (e && e.contactPhone === editingPhone){
-			  return { ...e, contactPhone: phone, contactName: name };
+			let touched = false;
+			vault.events = vault.events.map(e=>{
+			  if (e && e.contactPhone === editingPhone){
+				touched = true;
+				return {
+				  ...e,
+				  contactPhone: phone,
+				  contactName: name || e.contactName || null
+				};
+			  }
+			  return e;
+			});
+			if (touched){
+			  // Refresca la UI de agenda
+			  setTimeout(()=>{ paintEventDots(); renderDayList(); }, 0);
 			}
-			return e;
-		  });
 		}
 
-	
+		// Ordena y guarda
 		vault.list = sortContacts(list);
 		const pack=await encryptJson(S.key, vault); st.vault=pack; S.save(st);
 
-	
 		refreshContactsSelect(vault.list);
 		updateSelectedContactCard(phone);
 		if(getAutoBackup()) exportFixedBackup(true);
 
-		
+		// Reset edición
 		editingPhone = null;
 		$('newName').value = '';
 		$('newPhone').value = '+34';
