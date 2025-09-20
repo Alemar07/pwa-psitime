@@ -31,6 +31,8 @@
 			  color:#e5e7eb;
 			  background: transparent;
 	}
+	
+	:root, body { background-color: transparent; }
 
 	/* ===== 02 Base/Reset ===== */
 
@@ -44,7 +46,14 @@
 
 	html{
 	  -webkit-text-size-adjust:100%;
-					background:#0a162d;
+	 
+	  background:
+		radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
+		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
+	  
+	  background-attachment: fixed;
+	  min-height: 100%;
 	}
 
 	/* ===== 03 Fondo decorativo ===== */
@@ -63,7 +72,11 @@
 			  transform:translateZ(0);
 	}
 
-	
+	@supports (-webkit-touch-callout: none) {
+	  @media (display-mode: standalone) {
+		body::before{ display:none !important; }
+	  }
+	}
 
 	/* ===== 04 Topbar/Auth ===== */
 
@@ -902,7 +915,8 @@
 		flex: 1 1 auto;
 		min-height: 0;
 		overflow: auto;
-		padding-bottom: calc(env(safe-area-inset-bottom)) !important;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
 	  }
 
 	  /* 2) Barra inferior realmente fija y pegada al borde */
