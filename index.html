@@ -583,7 +583,7 @@
 	}
 
 	.app-wrap{
-	  padding-bottom: 20px;
+	  grid-auto-rows: minmax(min-content, max-content);
 	}
 
 
@@ -767,6 +767,17 @@
 	  display: none !important;
 	}
 
+	}
+	
+	@media (min-width: 981px){
+	  .app-wrap{
+		row-gap: 24px !important; 
+	  }
+	}
+
+	@media (min-width: 981px){
+	  .app-wrap > .glass{ margin-top: 0; }
+	  .app-wrap > .glass:nth-child(n + 2){ margin-top: 24px; }
 	}
 
 	/* ===== 14 Footer/Logout ===== */
