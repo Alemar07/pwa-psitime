@@ -1917,18 +1917,11 @@
 		  const events = v.events.filter(e=> isSameDay(day, new Date(e.start)) );
 		  n.innerHTML='';
 		  const palette = [' green',' yellow',' red',''];
-		  const maxDots = 4;
 		  events.slice(0,4).forEach((evt,idx)=>{
 			const d=document.createElement('span');
 			d.className = 'dot' + (palette[idx] || '');
 			n.appendChild(d);
 		  });
-		  if (events.length > maxDots){
-			const more = document.createElement('span');
-			more.textContent = `+${events.length - maxDots}`;
-			more.style.cssText = 'margin-left:4px;font-weight:800;font-size:10px;line-height:12px;color:#0b1220;background:#e2e8f0;border-radius:6px;padding:0 4px;';
-			n.appendChild(more);
-		  }
 		});
 	  }).catch(()=>{});
 	}
