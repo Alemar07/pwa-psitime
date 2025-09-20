@@ -802,7 +802,7 @@
 		.bottom-nav{
 		  position: fixed !important;
 		  bottom: 0 !important;
-		  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+		  padding-bottom: calc(88px + env(safe-area-inset-bottom));
 		}
 		/* Deja hueco al contenido para que no quede detrás de la barra */
 		.app-wrap{
@@ -811,7 +811,7 @@
 	  }
 	  /* Fallback iOS antiguos con constant() */
 	  @media (display-mode: standalone) {
-		.bottom-nav{ padding-bottom: calc(8px + constant(safe-area-inset-bottom)); }
+		.bottom-nav{ padding-bottom: calc(88px + constant(safe-area-inset-bottom)); }
 		.app-wrap{   padding-bottom: max(20px, calc(88px + constant(safe-area-inset-bottom))) !important; }
 	  }
 	}
@@ -827,7 +827,7 @@
 	  position: fixed !important;
 	  left: 0 !important; right: 0 !important; bottom: 0 !important;
 	  transform: none !important;
-	  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+	  padding-bottom: calc(88px + env(safe-area-inset-bottom));
 	}
 	html.standalone .app-wrap{
 	  padding-bottom: max(20px, calc(88px + env(safe-area-inset-bottom))) !important;
