@@ -546,18 +546,16 @@
 
 	.bottom-nav{
 	  position: fixed !important;
-	  left: 0; right: 0; bottom: 0;
-	  z-index: 999;
-	  background: rgba(8,12,24,.45);
-	  border-top: 1px solid var(--glassBorder);
-	  backdrop-filter: blur(12px) saturate(120%);
-	  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+	  left: 0 !important;
+	  right: 0 !important;
+	  bottom: 0 !important;             
+	  transform: none !important;      
+	  z-index: 9999;
+	  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+	  /* mantenemos tu grid en una sola fila */
 	  display: grid;
 	  grid-template-columns: repeat(4, 1fr);
 	  gap: 6px;
-	  transform: translateZ(0);
-	  backface-visibility: hidden;
-	  will-change: transform;
 	}
 	
 	.bottom-nav .nav-btn{
@@ -783,33 +781,27 @@
 	
 	/* ===== PWA iOS: barra inferior siempre fija y respetando safe-area ===== */
 
-	/* iOS Safari + PWA (añadida a pantalla de inicio) */
+	/* PWA iOS standalone: reafirma estilos y safe area */
 	@supports (-webkit-touch-callout: none) {
 	  @media (display-mode: standalone) {
 		.bottom-nav{
 		  position: fixed !important;
-		  left: 0 !important;
-		  right: 0 !important;
-		  bottom: 0 !important;                    /* anclada al borde físico */
-		  transform: none !important;              /* evita “desanclar” en iOS */
-		  contain: layout paint;                   /* más estable */
+		  bottom: 0 !important;
 		  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-		  z-index: 9999;                           /* por encima de todo */
 		}
-		/* deja hueco suficiente al contenido */
+		/* Deja hueco al contenido para que no quede detrás de la barra */
 		.app-wrap{
 		  padding-bottom: max(20px, calc(72px + env(safe-area-inset-bottom))) !important;
 		}
 	  }
-
-	  /* Fallback iOS antiguos: constant() */
+	  /* Fallback iOS antiguos con constant() */
 	  @media (display-mode: standalone) {
 		.bottom-nav{ padding-bottom: calc(8px + constant(safe-area-inset-bottom)); }
 		.app-wrap{   padding-bottom: max(20px, calc(72px + constant(safe-area-inset-bottom))) !important; }
 	  }
 	}
 
-	/* Defensa extra: evita que algún ancestro con transform/filtro cree un CB */
+	/* Asegura que ningún ancestro invalida el anclaje del fixed */
 	html, body, #appView, .card { transform: none !important; filter: none !important; }
 
 	/* Evita rebotes que muevan elementos fijos al hacer scroll */
@@ -2550,6 +2542,42 @@
 	  apply();
 	  try { window.matchMedia('(display-mode: standalone)').addEventListener('change', apply); } catch(_){}
 	})();
+
+
+	/* ===== Fix iOS: fuerza anclaje al visualViewport ===== */
+	(function lockBottomNavIOS(){
+	  var nav = document.getElementById('bottomNav');
+	  if(!nav) return;
+
+	  function place(){
+		try{
+		  var vv = window.visualViewport;
+		  if(!vv){
+			nav.style.bottom = '0px';
+			return;
+		  }
+		  // Diferencia entre fondo del viewport de layout y del viewport visual
+		  var offset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+		  // Coloca la barra exactamente en el borde visual
+		  nav.style.bottom = offset + 'px';
+		}catch(e){}
+	  }
+
+	  // Eventos que cambian el viewport visual
+	  if (window.visualViewport){
+		visualViewport.addEventListener('resize', place);
+		visualViewport.addEventListener('scroll', place);
+	  }
+	  window.addEventListener('resize', place, {passive:true});
+	  window.addEventListener('scroll', place, {passive:true});
+	  document.addEventListener('focusin', place);
+	  document.addEventListener('focusout', function(){ setTimeout(place, 150); });
+
+	  // Primera colocación
+	  place();
+	})();
+
+
 
 	
     function init(){
