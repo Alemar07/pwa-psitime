@@ -372,19 +372,7 @@
 	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
 	
 	/* ===== Navegación inferior (móvil) ===== */
-	.bottom-nav{
-	  position: fixed;
-	  left: 0; right: 0; bottom: 0;
-	  z-index: 50;
-	  display: none; /* desktop oculto */
-	  background: rgba(8,12,24,.45);
-	  border-top: 1px solid var(--glassBorder);
-	  backdrop-filter: blur(12px) saturate(120%);
-	  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-	  display: grid;
-	  grid-template-columns: repeat(4, 1fr);
-	  gap: 6px;
-	}
+
 	.bottom-nav .nav-btn{
 	  appearance: none; border: 0; cursor: pointer;
 	  width: 100%; height: 48px;
@@ -436,6 +424,7 @@
 	  /* El layout existente se mantiene tal cual */
 	}
 
+	/* ===== Barra inferior 100% fija y estable en móvil ===== */
 
 	/* Evita que el contenido quede oculto bajo la barra en móvil */
 	@media (max-width: 980px){
@@ -481,19 +470,41 @@
 	  #agendaCard.span-2{ grid-column: 1 / -1; }
 	}
 
-	/* === iOS PWA: barra inferior pegada al borde === */
+	
+	
+	/* === iOS PWA: body sin scroll; el scroll va en <main> === */
+	html, body {
+	  height: 100%;
+	  overflow: hidden;                  /* <- clave: el body no scrollea */
+	}
 
-	/* Viewport real en iOS standalone */
-	html, body { height: 100%; }
-	body { min-height: 100vh; min-height: 100dvh; }
-	@supports (height: 100svh) { body { min-height: 100svh; } }
+	body {                                /* viewport real en iOS */
+	  min-height: 100vh;
+	  min-height: 100dvh;
+	}
+	@supports (height: 100svh) {
+	  body { min-height: 100svh; }
+	}
 
-	:root { --navH: 64px; } /* alto base de la barra */
+	/* El contenedor que SÍ scrollea */
+	main.main {
+	  position: relative;
+	  height: 100vh;
+	  height: 100dvh;
+	  overflow: auto;                     /* <- aquí va el scroll */
+	  -webkit-overflow-scrolling: touch;
+	}
+	@supports (height: 100svh) {
+	  main.main { height: 100svh; }
+	}
 
-	/* Barra fija SIN transform */
+	/* Barra inferior fija, sin transform, con safe-area */
+	:root { --navH: 64px; }
+
 	.bottom-nav{
 	  position: fixed;
-	  inset: auto 0 0 0;     /* left:0; right:0; bottom:0 */
+	  left: 0; right: 0;
+	  bottom: 0;                          /* anclada al borde */
 	  z-index: 999;
 
 	  height: calc(var(--navH) + env(safe-area-inset-bottom));
@@ -506,24 +517,21 @@
 	  grid-template-columns: repeat(4, 1fr);
 	  gap: 6px;
 
+	  /* <- Quita cualquier transform/translateZ que tuvieras */
 	  transform: none !important;
 	  -webkit-transform: none !important;
-	  backface-visibility: visible;
 	  will-change: auto;
+	  backface-visibility: visible;
 	}
 
-	/* Deja hueco suficiente bajo el contenido en móvil */
+	/* Deja hueco estable para la barra en vistas móviles */
 	@media (max-width: 980px){
 	  .app-wrap{
 		padding-bottom: calc(20px + var(--navH) + env(safe-area-inset-bottom));
 	  }
 	}
 
-	/* Evita el “rubber band” que deja ver el fondo */
-	@supports (overscroll-behavior: contain) {
-	  html, body { overscroll-behavior-y: contain; }
-	}
-
+	
 	
 	
   </style>
