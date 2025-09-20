@@ -34,7 +34,7 @@
 	  margin:0; overflow-x:hidden;
 			  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
 			  color:#e5e7eb;
-			  background: transparent;
+			  background: var(--app-bg) fixed;
 			  min-height: 100vh;
 	}
 
@@ -58,12 +58,8 @@
 	}
 
 	@supports (-webkit-touch-callout: none){
-		@media (display-mode: standalone){
-		html, body{
-		  background: var(--app-bg) fixed !important;
-		  min-height:100svh;
-		}
-		body::before{ display:none !important; }
+	  @media (display-mode: standalone){
+		html, body{ background: var(--app-bg) !important; }
 	  }
 	}
 
@@ -75,7 +71,10 @@
 			  inset:-20% -20%;          
 			  z-index:-1;
 			  pointer-events:none;
-			  background: var(--app-bg);
+			  background:
+				radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+				radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
+				linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
 		  
 			  transform:translateZ(0);
 	}
