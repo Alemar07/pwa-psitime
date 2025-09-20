@@ -934,7 +934,7 @@
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 6px;
-		padding: 12px 12px;                 /* simétrico (los iconos quedan centrados) */
+		padding: 16px 12px 8px;                 /* simétrico (los iconos quedan centrados) */
 
 		/* estilo actual */
 		background: rgba(8,12,24,.45);
@@ -966,6 +966,10 @@
 		display: grid;
 		place-items: center;
 	  }
+	  
+	  .bottom-nav .nav-btn svg{ transform: translateY(-3px); }
+	  .bottom-nav .nav-btn.is-primary svg{ transform: translateY(-3px); }
+	  
 	}
 
 	/* Fallback iOS antiguos (constant() en vez de env()) */
