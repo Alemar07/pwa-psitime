@@ -966,8 +966,70 @@
 	  }
 	}
 
-	/* Defensa: ningún ancestro con transform/filtro que rompa el fixed */
+	
+	/* ===== Login/Setup: ocupar TODA la pantalla y respetar safe-area ===== */
+
+	/* Móvil / PWA */
+	@media (max-width: 980px){
+
+	  /* El documento ocupa el viewport; no dejamos hueco abajo */
+	  body.login-mode,
+	  body.setup-mode{
+		min-height: 100svh;
+		height: 100svh;
+		overflow: hidden; /* evitamos “rebotes” de body */
+	  }
+
+	  /* La “card” hace de shell a pantalla completa */
+	  body.login-mode .card,
+	  body.setup-mode .card{
+		position: fixed;
+		inset: 0;                 /* pega a los 4 bordes */
+		display: flex;
+		flex-direction: column;
+	  }
+
+	  /* El main se expande y hace el scroll si fuese necesario */
+	  body.login-mode .main,
+	  body.setup-mode .main{
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: env(safe-area-inset-bottom); /* respeta el “home indicator” */
+	  }
+
+	  /* El hero llena el alto disponible y queda centrado */
+	  .login-hero{
+		min-height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding-bottom: max(24px, env(safe-area-inset-bottom));
+	  }
+	}
+
+	/* Fallback iOS antiguos (constant() en lugar de env/svh) */
+	@supports (-webkit-touch-callout: none){
+	  @media (max-width: 980px){
+		body.login-mode .main,
+		body.setup-mode .main{
+		  padding-bottom: constant(safe-area-inset-bottom);
+		}
+		.login-hero{
+		  padding-bottom: max(24px, constant(safe-area-inset-bottom));
+		}
+	  }
+	}
+
+	/* Desktop: altura clásica */
+	@media (min-width: 981px){
+	  .login-hero{ min-height: 100vh; }
+	}
+
+	/* Defensa general: ningún ancestro con transform/filtro que rompa el posicionamiento */
 	html, body, #appView, .card { transform: none !important; filter: none !important; }
+
 
 
 
