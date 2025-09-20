@@ -23,13 +23,19 @@
 			  --glassBg: rgba(8,12,24,.45);
 			  --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.16);
 			  --ok:#22c55e; --danger:#ef4444; --warning:#f59e0b;
+			  
+	  --app-bg:
+		radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
+		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
+		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
 	}
 
 	body{
 	  margin:0; overflow-x:hidden;
 			  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
 			  color:#e5e7eb;
-			  background: transparent;
+			  background: var(--app-bg) fixed;
+			  min-height: 100vh;
 	}
 
 
@@ -46,13 +52,15 @@
 	html{
 	  -webkit-text-size-adjust:100%;
 	 
-	  background:
-		radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%),
-		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
-		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
+	  background:var(--app-bg) fixed;
 	  
-	  background-attachment: fixed;
 	  min-height: 100%;
+	}
+
+	@supports (-webkit-touch-callout: none){
+	  @media (display-mode: standalone){
+		html, body{ background: var(--app-bg) !important; }
+	  }
 	}
 
 	/* ===== 03 Fondo decorativo ===== */
@@ -71,11 +79,6 @@
 			  transform:translateZ(0);
 	}
 
-	@supports (-webkit-touch-callout: none) {
-	  @media (display-mode: standalone) {
-		body::before{ display:none !important; }
-	  }
-	}
 
 	/* ===== 04 Topbar/Auth ===== */
 
