@@ -35,7 +35,7 @@
 			  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
 			  color:#e5e7eb;
 			  background: transparent;
-			  
+			  min-height: 100vh;
 	}
 
 
@@ -58,9 +58,10 @@
 	}
 
 	@supports (-webkit-touch-callout: none){
-	  @media (display-mode: standalone){
-		html, body{ background: var(--app-bg) fixed !important;
-		min-height:100svh;
+		@media (display-mode: standalone){
+		html, body{
+		  background: var(--app-bg) fixed !important;
+		  min-height:100svh;
 		}
 		body::before{ display:none !important; }
 	  }
@@ -74,8 +75,7 @@
 			  inset:-20% -20%;          
 			  z-index:-1;
 			  pointer-events:none;
-			  background:
-				var(--app-bg);
+			  background: var(--app-bg);
 		  
 			  transform:translateZ(0);
 	}
@@ -935,7 +935,7 @@
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
 		gap: 6px;
-		padding: 8px 12px 32px;                 
+		padding: 16px 12px 32px;                 
 
 		/* estilo actual */
 		background: rgba(8,12,24,.45);
