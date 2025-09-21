@@ -1165,6 +1165,11 @@
     function setEyeIcon(el, visible){ if(el) el.innerHTML = visible ? eyeOff : eyeOpen; }
 
     // ===== CALENDAR LOGIC =====
+    let currentView = 'month'; // 'month' or 'week'
+	let currentWeekDate = new Date();
+	const WEEKLY_VIEW_START_HOUR = 7;
+	const WEEKLY_VIEW_END_HOUR = 22;
+
     const toLocalInput = d => new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
     const startOfDay = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; }
     const isSameDay = (a,b) => startOfDay(a).getTime()===startOfDay(b).getTime();
@@ -1174,12 +1179,23 @@
     };
     let currentMonth = new Date(), selectedDay = new Date();
     function ensureEvents(vault){ if(!vault.events) vault.events = []; return vault; }
+
+    function getStartOfWeek(d) {
+		const date = new Date(d);
+		const day = date.getDay();
+		const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Lunes como primer día
+		return startOfDay(new Date(date.setDate(diff)));
+	}
+
 	async function propagateContactEdit(oldPhone, newPhone, newName){
 	  const st = S.state(); if(!st || !S.getKey()) return false;
 	  const vault = await decryptJson(S.getKey(), st.vault); ensureEvents(vault);
 	  let touched = false;
 	  (vault.events || []).forEach(e=>{ if (e && e.contactPhone === oldPhone){ e.contactPhone = newPhone; if (newName) e.contactName = newName; touched = true; } });
-	  if (touched){ st.vault = await encryptJson(S.getKey(), vault); S.save(st); paintEventDots(); renderDayList(); }
+	  if (touched){
+          st.vault = await encryptJson(S.getKey(), vault); S.save(st);
+          if (currentView === 'month') { renderCalendar() } else { renderWeeklyCalendar() };
+      }
 	  const evtSel = $('evtContact');
 	  if (evtSel) for (let o of evtSel.options) if (o.value === oldPhone) { o.value = newPhone; o.text = `${newName} (${newPhone})`; }
 	  [ 'evtSearch', 'contactSearch' ].forEach(id => { const el = $(id); if (el && el.value.includes(oldPhone)) el.value = `${newName} (${newPhone})`; });
@@ -1187,6 +1203,18 @@
 	  return touched;
 	}
     function monthLabel(date){ return date.toLocaleDateString(undefined, {month:'long', year:'numeric'}); }
+    function weekLabel(date) {
+        const start = getStartOfWeek(date);
+        const end = addDays(start, 6);
+        const startMonth = start.toLocaleDateString(undefined, {month: 'long'});
+        const endMonth = end.toLocaleDateString(undefined, {month: 'long'});
+
+        if (startMonth === endMonth) {
+            return `${start.getDate()} - ${end.getDate()} de ${endMonth}, ${end.getFullYear()}`;
+        }
+        return `${start.getDate()} de ${startMonth} - ${end.getDate()} de ${endMonth}, ${end.getFullYear()}`;
+    }
+
     function highlightSelected(dateKey){
       const key = dateKey || selectedDay.toISOString().slice(0,10);
       document.querySelectorAll('.cal-cell.cal-selected').forEach(el=>el.classList.remove('cal-selected'));
@@ -1237,6 +1265,95 @@
 		${idx < evts.length - 1 ? '<div class="evt-sep"></div>' : ''}
 	  `).join('');
     }
+    async function renderWeeklyCalendar() {
+		const grid = $('calGridWeekly');
+		if (!grid) return;
+		
+        $('calTitle').textContent = weekLabel(currentWeekDate);
+		const st = S.state();
+		if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+
+		grid.innerHTML = ''; 
+
+		const weekStart = getStartOfWeek(currentWeekDate);
+		const today = new Date();
+
+        const headerContainer = document.createDocumentFragment();
+		const timeHeader = document.createElement('div');
+        timeHeader.className = 'cal-weekly-header cal-weekly-header-time';
+        headerContainer.appendChild(timeHeader);
+		for (let i = 0; i < 7; i++) {
+			const day = addDays(weekStart, i);
+			const headerCell = document.createElement('div');
+			headerCell.className = 'cal-weekly-header';
+			if (isSameDay(day, today)) headerCell.classList.add('is-today');
+			headerCell.innerHTML = `${day.toLocaleDateString(undefined, { weekday: 'short' }).slice(0,3)}<br><span style="font-size: 1.2em;">${day.getDate()}</span>`;
+			headerContainer.appendChild(headerCell);
+		}
+        grid.appendChild(headerContainer);
+
+        const bgContainer = document.createElement('div');
+        bgContainer.className = 'cal-weekly-bg';
+        bgContainer.appendChild(document.createElement('div')); // Empty for time col
+        for (let i=0; i<7; i++) {
+            const day = addDays(weekStart, i);
+            const dayColBg = document.createElement('div');
+            dayColBg.className = 'cal-weekly-day-col-bg';
+            if (isSameDay(day, today)) dayColBg.classList.add('is-today-col');
+            bgContainer.appendChild(dayColBg);
+        }
+        for (let i=0; i < (WEEKLY_VIEW_END_HOUR - WEEKLY_VIEW_START_HOUR) * 2; i++) {
+            grid.appendChild(bgContainer.cloneNode(true));
+        }
+
+		const timeCol = document.createElement('div');
+		timeCol.className = 'cal-weekly-times';
+		for (let hour = WEEKLY_VIEW_START_HOUR; hour < WEEKLY_VIEW_END_HOUR; hour++) {
+			const slot1 = document.createElement('div');
+			slot1.className = 'cal-weekly-time-slot';
+			slot1.textContent = `${String(hour).padStart(2, '0')}:00`;
+			const slot2 = document.createElement('div');
+			slot2.className = 'cal-weekly-time-slot';
+			timeCol.appendChild(slot1);
+			timeCol.appendChild(slot2);
+		}
+		grid.appendChild(timeCol);
+
+        const eventsContainer = document.createElement('div');
+        eventsContainer.className = 'cal-weekly-events-container';
+		const weekEnd = addDays(weekStart, 7);
+		const weekEvents = (vault.events || []).filter(e => {
+			const eventDate = new Date(e.start);
+			return eventDate >= startOfDay(weekStart) && eventDate < startOfDay(weekEnd);
+		});
+
+		weekEvents.forEach(evt => {
+			const eventEl = document.createElement('div');
+			eventEl.className = 'cal-weekly-event';
+			eventEl.onclick = () => openEventModalById(evt.id);
+			const start = new Date(evt.start);
+			const end = evt.end ? new Date(evt.end) : new Date(start.getTime() + 60 * 60 * 1000);
+            
+            const dayIndex = (start.getDay() + 6) % 7;
+			eventEl.style.gridColumn = `${dayIndex + 1} / span 1`;
+
+			const startMinutes = Math.max(0, (start.getHours() * 60 + start.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60));
+			const endMinutes = Math.min((WEEKLY_VIEW_END_HOUR - WEEKLY_VIEW_START_HOUR) * 60, (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60));
+			const durationMinutes = Math.max(30, endMinutes - startMinutes);
+
+			const startRow = (startMinutes / 30) * 1 + 1;
+            const rowSpan = Math.ceil(durationMinutes / 30);
+			eventEl.style.gridRow = `${startRow} / span ${rowSpan}`;
+
+			eventEl.innerHTML = `
+				<div class="evt-weekly-title">${esc(evt.title || 'Cita')}</div>
+				<div class="evt-weekly-meta">${start.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}</div>
+			`;
+			eventsContainer.appendChild(eventEl);
+		});
+        grid.appendChild(eventsContainer);
+	}
     async function openEventModalById(id) {
         const vault = await decryptJson(S.getKey(), S.state().vault);
         const evt = vault.events.find(e => e.id === id);
@@ -1291,27 +1408,29 @@
 				recurrence: $('evtRecurrence').value, gcalId: prevEvent?.gcalId || null
 			};
 
-			if (isNew) { vault.events.push(eventData); } 
+			if (isNew) { vault.events.push(eventData); }
             else { const idx = vault.events.findIndex(x => x.id === id); if (idx >= 0) vault.events[idx] = eventData; }
-			
+
             st.vault = await encryptJson(S.getKey(), vault);
 			S.save(st);
 			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
 
 			if (getGCalAuto()) {
 				const newGCalId = await addEventToGoogle(eventData);
-				if (isNew && newGCalId) {
+				if (newGCalId && eventData.gcalId !== newGCalId) {
 					eventData.gcalId = newGCalId;
-                    const idx = vault.events.findIndex(x => x.id === eventData.id);
-                    if (idx !== -1) vault.events[idx] = eventData;
-					st.vault = await encryptJson(S.getKey(), vault);
-					S.save(st);
+                    const freshVault = await decryptJson(S.getKey(), S.state().vault);
+                    const idx = freshVault.events.findIndex(x => x.id === eventData.id);
+                    if (idx !== -1) freshVault.events[idx].gcalId = newGCalId;
+					const finalPack = await encryptJson(S.getKey(), freshVault);
+                    S.save({ ...S.state(), vault: finalPack });
 					console.log(`gcalId ${newGCalId} guardado para el evento local ${eventData.id}`);
 				}
 			}
 
 			closeEventModal();
-			if(currentView === 'month') { renderCalendar(); } else { renderWeeklyCalendar(); }
+			if(currentView === 'month') { renderCalendar(); } else { await renderWeeklyCalendar(); }
+            if(currentView === 'month') renderDayList(); // Solo refrescar la lista de día en vista mensual
 			if (getAutoBackupCal()) exportAgendaFixed(true);
 
 		} catch (error) {
@@ -1342,7 +1461,7 @@
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
 
 	  try { closeEventModal(); } catch(_) {}
-	  if(currentView === 'month') { renderCalendar(); } else { renderWeeklyCalendar(); }
+	  if(currentView === 'month') { renderCalendar(); } else { await renderWeeklyCalendar(); }
 
 	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
@@ -1468,6 +1587,7 @@
 			}
 
 			if (!r.ok && method === 'PATCH' && r.status === 404) {
+                console.log('Evento no encontrado en Google Calendar, creando uno nuevo...');
 				const token3 = await ensureGoogleToken(true);
 				r = await fetch(base, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token3, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 			}
@@ -1479,14 +1599,12 @@
 			const j = await r.json();
             
             showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success');
-
-			// Devolvemos el ID de Google para que la función que llama decida si necesita guardarlo
 			return j.id;
 
 		} catch (e) {
 			console.warn('No se pudo sincronizar con Google Calendar:', e);
             showToast('Error al sincronizar con Google.', 'error');
-			return null; // Devolvemos null en caso de error
+			return null;
 		}
 	}
 
@@ -1521,6 +1639,94 @@
 	  }
 	}
 
+    // ===== TEMPLATES =====
+    function makeTemplateId(){ return 'tpl_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+	async function renderTemplates() {
+		const list = $('templateList'); if (!list) return;
+		const st = S.state(); if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		const templates = vault.templates || [];
+		if (templates.length === 0) {
+			list.innerHTML = `<p class="muted" style="text-align:center;">Aún no has creado ninguna plantilla.</p>`;
+			return;
+		}
+		list.innerHTML = templates.map(tpl => `
+			<div class="template-card" data-id="${tpl.id}">
+				<div class="template-header">
+					<div class="template-name">${esc(tpl.name)}</div>
+					<div class="contact-actions">
+						<button class="btn-small btn-outline" onclick="editTemplate('${tpl.id}')">Editar</button>
+						<button class="btn-small btn-danger" onclick="deleteTemplate('${tpl.id}')">Eliminar</button>
+					</div>
+				</div>
+				<div class="template-content">${esc(tpl.content)}</div>
+			</div>
+		`).join('');
+	}
+	async function saveTemplate() {
+		const id = $('templateId').value;
+		const name = $('templateName').value.trim();
+		const content = $('templateContent').value.trim();
+		if (!name || !content) { showToast('El nombre y el contenido no pueden estar vacíos.', 'error'); return; }
+
+		const st = S.state(); if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		if (!vault.templates) vault.templates = [];
+
+		if (id) {
+			const index = vault.templates.findIndex(t => t.id === id);
+			if (index > -1) vault.templates[index] = { id, name, content };
+		} else {
+			vault.templates.push({ id: makeTemplateId(), name, content });
+		}
+		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
+		showToast(id ? 'Plantilla actualizada' : 'Plantilla guardada', 'success');
+		resetTemplateForm(); await renderTemplates(); await populateTemplateSelectors();
+	}
+	async function deleteTemplate(id) {
+		if (!await showConfirmation('Eliminar Plantilla', '¿Seguro que quieres eliminar esta plantilla?')) return;
+		const st = S.state(); if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		vault.templates = (vault.templates || []).filter(t => t.id !== id);
+		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
+		showToast('Plantilla eliminada.', 'success');
+		await renderTemplates(); await populateTemplateSelectors();
+	}
+	async function editTemplate(id) {
+		const st = S.state(); if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		const template = (vault.templates || []).find(t => t.id === id);
+		if (!template) return;
+		$('templateFormTitle').textContent = 'Editando Plantilla';
+		$('templateId').value = template.id;
+		$('templateName').value = template.name;
+		$('templateContent').value = template.content;
+		$('btnCancelEditTemplate').style.display = 'inline-flex';
+		$('templateName').focus();
+	}
+	function resetTemplateForm() {
+		$('templateFormTitle').textContent = 'Nueva Plantilla';
+		$('templateId').value = '';
+		$('templateName').value = '';
+		$('templateContent').value = '';
+		$('btnCancelEditTemplate').style.display = 'none';
+	}
+	async function populateTemplateSelectors() {
+		const st = S.state(); if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		const templates = vault.templates || [];
+		const selectors = [$('templateSelectSend'), $('templateSelectModal')];
+		selectors.forEach((sel, index) => {
+			if (!sel) return;
+			const currentVal = sel.value;
+			sel.innerHTML = `<option value="">${index === 0 ? "Usar plantilla para mensaje..." : "Usar plantilla para notas..."}</option>`;
+			templates.forEach(tpl => sel.add(new Option(tpl.name, tpl.id)));
+			sel.value = currentVal;
+		});
+	}
+	function applyTemplate(templateContent, contactName = '') {
+		return templateContent.replace(/\{NOMBRE\}/g, contactName);
+	}
 
 	// ===== EVENT WIRING =====
     function wireEvents(){
@@ -1534,11 +1740,20 @@
         if(!user){ showToast('Introduce un usuario', 'error'); return; }
         if(pass.length<6){ showToast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
 		toggleLoading(e.target, true);
-        try{ const r=await derive(pass); S.setKey(r.aesKey); S.setUser(user);
-          const pack = await encryptJson(S.getKey(), {list:[], events:[], templates:[]});
-          S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
-          refreshContactsSelect([]); show('appView'); setActiveTab('agenda'); renderCalendar();
-        }catch(err){ showToast('Error creando el almacén', 'error'); }
+        try{
+            const r=await derive(pass);
+            S.setKey(r.aesKey); S.setUser(user);
+            // CORRECCIÓN CLAVE: Inicializar el vault con TODAS las secciones, incluyendo templates.
+            const pack=await encryptJson(S.getKey(),{list:[], events:[], templates:[]});
+            S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
+            refreshContactsSelect([]);
+            show('appView');
+            setActiveTab('agenda');
+            renderCalendar();
+        }catch(err){
+            console.error(err);
+            showToast('Error creando el almacén', 'error');
+        }
 		toggleLoading(e.target, false, 'Crear y acceder');
       });
 
@@ -1566,7 +1781,14 @@
       });
       $('logout')?.addEventListener('click', ()=>{ show('loginView'); $('loginPass').value=''; toggleResetVisibility(); });
 	  $('logoutTop')?.addEventListener('click', () => $('logout')?.click());
-	  $('contactSelect')?.addEventListener('change', (e)=> updateSelectedContactCard(e.target.value || ''));
+	  $('contactSelect')?.addEventListener('change', (e)=> {
+          updateSelectedContactCard(e.target.value || '');
+          const msgArea = $('msg');
+          const tplId = $('templateSelectSend').value;
+          if (msgArea && !tplId) {
+              msgArea.value = buildMessage();
+          }
+      });
 
       (function setupPhoneInput(){
         const el = $('newPhone'); el.type='tel'; el.inputMode='tel';
@@ -1604,8 +1826,13 @@
       $('dt')?.addEventListener('change', ()=>{ $('msg').value=buildMessage(); });
       $('btnSend')?.addEventListener('click', ()=>{
         const phone = $('contactSelect')?.value;
+        const msg = ($('msg')?.value||buildMessage()).trim();
+        const contact = findContactByPhone(phone);
+
         if(!isPhoneValid(phone)){ showToast('Selecciona un contacto válido', 'error'); return; }
-        openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(($('msg')?.value||buildMessage()).trim())}`);
+
+        const finalMsg = applyTemplate(msg, contact?.name);
+        openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(finalMsg)}`);
       });
 	  $('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
 	  $('btnGConnect')?.addEventListener('click', ()=>{ if (googleTokenClient) googleTokenClient.requestAccessToken({ prompt: 'consent' }); });
@@ -1632,17 +1859,15 @@
       $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
 
       wireSearch(); wireModalSearch();
-      $('calPrev')?.addEventListener('click', ()=>{ currentMonth.setMonth(currentMonth.getMonth()-1); renderCalendar(); });
-      $('calNext')?.addEventListener('click', ()=>{ currentMonth.setMonth(currentMonth.getMonth()+1); renderCalendar(); });
-      $('calToday')?.addEventListener('click', ()=>{ currentMonth = new Date(); selectedDay = new Date(); renderCalendar(); });
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').dataset.id; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
         const id=$('eventModal').dataset.id;
+        const contact = findContactByPhone($('evtContact').value);
         const tmpEvt = {
             title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(),
-            contactPhone: $('evtContact').value, contactName: findContactByPhone($('evtContact').value)?.name
+            contactPhone: contact?.phone, contactName: contact?.name
         };
         if(!id) sendEventByWhatsApp(tmpEvt);
         else sendEventByWhatsAppById(id);
@@ -1651,80 +1876,74 @@
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ $(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter') (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }); });
 	  
 	  $('btnSaveTemplate')?.addEventListener('click', saveTemplate);
-		$('btnCancelEditTemplate')?.addEventListener('click', resetTemplateForm);
-
-		$('templateSelectSend')?.addEventListener('change', async (e) => {
+	  $('btnCancelEditTemplate')?.addEventListener('click', resetTemplateForm);
+	  $('templateSelectSend')?.addEventListener('change', async (e) => {
 			const tplId = e.target.value;
 			const msgArea = $('msg');
-			if (!tplId) {
-				msgArea.value = buildMessage(); return;
-			}
-			const st = S.state();
-			if (!st || !S.getKey()) return;
+			if (!tplId) { msgArea.value = buildMessage(); return; }
+			const st = S.state(); if (!st || !S.getKey()) return;
 			const vault = await decryptJson(S.getKey(), st.vault);
 			const template = (vault.templates || []).find(t => t.id === tplId);
 			const contact = findContactByPhone($('contactSelect')?.value);
-			if (template) {
-				msgArea.value = applyTemplate(template.content, contact?.name);
-			}
-		});
-
-		$('templateSelectModal')?.addEventListener('change', async (e) => {
+			if (template) { msgArea.value = applyTemplate(template.content, contact?.name); }
+	  });
+	  $('templateSelectModal')?.addEventListener('change', async (e) => {
 			const tplId = e.target.value;
 			if (!tplId) return;
-			const st = S.state();
-			if (!st || !S.getKey()) return;
+			const st = S.state(); if (!st || !S.getKey()) return;
 			const vault = await decryptJson(S.getKey(), st.vault);
 			const template = (vault.templates || []).find(t => t.id === tplId);
 			if (template) {
-				$('evtNote').value = template.content;
-			}
-		});
+                const contact = findContactByPhone($('evtContact').value);
+                const currentNotes = $('evtNote').value;
+                const newContent = applyTemplate(template.content, contact?.name);
+                // Añade la plantilla a las notas existentes en lugar de sobreescribir
+                $('evtNote').value = currentNotes ? `${currentNotes}\n\n${newContent}` : newContent;
+            }
+	  });
 		
-		// Listeners para el cambio de vista de la agenda
-		$('viewMonth')?.addEventListener('click', () => {
+	  $('viewMonth')?.addEventListener('click', () => {
 			currentView = 'month';
 			$('viewMonth').classList.add('is-active');
 			$('viewWeek').classList.remove('is-active');
 			$('calGrid').style.display = 'grid';
 			$('calGridWeekly').style.display = 'none';
+			$('dayToolbar').style.display = 'flex';
 			$('dayList').style.display = 'grid';
-			$('dayTitle').style.display = 'block';
 			renderCalendar();
-		});
-
-		$('viewWeek')?.addEventListener('click', () => {
+	  });
+	  $('viewWeek')?.addEventListener('click', () => {
 			currentView = 'week';
 			$('viewWeek').classList.add('is-active');
 			$('viewMonth').classList.remove('is-active');
 			$('calGrid').style.display = 'none';
 			$('calGridWeekly').style.display = 'grid';
+			$('dayToolbar').style.display = 'none';
 			$('dayList').style.display = 'none';
-			$('dayTitle').style.display = 'none';
-			currentWeekDate = selectedDay; // Inicia la semana en el día seleccionado
+			currentWeekDate = selectedDay;
 			renderWeeklyCalendar();
-		});
-
-		// Modifica los listeners de navegación del calendario
-		$('calPrev').onclick = () => {
+	  });
+	  $('calPrev').onclick = () => {
 			if (currentView === 'month') {
 				currentMonth.setMonth(currentMonth.getMonth() - 1);
+                selectedDay.setMonth(selectedDay.getMonth() - 1);
 				renderCalendar();
 			} else {
 				currentWeekDate = addDays(currentWeekDate, -7);
 				renderWeeklyCalendar();
 			}
-		};
-		$('calNext').onclick = () => {
+	  };
+	  $('calNext').onclick = () => {
 			if (currentView === 'month') {
 				currentMonth.setMonth(currentMonth.getMonth() + 1);
+                selectedDay.setMonth(selectedDay.getMonth() + 1);
 				renderCalendar();
 			} else {
 				currentWeekDate = addDays(currentWeekDate, 7);
 				renderWeeklyCalendar();
 			}
-		};
-		$('calToday').onclick = () => {
+	  };
+	  $('calToday').onclick = () => {
 			selectedDay = new Date();
 			if (currentView === 'month') {
 				currentMonth = new Date();
@@ -1733,8 +1952,7 @@
 				currentWeekDate = new Date();
 				renderWeeklyCalendar();
 			}
-		};
-	  
+	  };
     }
 
 	// ===== MOBILE TABS & PWA =====
@@ -1761,24 +1979,50 @@
       $('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
       wireEvents();
 	  wireBottomNav();
-	  renderTemplates();
-	  populateTemplateSelectors();
 	  setActiveTab('agenda');
 	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 	  if ('contacts' in navigator && 'select' in navigator.contacts) {
 		  const btn = $('btnImportDevice'); btn.style.display = 'inline-flex';
 		  btn.onclick = async () => {
 			  try {
-				  const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+                  const props = ['name', 'tel'];
+                  const opts = {multiple: true};
+				  const contacts = await navigator.contacts.select(props, opts);
 				  if (!contacts.length) return;
-				  // ... (lógica de importación similar a la de archivos)
-				  showToast(`${contacts.length} contactos importados del dispositivo.`, 'success');
-			  } catch (err) { showToast('No se pudieron importar los contactos.', 'error'); }
+                  // Lógica de importación
+                  const st = S.state(); if (!st || !S.getKey()) return;
+                  const vault = await decryptJson(S.getKey(), st.vault);
+                  let added = 0, skipped = 0;
+                  const phoneSet = new Set((vault.list || []).map(c => c.phone));
+                  
+                  contacts.forEach(contact => {
+                      if (contact.tel && contact.tel.length > 0) {
+                          const phone = contact.tel[0]; // Usar el primer teléfono
+                          if (!phoneSet.has(phone)) {
+                              vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
+                              phoneSet.add(phone);
+                              added++;
+                          } else {
+                              skipped++;
+                          }
+                      }
+                  });
+
+                  if (added > 0) {
+                      st.vault = await encryptJson(S.getKey(), vault);
+                      S.save(st);
+                      refreshContactsSelect(vault.list);
+                  }
+				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
+			  } catch (err) {
+                  console.error(err);
+                  showToast('No se pudieron importar los contactos.', 'error');
+              }
 		  };
 	  }
     }
     document.addEventListener('DOMContentLoaded', init);
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui20').catch(()=>{})); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui21').catch(()=>{})); }
 </script>
 </body>
 </html>
