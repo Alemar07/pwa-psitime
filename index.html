@@ -884,7 +884,6 @@
     const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
     function openExternal(url){
-      // CORRECCIÓN: Siempre intenta abrir en una nueva pestaña para no reemplazar la PWA
       const a = document.createElement('a');
       a.href = url;
       a.target = '_blank';
@@ -1299,7 +1298,7 @@
         const headerContainer = document.createDocumentFragment();
 		const timeHeader = document.createElement('div');
         timeHeader.className = 'cal-weekly-header cal-weekly-header-time';
-        headerContainer.appendChild(timeHeader);
+        grid.appendChild(timeHeader); // Directly append to grid
 		for (let i = 0; i < 7; i++) {
 			const day = addDays(weekStart, i);
 			const headerCell = document.createElement('div');
@@ -1309,21 +1308,21 @@
 			grid.appendChild(headerCell);
 		}
 
-        // 2. Columna de horas
+        // 2. Columna de horas y fondo de la cuadrícula
 		const timeCol = document.createElement('div');
 		timeCol.className = 'cal-weekly-times';
 		for (let hour = WEEKLY_VIEW_START_HOUR; hour < WEEKLY_VIEW_END_HOUR; hour++) {
 			const slot1 = document.createElement('div');
 			slot1.className = 'cal-weekly-time-slot';
 			slot1.textContent = `${String(hour).padStart(2, '0')}:00`;
-			const slot2 = document.createElement('div');
-			slot2.className = 'cal-weekly-time-slot'; // Empty for the :30 slot
+			const slot2 = document.createElement('div'); // For the :30 slot line
+			slot2.className = 'cal-weekly-time-slot';
 			timeCol.appendChild(slot1);
 			timeCol.appendChild(slot2);
 		}
 		grid.appendChild(timeCol);
 
-        // 3. Contenedor de eventos y fondo de cuadrícula
+        // 3. Contenedor para eventos y las columnas de día
         for (let i = 0; i < 7; i++) {
             const dayCol = document.createElement('div');
             const day = addDays(weekStart, i);
@@ -1360,7 +1359,7 @@
             grid.appendChild(dayCol);
         }
 	}
-
+    
     async function openEventModalById(id) {
         const vault = await decryptJson(S.getKey(), S.state().vault);
         const evt = vault.events.find(e => e.id === id);
@@ -1533,7 +1532,7 @@
     }
 
 	// ===== GOOGLE CALENDAR =====
-	const GOOGLE_CLIENT_ID = '777777777777.apps.googleusercontent.com';
+	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';
 	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 	let googleTokenClient = null, googleAccessToken = null, googleTokenExpiry = 0;
 
@@ -1726,7 +1725,6 @@
 	async function populateTemplateSelectors() {
 		const st = S.state();
         if (!st || !S.getKey()) {
-            // No hay sesión, limpiar selectores
             [...document.querySelectorAll('select[id^="templateSelect"]')].forEach(sel => sel.innerHTML = '<option value="">No hay plantillas</option>');
             return;
         }
@@ -1760,7 +1758,6 @@
         try{
             const r=await derive(pass);
             S.setKey(r.aesKey); S.setUser(user);
-            // CORRECCIÓN CLAVE: Inicializar el vault con TODAS las secciones, incluyendo templates.
             const pack=await encryptJson(S.getKey(),{list:[], events:[], templates:[]});
             S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
             refreshContactsSelect([]);
@@ -1918,13 +1915,14 @@
             }
 	  });
 		
+      // CORRECTED VIEW SWITCHER LOGIC
 	  $('viewMonth')?.addEventListener('click', () => {
 			currentView = 'month';
 			$('viewMonth').classList.add('is-active');
 			$('viewWeek').classList.remove('is-active');
 			$('calGrid').style.display = 'grid';
 			$('calGridWeekly').style.display = 'none';
-			$('dayToolbar').style.display = 'flex';
+            $('dayToolbar').style.display = 'flex'; // <-- MOSTRAR barra de herramientas del día
 			$('dayList').style.display = 'grid';
 			renderCalendar();
 	  });
@@ -1934,11 +1932,12 @@
 			$('viewMonth').classList.remove('is-active');
 			$('calGrid').style.display = 'none';
 			$('calGridWeekly').style.display = 'grid';
-			$('dayToolbar').style.display = 'none';
+            $('dayToolbar').style.display = 'none'; // <-- OCULTAR barra de herramientas del día
 			$('dayList').style.display = 'none';
 			currentWeekDate = selectedDay;
 			renderWeeklyCalendar();
 	  });
+
 	  $('calPrev').onclick = () => {
 			if (currentView === 'month') {
 				currentMonth.setMonth(currentMonth.getMonth() - 1);
@@ -2039,5 +2038,3 @@
     document.addEventListener('DOMContentLoaded', init);
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui21').catch(()=>{})); }
 </script>
-</body>
-</html>
