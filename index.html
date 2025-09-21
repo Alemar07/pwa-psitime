@@ -648,22 +648,28 @@
 		container.appendChild(toast);
 		setTimeout(() => { toast.remove(); }, duration);
 	};
-	
+
 	const showConfirmation = (title, message) => {
 		return new Promise(resolve => {
 			const modal = $('confirmModal');
 			$('confirmTitle').textContent = title;
 			$('confirmMessage').textContent = message;
-			
-			const close = (value) => { modal.close(); resolve(value); };
-			
-			$('confirmOk').onclick = () => close(true);
-			$('confirmCancel').onclick = () => close(false);
-			
+
+			const onOk = () => { cleanup(); resolve(true); };
+			const onCancel = () => { cleanup(); resolve(false); };
+			const cleanup = () => {
+				$('confirmOk').removeEventListener('click', onOk);
+				$('confirmCancel').removeEventListener('click', onCancel);
+				modal.close();
+			};
+
+			$('confirmOk').addEventListener('click', onOk);
+			$('confirmCancel').addEventListener('click', onCancel);
+
 			modal.showModal();
 		});
 	};
-	
+
 	const toggleLoading = (button, isLoading, originalContent = '') => {
 		if (!button) return;
 		if (isLoading) {
@@ -675,16 +681,16 @@
 			button.disabled = false;
 		}
 	};
-	
+
 	// ===== STATE MANAGEMENT MODULE =====
 	const S = (() => {
 		let key = null;
 		let user = null;
 		const stateKey = 'wa-reminders-app-v1';
-		
+
 		const getState = () => { const v = localStorage.getItem(stateKey); return v ? JSON.parse(v) : null; };
 		const saveState = (o) => { localStorage.setItem(stateKey, JSON.stringify(o)); };
-		
+
 		return {
 			state: getState,
 			save: saveState,
@@ -711,7 +717,7 @@
 
     const FIXED_PASS = 'MFGestorCitas';
     async function deriveFixed(saltB64){ return derive(FIXED_PASS, saltB64); }
-	
+
 	// ===== FILE & EXTERNAL UTILS =====
     async function saveFileSmart(filename, mime, content){
       let blob = new Blob([content], {type: mime});
@@ -736,7 +742,7 @@
       if (isStandalone) { window.location.href = url; }
       else { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; document.body.appendChild(a); a.click(); a.remove(); }
     }
-	
+
 	// ===== UI LOGIC =====
     function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
     function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
@@ -855,7 +861,7 @@
 		showToast('Contacto eliminado.', 'success');
 	  };
 	}
-	let editingPhone = null; 
+	let editingPhone = null;
 	function diacNoCase(s){ return (s||'').normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
 	function sortContacts(list){ return (list||[]).slice().sort((a,b)=>diacNoCase(a.name).localeCompare(diacNoCase(b.name))); }
     function refreshContactsSelect(list){
@@ -890,7 +896,7 @@
       const name = evt.contactName || '';
       return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
-	
+
 	// ===== BACKUPS (CONTACTS) =====
     let pendingAutoBackup = null;
     function showAutoToast(show){ $('autoBackupToast').style.display = show ? 'block' : 'none'; }
@@ -909,7 +915,7 @@
       if(!data || data.format!=='mf-contacts-fixed-v1' || !data.ct){ showToast('Copia no reconocida.', 'error'); return; }
       let obj; try{ const {aesKey} = await deriveFixed(data.saltB64); obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ showToast('No se pudo descifrar la copia.', 'error'); return; }
       if(!obj || !Array.isArray(obj.list)){ showToast('Contenido de copia inválido.', 'error'); return; }
-      
+
 	  const st=S.state(); if(!st || !S.getKey()){ showToast('Inicia sesión para importar.', 'error'); return; }
       const vault=await decryptJson(S.getKey(), st.vault);
       const map = new Map((vault.list||[]).map(c=>[c.phone, c]));
@@ -1102,31 +1108,94 @@
     }
     function closeEventModal(){ $('eventModal')?.close(); }
     function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-    async function saveEvent(){
-      const t=$('evtTitle').value.trim(), s=$('evtStart').value, e=$('evtEnd').value;
-	  for(let id of ['evtStart-field', 'evtEnd-field']) $(id).classList.remove('field-error');
-      if(!s){ $('evtStart-field').classList.add('field-error'); showToast('Indica fecha y hora de inicio', 'error'); return; }
-	  if(e && new Date(e) < new Date(s)){ $('evtEnd-field').classList.add('field-error'); showToast('La fecha de fin no puede ser anterior a la de inicio.', 'error'); return; }
 
-	  const btn = $('evtSave'); toggleLoading(btn, true);
-      const contact = findContactByPhone($('evtContact').value||'') || {};
-      const st=S.state(); if(!st||!S.getKey()){ toggleLoading(btn, false); return; }
-      const vault=ensureEvents(await decryptJson(S.getKey(), st.vault));
-      const id = $('eventModal').dataset.id, isNew = !id;
-	  const prev = isNew ? null : vault.events.find(x=>x.id===id);
-      const evt = {
-		id: id || makeId(), title: t, start: new Date(s).toISOString(), end: e? new Date(e).toISOString():null,
-		contactPhone: contact.phone||null, contactName: contact.name||null, note: $('evtNote').value.trim()||null,
-		recurrence: $('evtRecurrence').value, gcalId: prev?.gcalId || null
-	  };
-      if(!isNew){ const idx=vault.events.findIndex(x=>x.id===id); if(idx>=0) vault.events[idx]=evt; else vault.events.push(evt); }
-	  else{ vault.events.push(evt); }
-      st.vault=await encryptJson(S.getKey(), vault); S.save(st);
-      closeEventModal(); paintEventDots(); renderDayList(); showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
-	  if (getAutoBackupCal()) exportAgendaFixed(true);
-	  if (getGCalAuto()) await addEventToGoogle(evt);
-	  toggleLoading(btn, false);
-    }
+	async function saveEvent() {
+		const btn = $('evtSave');
+		toggleLoading(btn, true);
+
+		try {
+			// 1. Validar campos
+			const t = $('evtTitle').value.trim(), s = $('evtStart').value, e = $('evtEnd').value;
+			for(let id of ['evtStart-field', 'evtEnd-field']) $(id).classList.remove('field-error');
+			if (!s) {
+				$('evtStart-field').classList.add('field-error');
+				showToast('Indica fecha y hora de inicio', 'error');
+				return;
+			}
+			if (e && new Date(e) < new Date(s)) {
+				$('evtEnd-field').classList.add('field-error');
+				showToast('La fecha de fin no puede ser anterior a la de inicio.', 'error');
+				return;
+			}
+
+			// 2. Cargar datos y preparar el evento local
+			const st = S.state();
+			if (!st || !S.getKey()) return;
+
+			let vault = await decryptJson(S.getKey(), st.vault);
+			ensureEvents(vault);
+
+			const id = $('eventModal').dataset.id;
+			const isNew = !id;
+			const prevEvent = isNew ? null : vault.events.find(x => x.id === id);
+			const contact = findContactByPhone($('evtContact').value || '') || {};
+
+			const eventData = {
+				id: id || makeId(),
+				title: t,
+				start: new Date(s).toISOString(),
+				end: e ? new Date(e).toISOString() : null,
+				contactPhone: contact.phone || null,
+				contactName: contact.name || null,
+				note: $('evtNote').value.trim() || null,
+				recurrence: $('evtRecurrence').value,
+				gcalId: prevEvent?.gcalId || null
+			};
+
+			// 3. Guardar el evento localmente PRIMERO
+			if (isNew) {
+				vault.events.push(eventData);
+			} else {
+				const idx = vault.events.findIndex(x => x.id === id);
+				if (idx >= 0) vault.events[idx] = eventData; else vault.events.push(eventData);
+			}
+			st.vault = await encryptJson(S.getKey(), vault);
+			S.save(st);
+			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
+
+			// 4. Sincronizar con Google Calendar DESPUÉS de guardar localmente
+			if (getGCalAuto()) {
+				const newGCalId = await addEventToGoogle(eventData);
+
+				// 5. Si es un evento nuevo, Google nos da un ID. Hay que volver a guardar para registrarlo.
+				if (isNew && newGCalId) {
+					// Volvemos a leer el vault para no sobreescribir otros cambios
+					let finalVault = await decryptJson(S.getKey(), S.state().vault);
+					const eventToUpdate = finalVault.events.find(x => x.id === eventData.id);
+					if (eventToUpdate) {
+						eventToUpdate.gcalId = newGCalId;
+						const finalPack = await encryptJson(S.getKey(), finalVault);
+						S.save({ ...S.state(), vault: finalPack });
+						console.log(`gcalId ${newGCalId} guardado para el evento local ${eventData.id}`);
+					}
+				}
+			}
+
+			// 6. Actualizar UI
+			closeEventModal();
+			paintEventDots();
+			renderDayList();
+			if (getAutoBackupCal()) exportAgendaFixed(true);
+
+		} catch (error) {
+			console.error("Error al guardar el evento:", error);
+			showToast('Ocurrió un error al guardar.', 'error');
+		} finally {
+			toggleLoading(btn, false);
+		}
+	}
+
+
     async function deleteEvent(id){
       if(!await showConfirmation('Eliminar Cita', '¿Seguro que quieres eliminar esta cita?')) return;
 	  const st=S.state(); if(!st||!S.getKey()) return;
@@ -1142,16 +1211,16 @@
 	  if (eventToDelete.gcalId && getGCalAuto()){
 		await deleteEventFromGoogle(eventToDelete.gcalId);
 	  }
-	  
+
 	  // Continúa con el borrado local
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
-	  
+
 	  // Cierra el modal si está abierto y refresca la UI
 	  try { closeEventModal(); } catch(_) {}
-	  paintEventDots(); 
+	  paintEventDots();
 	  renderDayList();
-	  
+
 	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
@@ -1208,139 +1277,127 @@
       });
       clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; input.focus(); renderEvtResults(''); });
     }
-	
+
 	// ===== GOOGLE CALENDAR =====
 	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';
 	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 	let googleTokenClient = null, googleAccessToken = null, googleTokenExpiry = 0;
+
 	function setGStatus(connected){ $('gStatus').textContent = connected ? 'Conectado' : 'Sin conectar'; $('gCalAutoToggle').disabled = !connected; $('btnGConnect').textContent = connected ? 'Reconectar' : 'Conectar Google'; }
 	function getGCalAuto(){ return !!S.state()?.gcalAuto; }
 	function setGCalAuto(v){ const st=S.state(); if(!st) return; st.gcalAuto = !!v; S.save(st); $('gCalAutoToggle').checked = st.gcalAuto; }
 	function setupGoogle(){ if (!window.google) return; googleTokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: GCAL_SCOPE, callback: (resp)=>{ if(resp.access_token){ googleAccessToken=resp.access_token; googleTokenExpiry=Date.now()+(resp.expires_in||3600)*1000; setGStatus(true); } } }); setGStatus(false); if(getGCalAuto()) try { googleTokenClient.requestAccessToken({ prompt: '' }); } catch(_) {} }
+
 	async function ensureGoogleToken(silent=true){
 	  if (googleAccessToken && Date.now() < googleTokenExpiry - 60_000) return googleAccessToken;
 	  if (!googleTokenClient) throw new Error('Google no inicializado');
-	  const token = await new Promise((resolve,reject)=>{
+	  return new Promise((resolve,reject)=>{
 		googleTokenClient.callback = (resp)=>{
 		  if (resp && resp.access_token){
 			googleAccessToken = resp.access_token;
 			googleTokenExpiry = Date.now() + (resp.expires_in||3600)*1000;
 			setGStatus(true);
 			resolve(googleAccessToken);
-		  } else reject(new Error('No token'));
+		  } else {
+            setGStatus(false);
+            reject(new Error('No se pudo obtener el token de Google.'));
+          }
 		};
 		try {
 		  googleTokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
 		} catch(e){
-		  if (silent) {
-			try { googleTokenClient.requestAccessToken({ prompt: 'consent' }); }
-			catch(err){ reject(err); }
-		  } else reject(e);
+		  reject(e);
 		}
 	  });
-	  return token;
 	}
 
-	async function attachGoogleIdToEvent(localId, gcalId){
-	  const st=S.state(); if(!st||!S.key) return;
-	  const v = await decryptJson(S.key, st.vault);
-	  const i = (v.events||[]).findIndex(e=>e.id===localId);
-	  if (i>=0){ v.events[i].gcalId = gcalId; const pack=await encryptJson(S.key, v); st.vault=pack; S.save(st); }
+	async function addEventToGoogle(evt) {
+		try {
+			const token = await ensureGoogleToken(true);
+			const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
+			const endISO = evt.end || new Date(new Date(evt.start).getTime() + 60 * 60 * 1000).toISOString();
+
+			const payload = {
+				summary: evt.title || 'Cita',
+				description: evt.note || '',
+				start: { dateTime: evt.start, timeZone: tz },
+				end: { dateTime: endISO, timeZone: tz }
+			};
+
+			const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+			let url = base;
+			let method = 'POST';
+			if (evt.gcalId) {
+				url = `${base}/${encodeURIComponent(evt.gcalId)}`;
+				method = 'PATCH';
+			}
+
+			let r = await fetch(url, {
+				method,
+				headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
+
+			if (r.status === 401) {
+				googleAccessToken = null;
+				const token2 = await ensureGoogleToken(false);
+				r = await fetch(url, { method, headers: { 'Authorization': 'Bearer ' + token2, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+			}
+
+			if (!r.ok && method === 'PATCH' && r.status === 404) {
+				const token3 = await ensureGoogleToken(true);
+				r = await fetch(base, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token3, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+			}
+
+			if (!r.ok) {
+                const errorData = await r.json();
+                throw new Error(`Google Calendar error: ${r.status} - ${errorData.error.message}`);
+            }
+			const j = await r.json();
+            
+            showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success');
+
+			// Devolvemos el ID de Google para que la función que llama decida si necesita guardarlo
+			return j.id;
+
+		} catch (e) {
+			console.warn('No se pudo sincronizar con Google Calendar:', e);
+            showToast('Error al sincronizar con Google.', 'error');
+			return null; // Devolvemos null en caso de error
+		}
 	}
 
 
-	async function addEventToGoogle(evt){
-	  try{
-		const token = await ensureGoogleToken(true);  // intenta silencioso
-		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid';
-		const endISO = evt.end || new Date(new Date(evt.start).getTime() + 60*60*1000).toISOString();
-
-		const payload = {
-		  summary:     evt.title || 'Cita',
-		  description: evt.note  || '',
-		  start: { dateTime: evt.start, timeZone: tz },
-		  end:   { dateTime: endISO,  timeZone: tz }
-		};
-
-		const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-		let url = base;
-		let method = 'POST';
-		if (evt.gcalId){
-		  url = `${base}/${encodeURIComponent(evt.gcalId)}`;
-		  method = 'PATCH';
-		}
-
-		let r = await fetch(url, {
-		  method,
-		  headers: { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-		  body: JSON.stringify(payload)
-		});
-
-		// Token caducado → reintenta pidiendo consentimiento si hace falta
-		if (r.status === 401){
-		  googleAccessToken = null;
-		  const token2 = await ensureGoogleToken(false);
-		  r = await fetch(url, {
-			method,
-			headers: { 'Authorization':'Bearer '+token2, 'Content-Type':'application/json' },
-			body: JSON.stringify(payload)
-		  });
-		}
-
-		// Si el PATCH falla por 404 (evento borrado en Google) → crea uno nuevo
-		if (!r.ok && method === 'PATCH' && r.status === 404){
-		  const token3 = await ensureGoogleToken(true);
-		  r = await fetch(base, {
-			method:'POST',
-			headers: { 'Authorization':'Bearer '+token3, 'Content-Type':'application/json' },
-			body: JSON.stringify(payload)
-		  });
-		}
-
-		if (!r.ok) throw new Error('Google Calendar error: '+r.status);
-		const j = await r.json();
-
-		// Si fue creación, guarda el id de Google en el evento local
-		if (!evt.gcalId && j.id) await attachGoogleIdToEvent(evt.id, j.id);
-
-		return true;
-	  }catch(e){
-		console.warn('No se pudo sincronizar con Google Calendar:', e);
-		return false;
-	  }
-	}
-	
 	async function deleteEventFromGoogle(gcalId) {
-	  if (!gcalId) return true; 
+	  if (!gcalId) return true;
 	  try {
 		const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
 		const url = base + encodeURIComponent(gcalId);
 
-		let token = await ensureGoogleToken(true); // Intenta silencioso
+		let token = await ensureGoogleToken(true);
 		let r = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
 
-		// Si el token está caducado, reintenta
 		if (r.status === 401) {
 		  googleAccessToken = null;
 		  token = await ensureGoogleToken(false);
 		  r = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
 		}
 
-		// 404 (Not Found) o 410 (Gone) significa que ya no existe, lo cual es un éxito para nosotros.
 		if (!r.ok && ![404, 410].includes(r.status)) {
 		  throw new Error('Google Calendar delete error: ' + r.status);
 		}
-		
+
 		console.log('Evento eliminado de Google Calendar con éxito.');
+        showToast('Cita eliminada de Google Calendar.', 'info');
 		return true;
 
 	  } catch (e) {
 		console.warn('No se pudo borrar el evento en Google Calendar:', e);
-		// Decidimos no bloquear la eliminación local aunque falle en Google
-		// para que el usuario pueda seguir trabajando.
+        showToast('No se pudo eliminar la cita de Google.', 'error');
 		return false;
 	  }
 	}
+
 
 	// ===== EVENT WIRING =====
     function wireEvents(){
@@ -1441,7 +1498,7 @@
 	  setupImportButton('btnImportFull', importFullFixedFromFile);
 	  setupImportButton('btnImportAgenda', importAgendaFixedFromFile);
 	  setupImportButton('btnImportApp', importFixedBackupFromFile);
-	  
+
 	  $('btnExportFull')?.addEventListener('click', exportFullFixed);
 	  $('btnExportAgenda')?.addEventListener('click', ()=>exportAgendaFixed(false));
 	  $('btnExportFixed')?.addEventListener('click', ()=>exportFixedBackup(false));
@@ -1484,7 +1541,7 @@
 	  const apply = () => document.documentElement.classList.toggle('standalone', !!(window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone));
 	  apply(); window.matchMedia?.('(display-mode: standalone)').addEventListener('change', apply);
 	})();
-	
+
 	// ===== INITIALIZATION =====
     function init(){
       show(S.state()? 'loginView' : 'setupView');
@@ -1509,6 +1566,6 @@
     }
     document.addEventListener('DOMContentLoaded', init);
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui20').catch(()=>{})); }
-  </script>
+</script>
 </body>
 </html>
