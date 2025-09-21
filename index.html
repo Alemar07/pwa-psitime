@@ -340,35 +340,21 @@
 	  }
 	}
     /* ===== 18. Nuevos Estilos para Vista Semanal y Plantillas ===== */
-    .cal-head { flex-wrap: wrap; }
     .cal-view-switcher { display: flex; gap: 8px; margin-left: auto; }
     .cal-view-switcher .chip { padding: 6px 12px; font-size: 14px; }
     .chip.is-active { background: var(--violet); color: white; border-color: var(--violet); }
 
+    /* Estilos para la vista semanal */
     .cal-grid-weekly {
         display: grid;
         grid-template-columns: 50px repeat(7, 1fr); /* Columna para horas + 7 días */
-        grid-auto-rows: 40px; /* 30 min por slot */
+        grid-template-rows: auto repeat(30, 40px); /* Cabecera + 30 slots de 30 min (7am-10pm) */
         margin-top: 16px;
         background: rgba(0,0,0,.1);
         border-radius: 16px;
-        position: relative;
+        overflow: hidden;
+        position: relative; /* Para posicionar eventos dentro */
     }
-    
-    .cal-weekly-bg {
-        position: absolute; inset: 0; top: 37px; /* Debajo de la cabecera */
-        display: grid;
-        grid-template-columns: 50px repeat(7, 1fr);
-        grid-auto-rows: 40px;
-        pointer-events: none;
-    }
-    .cal-weekly-day-col-bg {
-        grid-column: span 1;
-        border-left: 1px solid var(--glassBorder);
-        background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-        background-size: 100% 40px;
-    }
-    .cal-weekly-day-col-bg.is-today-col { background-color: rgba(16,181,255,.05); }
 
     .cal-weekly-header {
         text-align: center;
@@ -381,38 +367,52 @@
         background: rgba(15, 28, 54, 0.8);
         backdrop-filter: blur(4px);
         z-index: 10;
-        grid-column: span 1;
     }
     .cal-weekly-header.is-today { color: var(--cyan); }
-    .cal-weekly-header-time { grid-column: 1 / 2; }
-    
-    .cal-weekly-times {
+    .cal-weekly-header-time { /* Celda superior izquierda vacía */
         grid-column: 1 / 2;
-        padding-right: 8px;
-        grid-row: 2 / -1; /* Ocupa desde la segunda fila hasta el final */
     }
 
+    .cal-weekly-times {
+        grid-column: 1 / 2;
+        grid-row: 2 / -1; /* Desde la segunda fila hasta el final */
+        position: sticky; left: 0;
+        z-index: 5;
+        background: rgba(15, 28, 54, 0.8);
+        backdrop-filter: blur(4px);
+        padding-right: 8px;
+        border-right: 1px solid var(--glassBorder);
+    }
     .cal-weekly-time-slot {
         height: 40px; /* 30 min por slot */
         position: relative;
         text-align: right;
         font-size: 11px;
         color: #94a3b8;
+        padding-top: 2px;
     }
-    .cal-weekly-time-slot:first-child { margin-top: -8px; }
+    /* Estilos para las líneas de la cuadrícula de fondo */
+    .cal-weekly-day-col-bg {
+        border-left: 1px solid var(--glassBorder);
+        background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+        background-size: 100% 40px; /* Coincide con time-slot height */
+    }
+    .cal-weekly-day-col-bg.is-today-col { background-color: rgba(16,181,255,.05); }
 
     .cal-weekly-events-container {
-        grid-column: 2 / -1;
-        grid-row: 2 / -1;
-        position: relative;
+        grid-column: 2 / -1; /* Ocupa las columnas de los 7 días */
+        grid-row: 2 / -1; /* Ocupa las filas de las franjas horarias */
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        grid-auto-rows: 40px; /* 30 min por slot */
+        grid-template-rows: repeat(30, 40px); /* 30 slots de 30 minutos (7am a 10pm) */
+        position: absolute;
+        top: 0; left: 50px; right: 0;
+        height: 100%;
+        pointer-events: none; /* Para que no bloquee scroll ni clicks en bg */
     }
 
     .cal-weekly-event {
-        position: absolute;
-        left: 4px; right: 4px;
+        position: relative; /* Relative para posicionar dentro del grid de eventos */
         background: rgba(255,255,255,.9);
         border-radius: 8px;
         padding: 4px 6px;
@@ -423,7 +423,9 @@
         border-left: 4px solid var(--violet);
         cursor: pointer;
         transition: transform .2s ease, box-shadow .2s ease;
-        z-index: 5;
+        z-index: 15;
+        margin: 0 2px; /* Espacio entre eventos */
+        pointer-events: auto; /* Habilitar clicks en el evento */
     }
     .cal-weekly-event:hover { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,.25); }
 
@@ -432,15 +434,25 @@
 
     /* Estilos para la sección de Plantillas */
     .template-card {
-        background: #fff; color: var(--ink); border-radius: 14px;
-        padding: 16px; margin-top: 12px; box-shadow: 0 10px 22px rgba(0,0,0,.14);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 14px;
+        padding: 16px;
+        margin-top: 12px;
+        box-shadow: 0 10px 22px rgba(0,0,0,.14);
     }
     .template-header { display: flex; justify-content: space-between; align-items: center; }
     .template-name { font-weight: 800; font-size: 18px; }
     .template-content {
-        margin-top: 8px; white-space: pre-wrap; background: #f8f9fa;
-        padding: 10px; border-radius: 8px; font-family: monospace;
-        font-size: 14px; max-height: 150px; overflow-y: auto;
+        margin-top: 8px;
+        white-space: pre-wrap;
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 14px;
+        max-height: 150px;
+        overflow-y: auto;
     }
     .template-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
 	.template-tip { font-size: 13px; margin-top: 12px; color: #c7d2fe; }
@@ -874,9 +886,14 @@
     const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
     function openExternal(url){
-      const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone);
-      if (isStandalone) { window.location.href = url; }
-      else { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; document.body.appendChild(a); a.click(); a.remove(); }
+      // CORRECCIÓN: Siempre intenta abrir en una nueva pestaña para no reemplazar la PWA
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
 
 	// ===== UI LOGIC =====
@@ -1265,6 +1282,7 @@
 		${idx < evts.length - 1 ? '<div class="evt-sep"></div>' : ''}
 	  `).join('');
     }
+
     async function renderWeeklyCalendar() {
 		const grid = $('calGridWeekly');
 		if (!grid) return;
@@ -1279,6 +1297,7 @@
 		const weekStart = getStartOfWeek(currentWeekDate);
 		const today = new Date();
 
+        // 1. Cabecera con días de la semana
         const headerContainer = document.createDocumentFragment();
 		const timeHeader = document.createElement('div');
         timeHeader.className = 'cal-weekly-header cal-weekly-header-time';
@@ -1289,24 +1308,10 @@
 			headerCell.className = 'cal-weekly-header';
 			if (isSameDay(day, today)) headerCell.classList.add('is-today');
 			headerCell.innerHTML = `${day.toLocaleDateString(undefined, { weekday: 'short' }).slice(0,3)}<br><span style="font-size: 1.2em;">${day.getDate()}</span>`;
-			headerContainer.appendChild(headerCell);
+			grid.appendChild(headerCell);
 		}
-        grid.appendChild(headerContainer);
 
-        const bgContainer = document.createElement('div');
-        bgContainer.className = 'cal-weekly-bg';
-        bgContainer.appendChild(document.createElement('div')); // Empty for time col
-        for (let i=0; i<7; i++) {
-            const day = addDays(weekStart, i);
-            const dayColBg = document.createElement('div');
-            dayColBg.className = 'cal-weekly-day-col-bg';
-            if (isSameDay(day, today)) dayColBg.classList.add('is-today-col');
-            bgContainer.appendChild(dayColBg);
-        }
-        for (let i=0; i < (WEEKLY_VIEW_END_HOUR - WEEKLY_VIEW_START_HOUR) * 2; i++) {
-            grid.appendChild(bgContainer.cloneNode(true));
-        }
-
+        // 2. Columna de horas
 		const timeCol = document.createElement('div');
 		timeCol.className = 'cal-weekly-times';
 		for (let hour = WEEKLY_VIEW_START_HOUR; hour < WEEKLY_VIEW_END_HOUR; hour++) {
@@ -1314,70 +1319,79 @@
 			slot1.className = 'cal-weekly-time-slot';
 			slot1.textContent = `${String(hour).padStart(2, '0')}:00`;
 			const slot2 = document.createElement('div');
-			slot2.className = 'cal-weekly-time-slot';
+			slot2.className = 'cal-weekly-time-slot'; // Empty for the :30 slot
 			timeCol.appendChild(slot1);
 			timeCol.appendChild(slot2);
 		}
 		grid.appendChild(timeCol);
 
-        const eventsContainer = document.createElement('div');
-        eventsContainer.className = 'cal-weekly-events-container';
-		const weekEnd = addDays(weekStart, 7);
-		const weekEvents = (vault.events || []).filter(e => {
-			const eventDate = new Date(e.start);
-			return eventDate >= startOfDay(weekStart) && eventDate < startOfDay(weekEnd);
-		});
+        // 3. Contenedor de eventos y fondo de cuadrícula
+        for (let i = 0; i < 7; i++) {
+            const dayCol = document.createElement('div');
+            const day = addDays(weekStart, i);
+            dayCol.className = 'cal-weekly-day-col-bg';
+            if (isSameDay(day, today)) dayCol.classList.add('is-today-col');
 
-		weekEvents.forEach(evt => {
-			const eventEl = document.createElement('div');
-			eventEl.className = 'cal-weekly-event';
-			eventEl.onclick = () => openEventModalById(evt.id);
-			const start = new Date(evt.start);
-			const end = evt.end ? new Date(evt.end) : new Date(start.getTime() + 60 * 60 * 1000);
-            
-            const dayIndex = (start.getDay() + 6) % 7;
-			eventEl.style.gridColumn = `${dayIndex + 1} / span 1`;
+            const weekEnd = addDays(weekStart, 7);
+            const dayEvents = (vault.events || []).filter(e => {
+                const eventDate = new Date(e.start);
+                return isSameDay(eventDate, day) && eventDate >= startOfDay(weekStart) && eventDate < startOfDay(weekEnd);
+            });
 
-			const startMinutes = Math.max(0, (start.getHours() * 60 + start.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60));
-			const endMinutes = Math.min((WEEKLY_VIEW_END_HOUR - WEEKLY_VIEW_START_HOUR) * 60, (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60));
-			const durationMinutes = Math.max(30, endMinutes - startMinutes);
+            dayEvents.forEach(evt => {
+                const eventEl = document.createElement('div');
+                eventEl.className = 'cal-weekly-event';
+                eventEl.onclick = () => openEventModalById(evt.id);
+                
+                const start = new Date(evt.start);
+                const end = evt.end ? new Date(evt.end) : new Date(start.getTime() + 60 * 60 * 1000);
+                
+                const startMinutes = (start.getHours() * 60 + start.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60);
+                const endMinutes = (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60);
+                const durationMinutes = Math.max(30, endMinutes - startMinutes);
 
-			const startRow = (startMinutes / 30) * 1 + 1;
-            const rowSpan = Math.ceil(durationMinutes / 30);
-			eventEl.style.gridRow = `${startRow} / span ${rowSpan}`;
+                eventEl.style.top = `${(startMinutes / 30) * 40}px`; 
+                eventEl.style.height = `${(durationMinutes / 30) * 40}px`;
 
-			eventEl.innerHTML = `
-				<div class="evt-weekly-title">${esc(evt.title || 'Cita')}</div>
-				<div class="evt-weekly-meta">${start.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}</div>
-			`;
-			eventsContainer.appendChild(eventEl);
-		});
-        grid.appendChild(eventsContainer);
+                eventEl.innerHTML = `
+                    <div class="evt-weekly-title">${esc(evt.title || 'Cita')}</div>
+                    <div class="evt-weekly-meta">${start.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}</div>
+                `;
+                dayCol.appendChild(eventEl);
+            });
+            grid.appendChild(dayCol);
+        }
 	}
+
     async function openEventModalById(id) {
         const vault = await decryptJson(S.getKey(), S.state().vault);
         const evt = vault.events.find(e => e.id === id);
         if (evt) openEventModal(evt);
     }
     function openEventModal(evt){
-      const dlg=$('eventModal'), title=$('evtModalTitle'), del=$('evtDelete');
+      const dlg=$('eventModal');
+      const title=$('evtModalTitle'), del=$('evtDelete');
       if(!evt){
         title.textContent='Nueva cita';
         const base=new Date(selectedDay); base.setHours(10,0,0,0);
-		$('evtForm').reset(); $('evtStart').value = toLocalInput(base);
-        del.style.display='none'; dlg.dataset.id = '';
+		$('evtForm').reset();
+        $('evtId').value = '';
+        $('evtStart').value = toLocalInput(base);
+        del.style.display='none';
       }else{
         title.textContent='Editar cita';
+        $('evtId').value = evt.id;
         $('evtTitle').value=evt.title||'';
         $('evtStart').value = toLocalInput(new Date(evt.start));
         $('evtEnd').value = evt.end ? toLocalInput(new Date(evt.end)) : '';
         $('evtContact').value = evt.contactPhone || '';
         $('evtNote').value=evt.note||'';
 		$('evtRecurrence').value = evt.recurrence || 'none';
-        del.style.display='inline-flex'; dlg.dataset.id = evt.id;
+        del.style.display='inline-flex';
       }
       const sbox = $('evtSearch'), c = findContactByPhone(evt?.contactPhone);
-      sbox.value = c ? `${c.name} (${c.phone})` : ''; $('evtResults').hidden = true;
+      sbox.value = c ? `${c.name} (${c.phone})` : '';
+      $('evtResults').hidden = true;
       dlg.showModal();
     }
     function closeEventModal(){ $('eventModal')?.close(); }
@@ -1396,7 +1410,7 @@
 			let vault = await decryptJson(S.getKey(), st.vault);
 			ensureEvents(vault);
 
-			const id = $('eventModal').dataset.id;
+			const id = $('evtId').value;
 			const isNew = !id;
 			const prevEvent = isNew ? null : vault.events.find(x => x.id === id);
 			const contact = findContactByPhone($('evtContact').value || '') || {};
@@ -1430,7 +1444,7 @@
 
 			closeEventModal();
 			if(currentView === 'month') { renderCalendar(); } else { await renderWeeklyCalendar(); }
-            if(currentView === 'month') renderDayList(); // Solo refrescar la lista de día en vista mensual
+            if(currentView === 'month') renderDayList();
 			if (getAutoBackupCal()) exportAgendaFixed(true);
 
 		} catch (error) {
@@ -1521,7 +1535,7 @@
     }
 
 	// ===== GOOGLE CALENDAR =====
-	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';
+	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com'; // 
 	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 	let googleTokenClient = null, googleAccessToken = null, googleTokenExpiry = 0;
 
@@ -1712,7 +1726,12 @@
 		$('btnCancelEditTemplate').style.display = 'none';
 	}
 	async function populateTemplateSelectors() {
-		const st = S.state(); if (!st || !S.getKey()) return;
+		const st = S.state();
+        if (!st || !S.getKey()) {
+            // No hay sesión, limpiar selectores
+            [...document.querySelectorAll('select[id^="templateSelect"]')].forEach(sel => sel.innerHTML = '<option value="">No hay plantillas</option>');
+            return;
+        }
 		const vault = await decryptJson(S.getKey(), st.vault);
 		const templates = vault.templates || [];
 		const selectors = [$('templateSelectSend'), $('templateSelectModal')];
@@ -1861,9 +1880,9 @@
       wireSearch(); wireModalSearch();
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
-      $('evtDelete')?.addEventListener('click', ()=>{ const id=$('eventModal').dataset.id; if(id) deleteEvent(id); });
+      $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
-        const id=$('eventModal').dataset.id;
+        const id=$('evtId').value;
         const contact = findContactByPhone($('evtContact').value);
         const tmpEvt = {
             title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(),
@@ -1897,7 +1916,6 @@
                 const contact = findContactByPhone($('evtContact').value);
                 const currentNotes = $('evtNote').value;
                 const newContent = applyTemplate(template.content, contact?.name);
-                // Añade la plantilla a las notas existentes en lugar de sobreescribir
                 $('evtNote').value = currentNotes ? `${currentNotes}\n\n${newContent}` : newContent;
             }
 	  });
@@ -1989,7 +2007,6 @@
                   const opts = {multiple: true};
 				  const contacts = await navigator.contacts.select(props, opts);
 				  if (!contacts.length) return;
-                  // Lógica de importación
                   const st = S.state(); if (!st || !S.getKey()) return;
                   const vault = await decryptJson(S.getKey(), st.vault);
                   let added = 0, skipped = 0;
@@ -1997,7 +2014,7 @@
                   
                   contacts.forEach(contact => {
                       if (contact.tel && contact.tel.length > 0) {
-                          const phone = contact.tel[0]; // Usar el primer teléfono
+                          const phone = contact.tel[0];
                           if (!phoneSet.has(phone)) {
                               vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
                               phoneSet.add(phone);
