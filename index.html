@@ -8,7 +8,7 @@
   <title>MF Gestor de Citas</title>
   <meta name="theme-color" content="#0f1c36">
   <meta name="theme-color" content="#0f1c36" media="(prefers-color-scheme: dark)">
-  <link rel="manifest" href="manifest.webmanifest?v=ui20">
+  <link rel="manifest" href="manifest.webmanifest?v=ui21">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
@@ -26,7 +26,6 @@
 		radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%),
 		linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
 	}
-
 	body{
 	  margin:0; overflow-x:hidden;
 	  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
@@ -34,7 +33,6 @@
 	  background: var(--app-bg) fixed;
 	  min-height: 100vh;
 	}
-
 	/* ===== 02 Base/Reset ===== */
 	*, *::before, *::after{ box-sizing: border-box; }
 	html, body{ height:100%; }
@@ -42,14 +40,12 @@
 	@supports (-webkit-touch-callout: none){
 	  @media (display-mode: standalone){ html, body{ background: var(--app-bg) !important; } }
 	}
-
 	/* ===== 03 Fondo decorativo ===== */
 	body::before{
 	  content:""; position:fixed; inset:-20% -20%; z-index:-1; pointer-events:none;
 	  background: radial-gradient(1000px 520px at 88% -10%, rgba(255,105,180,.45), transparent 60%), radial-gradient(1100px 600px at -10% 100%, rgba(16,181,255,.38), transparent 62%), linear-gradient(180deg, #13203d 0%, #0f1c36 58%, #0a162d 100%);
 	  transform:translateZ(0);
 	}
-
 	/* ===== 04 Topbar/Auth ===== */
 	.auth-head{ display:flex; align-items:center; gap:14px; padding:14px 18px; }
 	.logo-box{ width:44px; height:44px; border-radius:12px; overflow:hidden; flex:0 0 auto; }
@@ -67,7 +63,6 @@
 	}
 	body:not(.login-mode):not(.setup-mode) .hr{ margin: 0 0 12px; }
 	body:not(.login-mode):not(.setup-mode) .app-wrap{ padding-top: 20px; }
-
 	/* ===== 05 Campos y formularios ===== */
 	.field{ position:relative; }
 	.field input, .field select, .field textarea, .field [type="datetime-local"]{
@@ -82,13 +77,12 @@
 	}
 	.field.field-error input, .field.field-error select { border-color: var(--danger); }
 	.field input[type="datetime-local"]{ -webkit-appearance:none; appearance:none; min-height:56px; padding-right:14px; }
-	.field select{ min-height:56px; }
+	.field select{ min-height:56px; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right .7rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;}
 	.field textarea{ min-height:140px; resize:vertical; }
-	.icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085; transition: color .2s ease; }
+	.icon-left, .icon-right{ position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#667085; transition: color .2s ease; pointer-events: none;}
 	.field:focus-within .icon-left { color: var(--violet); }
 	.icon-left{ left:14px }
-	.icon-right{ right:14px; cursor:pointer }
-
+	.icon-right{ right:14px; cursor:pointer; pointer-events: all; }
 	/* ===== 06 Botones/Chips ===== */
 	.btn, .btn-ghost, .btn-outline{ transition: transform .15s ease-out, box-shadow .2s ease, background .2s ease; }
 	.btn:active, .btn-ghost:active, .btn-outline:active { transform: translateY(1px) scale(.99); }
@@ -110,8 +104,6 @@
 	.btn-outline{ border:1px solid rgba(255,255,255,.35); background:#fff; color:#1f2a44; }
 	.btn-danger{ background:linear-gradient(90deg,#ff6b6b,#ef4444); color:#fff; border:none }
 	.btn-small{ padding:10px 14px; border-radius:12px; font-weight:800 }
-	.btn-borderDate{ border: 2px solid blue; }
-	
 	.spinner {
 		width: 20px; height: 20px; border-radius: 50%;
 		border: 3px solid rgba(255,255,255,.3);
@@ -120,7 +112,6 @@
 	}
 	.btn[disabled] .spinner { border-top-color: #666; }
 	@keyframes spin { to { transform: rotate(360deg); } }
-
 	/* ===== 07 Login/Setup ===== */
 	.login-hero{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px 20px 40px; }
 	.login-card{
@@ -140,7 +131,6 @@
 	.login-sub{ color:rgba(255,255,255,.78); text-align:center; font-size:13px; margin:0 0 18px }
 	.login-fields{ display:grid; gap:16px }
 	.login-field input{ background:#fff; border:none !important; border-radius:18px; box-shadow: 0 12px 28px rgba(0,0,0,.18) }
-
 	/* ===== 08 Layout general ===== */
 	.glass{
 	  backdrop-filter: blur(14px) saturate(120%); background: var(--glassBg); border:1px solid var(--glassBorder); border-radius:24px; box-shadow: var(--shadow); padding:20px;
@@ -148,7 +138,6 @@
 	.span-2{ grid-column: 1 / -1; }
 	.section-title{ margin:0 0 12px; font-weight:900; color:#fff; font-size: clamp(18px, 1.8vw, 20px); }
 	.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
-
 	/* ===== 09 Contactos ===== */
 	.contact-picker{ display:grid; gap:10px }
 	.search-wrap{ position:relative }
@@ -166,8 +155,8 @@
 	  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 12px 26px rgba(0,0,0,.16);
 	}
 	::placeholder{ color:#94a3b8; opacity:.9; }
-	.search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6 }
-	.clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none }
+	.search-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; pointer-events: none; }
+	.clear-icon{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:20px; height:20px; opacity:.6; cursor:pointer; display:none; pointer-events: all; }
 	#contactResults, #evtResults{
 	  border:1px solid rgba(255,255,255,.25); border-radius:16px; background:#fff;
 	  box-shadow: 0 12px 28px rgba(0,0,0,.18);
@@ -180,14 +169,13 @@
 	.result-item:hover, .result-item[aria-selected="true"]{ background: var(--soft); border-color: rgba(94,91,255,.24); }
 	.result-name{ color:#0b1220; font-weight:700 }
 	.result-phone{ color:#475569; font-variant-numeric: tabular-nums }
-
 	/* ===== 10 Calendario ===== */
 	.cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px }
 	.cal-title{ font-weight:900; color:#fff; font-size:clamp(18px, 2vw, 22px) }
 	.cal-nav{ display:flex; gap:8px }
 	.chip{
 	  border:1px solid rgba(255,255,255,.3); border-radius:12px; padding:8px 10px; background:#fff; color:#0b1220; font-weight:700; cursor:pointer;
-	  transition: transform .15s ease-out, box-shadow .2s ease;
+	  transition: transform .15s ease-out, box-shadow .2s ease, background .2s ease, color .2s ease;
 	}
 	.chip:active { transform: translateY(1px) scale(.99); }
 	.cal-grid{ display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; align-items:stretch }
@@ -210,17 +198,13 @@
 	.dot.green{ background:var(--ok) }
 	.dot.yellow{ background:var(--warning) }
 	.dot.red{ background:var(--danger) }
-
 	/* ===== 11 Lista del día / Eventos ===== */
 	.day-list{ display:grid; gap:14px; margin-top:6px; }
 	.day-list > .muted{ display:block; margin-top:6px; animation: fadeIn .3s ease-out; }
 	.evt-item{ position:relative; background:#fff; color:#0b1220; border-radius:14px; padding:12px 12px; box-shadow: 0 10px 22px rgba(0,0,0,.18); animation: fadeIn .3s ease-out .1s backwards; }
 	.evt-actions{ display:flex; gap:12px; flex-wrap:wrap; }
 	.evt-sep{ height:1px; background:rgba(255,255,255,.12); margin:4px 8px; border-radius:1px; }
-
 	/* ===== 12 Modal & Toast & Confirmation ===== */
-	#eventModal .field.select-field select{ -webkit-appearance:none; appearance:none; padding-left:64px; padding-right:44px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-	#eventModal .field.select-field .caret{ position:absolute; right:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:.6; pointer-events:none; }
 	.day-toolbar{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
 	#dayTitle{ margin:0; }
 	#eventModal .modal-head{ position: relative; display: flex; align-items: center; justify-content: center; padding: 12px 16px; margin-bottom: 10px; min-height: 56px; }
@@ -235,7 +219,6 @@
 	}
 	.modal-actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
 	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible{ outline:2px solid var(--cyan); outline-offset:2px; }
-
 	.toast-container {
 		position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0)); left: 50%;
 		transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column;
@@ -255,7 +238,6 @@
 	.toast.info { background: rgba(16, 181, 255, .5); }
 	@keyframes toast-in { from { opacity: 0; transform: translateY(20px) scale(.95); } }
 	@keyframes fadeIn { from { opacity: 0; } }
-
 	/* ===== 13 Navegación inferior (móvil) ===== */
 	.bottom-nav{
 	  position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; transform: none !important; z-index: 9999;
@@ -276,7 +258,6 @@
 	}
 	.app-wrap{ grid-auto-rows: minmax(min-content, max-content); }
 	.logout-top{ display: none; margin-left: auto; }
-
 	@supports not (padding: max(0px)){
 		body:not(.login-mode):not(.setup-mode) .auth-head{ padding-top: calc(14px + constant(safe-area-inset-top)); }
 	}
@@ -299,6 +280,7 @@
 		body[data-tab="agenda"] [data-section="agenda"]{ display:block !important; }
 		body[data-tab="send"] [data-section="send"]{ display:block !important; }
 		body[data-tab="contacts"] [data-section="contacts"]{ display:block !important; }
+        body[data-tab="templates"] [data-section="templates"]{ display:block !important; }
 		body[data-tab="backups"] [data-section="backups"]{ display:block !important; }
 		#agendaCard.span-2{ grid-column: 1 / -1; }
 	}
@@ -322,31 +304,26 @@
 	body { overscroll-behavior-y: contain; }
 	html.standalone .bottom-nav{ position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; transform: none !important; padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 	html.standalone .app-wrap{ padding-bottom: max(20px, calc(88px + env(safe-area-inset-bottom))) !important; }
-
 	/* ===== 14 Footer/Logout ===== */
 	.logout{ color:#ffb4b4; text-decoration:underline; cursor:pointer; font-weight:800 }
-
 	/* ===== 15 Animaciones ===== */
 	@keyframes glowTitle{ 0% { text-shadow: 0 0 0 rgba(16,181,255,0); } 50% { text-shadow: 0 0 16px rgba(16,181,255,.6); } 100% { text-shadow: 0 0 0 rgba(16,181,255,0); } }
 	.flash{ animation: glowTitle 360ms ease-out; }
-
 	/* ===== 16 Utilidades ===== */
 	.muted{ color:#cbd5e1; font-size:14px }
 	mark{ background:#fff5b1; padding:0 2px; border-radius:4px }
 	.footer{ padding:18px 16px 36px 16px; display:flex; justify-content:center; align-items:center }
-
 	/* ===== 17 Miscelánea ===== */
 	.card{ width:min(1120px, 100%); margin:0 auto; background:transparent; }
 	.main{ padding:0; }
 	.stage{ display:none; }
-	
 	@media (max-width: 980px){
 	  body:not(.login-mode):not(.setup-mode){ height: 100svh; overflow: hidden; }
 	  .card{ position: fixed; inset: 0; display: flex; flex-direction: column; }
 	  .main{ flex: 1 1 auto; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
 	  #bottomNav.bottom-nav{
 		position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; transform: none !important; z-index: 9999;
-		display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 16px 12px 32px;                 
+		display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 16px 12px 32px;
 		background: rgba(8,12,24,.45); -webkit-backdrop-filter: blur(12px) saturate(120%); backdrop-filter: blur(12px) saturate(120%);
 		border: 0 !important; box-shadow: 0 -1px 0 rgba(255,255,255,.14) inset; isolation: isolate;
 	  }
@@ -362,6 +339,118 @@
 		#bottomNav.bottom-nav::after{ bottom: calc(-1 * constant(safe-area-inset-bottom)); height: constant(safe-area-inset-bottom); }
 	  }
 	}
+    /* ===== 18. Nuevos Estilos para Vista Semanal y Plantillas ===== */
+    .cal-head { flex-wrap: wrap; }
+    .cal-view-switcher { display: flex; gap: 8px; margin-left: auto; }
+    .cal-view-switcher .chip { padding: 6px 12px; font-size: 14px; }
+    .chip.is-active { background: var(--violet); color: white; border-color: var(--violet); }
+
+    .cal-grid-weekly {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 1fr); /* Columna para horas + 7 días */
+        grid-auto-rows: 40px; /* 30 min por slot */
+        margin-top: 16px;
+        background: rgba(0,0,0,.1);
+        border-radius: 16px;
+        position: relative;
+    }
+    
+    .cal-weekly-bg {
+        position: absolute; inset: 0; top: 37px; /* Debajo de la cabecera */
+        display: grid;
+        grid-template-columns: 50px repeat(7, 1fr);
+        grid-auto-rows: 40px;
+        pointer-events: none;
+    }
+    .cal-weekly-day-col-bg {
+        grid-column: span 1;
+        border-left: 1px solid var(--glassBorder);
+        background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+        background-size: 100% 40px;
+    }
+    .cal-weekly-day-col-bg.is-today-col { background-color: rgba(16,181,255,.05); }
+
+    .cal-weekly-header {
+        text-align: center;
+        padding: 8px 4px;
+        font-weight: 800;
+        color: #c7d2fe;
+        font-size: clamp(11px, 2.6vw, 13px);
+        border-bottom: 1px solid var(--glassBorder);
+        position: sticky; top: 0;
+        background: rgba(15, 28, 54, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 10;
+        grid-column: span 1;
+    }
+    .cal-weekly-header.is-today { color: var(--cyan); }
+    .cal-weekly-header-time { grid-column: 1 / 2; }
+    
+    .cal-weekly-times {
+        grid-column: 1 / 2;
+        padding-right: 8px;
+        grid-row: 2 / -1; /* Ocupa desde la segunda fila hasta el final */
+    }
+
+    .cal-weekly-time-slot {
+        height: 40px; /* 30 min por slot */
+        position: relative;
+        text-align: right;
+        font-size: 11px;
+        color: #94a3b8;
+    }
+    .cal-weekly-time-slot:first-child { margin-top: -8px; }
+
+    .cal-weekly-events-container {
+        grid-column: 2 / -1;
+        grid-row: 2 / -1;
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        grid-auto-rows: 40px; /* 30 min por slot */
+    }
+
+    .cal-weekly-event {
+        position: absolute;
+        left: 4px; right: 4px;
+        background: rgba(255,255,255,.9);
+        border-radius: 8px;
+        padding: 4px 6px;
+        overflow: hidden;
+        font-size: 12px;
+        color: var(--ink);
+        box-shadow: 0 4px 10px rgba(0,0,0,.2);
+        border-left: 4px solid var(--violet);
+        cursor: pointer;
+        transition: transform .2s ease, box-shadow .2s ease;
+        z-index: 5;
+    }
+    .cal-weekly-event:hover { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+
+    .evt-weekly-title { font-weight: 800; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .evt-weekly-meta { font-size: 11px; opacity: .7; }
+
+    /* Estilos para la sección de Plantillas */
+    .template-card {
+        background: #fff; color: var(--ink); border-radius: 14px;
+        padding: 16px; margin-top: 12px; box-shadow: 0 10px 22px rgba(0,0,0,.14);
+    }
+    .template-header { display: flex; justify-content: space-between; align-items: center; }
+    .template-name { font-weight: 800; font-size: 18px; }
+    .template-content {
+        margin-top: 8px; white-space: pre-wrap; background: #f8f9fa;
+        padding: 10px; border-radius: 8px; font-family: monospace;
+        font-size: 14px; max-height: 150px; overflow-y: auto;
+    }
+    .template-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+	.template-tip { font-size: 13px; margin-top: 12px; color: #c7d2fe; }
+
+    /* Ajuste para 5 iconos en la barra inferior */
+    @media (max-width: 980px) {
+        #bottomNav.bottom-nav {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
   </style>
 </head>
 <body>
@@ -434,6 +523,10 @@
           <div class="glass span-2 app-section" id="agendaCard" data-section="agenda">
             <div class="cal-head">
               <div class="cal-title" id="calTitle">Agenda</div>
+              <div class="cal-view-switcher">
+                <button class="chip is-active" id="viewMonth" type="button">Mes</button>
+                <button class="chip" id="viewWeek" type="button">Semana</button>
+              </div>
               <div class="cal-nav">
                 <button class="chip" id="calPrev" type="button">◀︎</button>
                 <button class="chip" id="calToday" type="button">Hoy</button>
@@ -441,8 +534,10 @@
               </div>
             </div>
             <div class="cal-grid" id="calGrid"></div>
-            <div class="day-toolbar">
-				<div class="toggle" id="gcalRow" style="display:flex; align-items:center; gap:10px; margin:6px 0 10px">
+            <div class="cal-grid-weekly" id="calGridWeekly" style="display: none;"></div>
+
+            <div class="day-toolbar" id="dayToolbar">
+				<div class="toggle" id="gcalRow" style="display:flex; align-items:center; gap:10px; margin:6px 0 10px; width: 100%;">
 				  <input id="gCalAutoToggle" type="checkbox" disabled />
 				  <span class="muted">Añadir nuevas citas a Google Calendar</span>
 				  <button id="btnGConnect" class="btn-small btn-outline" type="button" style="margin-left:auto">Conectar Google</button>
@@ -458,24 +553,28 @@
             <h3 class="section-title">Enviar cita</h3>
             <div class="grid2">
               <div>
-                <label>Fecha y hora del recordatorio</label>
+                <label for="dt">Fecha y hora del recordatorio</label>
                 <div class="field"><input id="dt" type="datetime-local" /></div>
               </div>
               <div>
-                <label>Contacto</label>
+                <label for="contactSearch">Contacto</label>
                 <div class="contact-picker">
                   <div class="search-wrap">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
                     <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
-                    <svg id="clearSearch" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+                    <svg id="clearSearch" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
                 </div>
               </div>
             </div>
+             <div style="margin-top:14px">
+              <label for="templateSelectSend">Plantilla de Mensaje (Opcional)</label>
+              <div class="field"><select id="templateSelectSend"></select></div>
+            </div>
             <div style="margin-top:14px">
-              <label>Mensaje</label>
-              <div class="field"><textarea id="msg" rows="4" placeholder="Se generará automáticamente, pero puedes editarlo."></textarea></div>
+              <label for="msg">Mensaje</label>
+              <div class="field"><textarea id="msg" rows="4" placeholder="Selecciona una plantilla o escribe tu mensaje. Usa {NOMBRE} para el nombre del contacto."></textarea></div>
             </div>
             <div style="margin-top:16px">
               <button id="btnSend" class="btn" type="button">Enviar Cita</button>
@@ -515,6 +614,26 @@
 			  <div class="gc-sep"></div>
 			</div>
 		  </div>
+
+          <div class="glass app-section" data-section="templates">
+            <h3 class="section-title">Plantillas de Mensajes</h3>
+            <div class="glass" style="background: rgba(0,0,0,.1);">
+                <h4 class="section-title" id="templateFormTitle">Nueva Plantilla</h4>
+                <input type="hidden" id="templateId" />
+                <div class="field">
+                    <input id="templateName" placeholder="Nombre de la plantilla (ej. Recordatorio 24h)" />
+                </div>
+                <div class="field" style="margin-top: 10px;">
+                    <textarea id="templateContent" rows="4" placeholder="Escribe el contenido del mensaje..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button id="btnSaveTemplate" class="btn" type="button">Guardar Plantilla</button>
+                    <button id="btnCancelEditTemplate" class="btn btn-outline" type="button" style="display: none;">Cancelar Edición</button>
+                </div>
+				<p class="template-tip"><b>Consejo:</b> Usa <code>{NOMBRE}</code> en tu texto y será reemplazado por el nombre del contacto.</p>
+            </div>
+            <div id="templateList" style="margin-top: 24px;"></div>
+          </div>
 		  
 		  <div class="glass app-section" data-section="backups">
             <div>
@@ -558,10 +677,21 @@
         </div>
 
 		<nav class="bottom-nav" id="bottomNav" aria-label="Secciones">
-		  <button class="nav-btn" data-tab="contacts" aria-label="Contactos" title="Contactos"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-7 2.2-7 5v1h14v-1c0-2.8-2.6-5-7-5Z"/></svg></button>
-		  <button class="nav-btn is-primary" data-tab="agenda" aria-label="Agenda" title="Agenda"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v3M17 2v3M3.5 9h17"/><rect x="3.5" y="5" width="17" height="16" rx="2"/></g></svg></button>
-		  <button class="nav-btn" data-tab="send" aria-label="Enviar" title="Enviar cita"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="m2 21 20-9L2 3v6l14 3L2 15z"/></svg></button>
-		  <button class="nav-btn" data-tab="backups" aria-label="Copias" title="Copias de seguridad"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M12 6a6 6 0 1 1-5.3 3.1l1.3.75A4.5 4.5 0 1 0 12 7.5V10l4-3-4-3v2Z"/></svg></button>
+		  <button class="nav-btn" data-tab="contacts" aria-label="Contactos" title="Contactos">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-7 2.2-7 5v1h14v-1c0-2.8-2.6-5-7-5Z"/></svg>
+		  </button>
+		  <button class="nav-btn" data-tab="send" aria-label="Enviar" title="Enviar cita">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="m2 21 20-9L2 3v6l14 3L2 15z"/></svg>
+		  </button>
+		  <button class="nav-btn is-primary" data-tab="agenda" aria-label="Agenda" title="Agenda">
+			<svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v3M17 2v3M3.5 9h17"/><rect x="3.5" y="5" width="17" height="16" rx="2"/></g></svg>
+		  </button>
+		  <button class="nav-btn" data-tab="templates" aria-label="Plantillas" title="Plantillas de Mensajes">
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M6 2h10l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm5 10H8v2h3v-2zm5-4H8v2h8V8z"/></svg>
+		  </button>
+		  <button class="nav-btn" data-tab="backups" aria-label="Copias" title="Copias de seguridad">
+			<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M12 6a6 6 0 1 1-5.3 3.1l1.3.75A4.5 4.5 0 1 0 12 7.5V10l4-3-4-3v2Z"/></svg>
+		  </button>
 		</nav>
         <div class="footer"><span id="logout" class="logout" style="display:none">Cerrar sesión</span></div>
       </section>
@@ -592,16 +722,22 @@
         <div class="search-wrap">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
           <input id="evtSearch" type="search" placeholder="Buscar contacto (opcional)" autocapitalize="none" autocomplete="off" spellcheck="false" />
-          <svg id="evtClear" class="clear-icon" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+          <svg id="evtClear" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
         </div>
         <div id="evtResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
         <select id="evtContact" style="display:none"></select>
       </div>
-      <div class="field" style="margin-bottom:10px">
+      <div class="field">
         <svg class="icon-left" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14l-8-4-8 4V5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <textarea id="evtNote" rows="3" placeholder="Notas (opcional)"></textarea>
+        <textarea id="evtNote" rows="3" placeholder="Notas"></textarea>
       </div>
-	  <div class="field" style="margin-bottom:10px">
+	  <div class="field" style="margin-top:10px">
+		<svg class="icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+		<select id="templateSelectModal">
+			<option value="">Usar plantilla para notas...</option>
+		</select>
+	  </div>
+	  <div class="field" style="margin-top:10px">
 		<svg class="icon-left" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6a6 6 0 1 1-5.3 3.1l1.3.75A4.5 4.5 0 1 0 12 7.5V10l4-3-4-3v2Z"/></svg>
 		<select id="evtRecurrence">
 			<option value="none">No se repite</option>
@@ -617,9 +753,9 @@
       </div>
     </form>
   </dialog>
-  
+
   <div id="toastContainer" class="toast-container"></div>
-  
+
   <dialog id="confirmModal" class="modal">
 	<div class="modal-card">
 		<h3 id="confirmTitle" class="section-title" style="text-align:center;">Confirmar acción</h3>
@@ -754,6 +890,10 @@
       document.body.classList.toggle('login-mode', id==='loginView');
       document.body.classList.toggle('setup-mode', id==='setupView');
       window.scrollTo(0,0);
+      if (id === 'appView') {
+        renderTemplates();
+        populateTemplateSelectors();
+      }
     }
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
     function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
@@ -893,7 +1033,11 @@
       const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
       const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       const title = evt.title ? `“${evt.title}”` : 'la cita';
-      const name = evt.contactName || '';
+      let name = evt.contactName || '';
+	  if (!name && evt.contactPhone) {
+		  const contact = findContactByPhone(evt.contactPhone);
+		  if (contact) name = contact.name;
+	  }
       return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
 
@@ -979,7 +1123,7 @@
 	  const st = S.state(); if(!st || !S.getKey()){ showToast('Inicia sesión para exportar.', 'error'); return; }
 	  const vault = await decryptJson(S.getKey(), st.vault);
 	  const {aesKey, saltB64} = await deriveFixed();
-	  const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]) });
+	  const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
 	  const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
 	  await saveJson('copia-completa.json', payload);
 	  showToast('Copia completa exportada.', 'success');
@@ -990,16 +1134,29 @@
 	  let obj; try{ const {aesKey} = await deriveFixed(data.saltB64); obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct}); } catch(e){ showToast('No se pudo descifrar.', 'error'); return; }
 	  if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){ showToast('Contenido inválido.', 'error'); return; }
 	  const st = S.state(); if(!st || !S.getKey()){ showToast('Inicia sesión para importar.', 'error'); return; }
-	  const vault = await decryptJson(S.getKey(), st.vault); ensureEvents(vault);
+	  const vault = await decryptJson(S.getKey(), st.vault);
+      ensureEvents(vault);
+      if (!vault.templates) vault.templates = [];
+
 	  const mapContacts = new Map((vault.list||[]).map(c=>[c.phone, c])); let addedC=0, skippedC=0;
 	  (obj.list||[]).forEach(c=>{ if(c&&c.phone&&c.name){ if(mapContacts.has(c.phone)) skippedC++; else { mapContacts.set(c.phone, c); addedC++; } } });
 	  vault.list = Array.from(mapContacts.values());
+
 	  const mapEvents = new Map((vault.events||[]).map(e=>[e.id, e])); let addedE=0, skippedE=0;
 	  (obj.events||[]).forEach(e=>{ if(e&&e.id&&e.start){ if(mapEvents.has(e.id)) skippedE++; else { mapEvents.set(e.id, e); addedE++; } } });
 	  vault.events = Array.from(mapEvents.values()).sort((a,b)=> new Date(a.start)-new Date(b.start));
+
+      const mapTemplates = new Map((vault.templates||[]).map(t=>[t.id, t])); let addedT=0, skippedT=0;
+	  (obj.templates||[]).forEach(t=>{ if(t&&t.id&&t.name&&t.content){ if(mapTemplates.has(t.id)) skippedT++; else { mapTemplates.set(t.id, t); addedT++; } } });
+	  vault.templates = Array.from(mapTemplates.values());
+
 	  st.vault = await encryptJson(S.getKey(), vault); S.save(st);
-	  refreshContactsSelect(vault.list); paintEventDots(); renderDayList();
-	  showToast(`Importación completa. Contactos: ${addedC}+, Citas: ${addedE}+`, 'success');
+	  refreshContactsSelect(vault.list);
+      paintEventDots();
+      renderDayList();
+      renderTemplates();
+      populateTemplateSelectors();
+	  showToast(`Importación completa. Contactos: ${addedC}+, Citas: ${addedE}+, Plantillas: ${addedT}+`, 'success');
 	}
 
 	// ===== PASSWORD VISIBILITY =====
@@ -1037,7 +1194,7 @@
     }
     function renderCalendar(){
       const grid=$('calGrid'); if(!grid) return;
-      grid.innerHTML=''; $('calTitle').textContent = `Agenda · ${monthLabel(currentMonth)}`;
+      grid.innerHTML=''; $('calTitle').textContent = `${monthLabel(currentMonth)}`;
       ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
       const start = firstDayGrid(currentMonth), today = new Date();
       for(let i=0;i<42;i++){
@@ -1108,30 +1265,17 @@
     }
     function closeEventModal(){ $('eventModal')?.close(); }
     function makeId(){ return 'evt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-
-	async function saveEvent() {
+    async function saveEvent() {
 		const btn = $('evtSave');
 		toggleLoading(btn, true);
 
 		try {
-			// 1. Validar campos
 			const t = $('evtTitle').value.trim(), s = $('evtStart').value, e = $('evtEnd').value;
 			for(let id of ['evtStart-field', 'evtEnd-field']) $(id).classList.remove('field-error');
-			if (!s) {
-				$('evtStart-field').classList.add('field-error');
-				showToast('Indica fecha y hora de inicio', 'error');
-				return;
-			}
-			if (e && new Date(e) < new Date(s)) {
-				$('evtEnd-field').classList.add('field-error');
-				showToast('La fecha de fin no puede ser anterior a la de inicio.', 'error');
-				return;
-			}
+			if (!s) { throw new Error('Indica fecha y hora de inicio'); }
+			if (e && new Date(e) < new Date(s)) { throw new Error('La fecha de fin no puede ser anterior a la de inicio.'); }
 
-			// 2. Cargar datos y preparar el evento local
-			const st = S.state();
-			if (!st || !S.getKey()) return;
-
+			const st = S.state(); if (!st || !S.getKey()) throw new Error("Sesión no válida");
 			let vault = await decryptJson(S.getKey(), st.vault);
 			ensureEvents(vault);
 
@@ -1141,61 +1285,44 @@
 			const contact = findContactByPhone($('evtContact').value || '') || {};
 
 			const eventData = {
-				id: id || makeId(),
-				title: t,
-				start: new Date(s).toISOString(),
-				end: e ? new Date(e).toISOString() : null,
-				contactPhone: contact.phone || null,
-				contactName: contact.name || null,
-				note: $('evtNote').value.trim() || null,
-				recurrence: $('evtRecurrence').value,
-				gcalId: prevEvent?.gcalId || null
+				id: id || makeId(), title: t, start: new Date(s).toISOString(),
+				end: e ? new Date(e).toISOString() : null, contactPhone: contact.phone || null,
+				contactName: contact.name || null, note: $('evtNote').value.trim() || null,
+				recurrence: $('evtRecurrence').value, gcalId: prevEvent?.gcalId || null
 			};
 
-			// 3. Guardar el evento localmente PRIMERO
-			if (isNew) {
-				vault.events.push(eventData);
-			} else {
-				const idx = vault.events.findIndex(x => x.id === id);
-				if (idx >= 0) vault.events[idx] = eventData; else vault.events.push(eventData);
-			}
-			st.vault = await encryptJson(S.getKey(), vault);
+			if (isNew) { vault.events.push(eventData); } 
+            else { const idx = vault.events.findIndex(x => x.id === id); if (idx >= 0) vault.events[idx] = eventData; }
+			
+            st.vault = await encryptJson(S.getKey(), vault);
 			S.save(st);
 			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
 
-			// 4. Sincronizar con Google Calendar DESPUÉS de guardar localmente
 			if (getGCalAuto()) {
 				const newGCalId = await addEventToGoogle(eventData);
-
-				// 5. Si es un evento nuevo, Google nos da un ID. Hay que volver a guardar para registrarlo.
 				if (isNew && newGCalId) {
-					// Volvemos a leer el vault para no sobreescribir otros cambios
-					let finalVault = await decryptJson(S.getKey(), S.state().vault);
-					const eventToUpdate = finalVault.events.find(x => x.id === eventData.id);
-					if (eventToUpdate) {
-						eventToUpdate.gcalId = newGCalId;
-						const finalPack = await encryptJson(S.getKey(), finalVault);
-						S.save({ ...S.state(), vault: finalPack });
-						console.log(`gcalId ${newGCalId} guardado para el evento local ${eventData.id}`);
-					}
+					eventData.gcalId = newGCalId;
+                    const idx = vault.events.findIndex(x => x.id === eventData.id);
+                    if (idx !== -1) vault.events[idx] = eventData;
+					st.vault = await encryptJson(S.getKey(), vault);
+					S.save(st);
+					console.log(`gcalId ${newGCalId} guardado para el evento local ${eventData.id}`);
 				}
 			}
 
-			// 6. Actualizar UI
 			closeEventModal();
-			paintEventDots();
-			renderDayList();
+			if(currentView === 'month') { renderCalendar(); } else { renderWeeklyCalendar(); }
 			if (getAutoBackupCal()) exportAgendaFixed(true);
 
 		} catch (error) {
 			console.error("Error al guardar el evento:", error);
-			showToast('Ocurrió un error al guardar.', 'error');
+			showToast(error.message || 'Ocurrió un error al guardar.', 'error');
+            if(error.message.includes('inicio')) $('evtStart-field').classList.add('field-error');
+            if(error.message.includes('fin')) $('evtEnd-field').classList.add('field-error');
 		} finally {
 			toggleLoading(btn, false);
 		}
 	}
-
-
     async function deleteEvent(id){
       if(!await showConfirmation('Eliminar Cita', '¿Seguro que quieres eliminar esta cita?')) return;
 	  const st=S.state(); if(!st||!S.getKey()) return;
@@ -1207,19 +1334,15 @@
 		return;
 	  }
 
-	  // Llama a la función de borrado de Google ANTES de modificar el vault local
 	  if (eventToDelete.gcalId && getGCalAuto()){
 		await deleteEventFromGoogle(eventToDelete.gcalId);
 	  }
 
-	  // Continúa con el borrado local
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
 
-	  // Cierra el modal si está abierto y refresca la UI
 	  try { closeEventModal(); } catch(_) {}
-	  paintEventDots();
-	  renderDayList();
+	  if(currentView === 'month') { renderCalendar(); } else { renderWeeklyCalendar(); }
 
 	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
@@ -1526,13 +1649,101 @@
       });
       $('evtClose')?.addEventListener('click', closeEventModal);
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ $(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter') (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }); });
+	  
+	  $('btnSaveTemplate')?.addEventListener('click', saveTemplate);
+		$('btnCancelEditTemplate')?.addEventListener('click', resetTemplateForm);
+
+		$('templateSelectSend')?.addEventListener('change', async (e) => {
+			const tplId = e.target.value;
+			const msgArea = $('msg');
+			if (!tplId) {
+				msgArea.value = buildMessage(); return;
+			}
+			const st = S.state();
+			if (!st || !S.getKey()) return;
+			const vault = await decryptJson(S.getKey(), st.vault);
+			const template = (vault.templates || []).find(t => t.id === tplId);
+			const contact = findContactByPhone($('contactSelect')?.value);
+			if (template) {
+				msgArea.value = applyTemplate(template.content, contact?.name);
+			}
+		});
+
+		$('templateSelectModal')?.addEventListener('change', async (e) => {
+			const tplId = e.target.value;
+			if (!tplId) return;
+			const st = S.state();
+			if (!st || !S.getKey()) return;
+			const vault = await decryptJson(S.getKey(), st.vault);
+			const template = (vault.templates || []).find(t => t.id === tplId);
+			if (template) {
+				$('evtNote').value = template.content;
+			}
+		});
+		
+		// Listeners para el cambio de vista de la agenda
+		$('viewMonth')?.addEventListener('click', () => {
+			currentView = 'month';
+			$('viewMonth').classList.add('is-active');
+			$('viewWeek').classList.remove('is-active');
+			$('calGrid').style.display = 'grid';
+			$('calGridWeekly').style.display = 'none';
+			$('dayList').style.display = 'grid';
+			$('dayTitle').style.display = 'block';
+			renderCalendar();
+		});
+
+		$('viewWeek')?.addEventListener('click', () => {
+			currentView = 'week';
+			$('viewWeek').classList.add('is-active');
+			$('viewMonth').classList.remove('is-active');
+			$('calGrid').style.display = 'none';
+			$('calGridWeekly').style.display = 'grid';
+			$('dayList').style.display = 'none';
+			$('dayTitle').style.display = 'none';
+			currentWeekDate = selectedDay; // Inicia la semana en el día seleccionado
+			renderWeeklyCalendar();
+		});
+
+		// Modifica los listeners de navegación del calendario
+		$('calPrev').onclick = () => {
+			if (currentView === 'month') {
+				currentMonth.setMonth(currentMonth.getMonth() - 1);
+				renderCalendar();
+			} else {
+				currentWeekDate = addDays(currentWeekDate, -7);
+				renderWeeklyCalendar();
+			}
+		};
+		$('calNext').onclick = () => {
+			if (currentView === 'month') {
+				currentMonth.setMonth(currentMonth.getMonth() + 1);
+				renderCalendar();
+			} else {
+				currentWeekDate = addDays(currentWeekDate, 7);
+				renderWeeklyCalendar();
+			}
+		};
+		$('calToday').onclick = () => {
+			selectedDay = new Date();
+			if (currentView === 'month') {
+				currentMonth = new Date();
+				renderCalendar();
+			} else {
+				currentWeekDate = new Date();
+				renderWeeklyCalendar();
+			}
+		};
+	  
     }
 
 	// ===== MOBILE TABS & PWA =====
 	if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 	function setActiveTab(tab){
-	  document.body.dataset.tab = tab;
-	  document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn=> btn.classList.toggle('is-active', btn.dataset.tab === tab));
+	  const allowed = new Set(['agenda','send','contacts','backups', 'templates']);
+	  const t = allowed.has(tab) ? tab : 'agenda';
+	  document.body.setAttribute('data-tab', t);
+	  document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn=> btn.classList.toggle('is-active', btn.dataset.tab === t));
 	}
 	function wireBottomNav(){
 	  $('bottomNav')?.addEventListener('click', (e)=>{ const btn = e.target.closest('.nav-btn'); if(btn) setActiveTab(btn.dataset.tab); });
@@ -1550,6 +1761,8 @@
       $('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
       wireEvents();
 	  wireBottomNav();
+	  renderTemplates();
+	  populateTemplateSelectors();
 	  setActiveTab('agenda');
 	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 	  if ('contacts' in navigator && 'select' in navigator.contacts) {
