@@ -1535,7 +1535,7 @@
         if(pass.length<6){ showToast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
 		toggleLoading(e.target, true);
         try{ const r=await derive(pass); S.setKey(r.aesKey); S.setUser(user);
-          const pack=await encryptJson(S.getKey(),{list:[], events:[]});
+          const pack = await encryptJson(S.getKey(), {list:[], events:[], templates:[]});
           S.save({user, pwHashB64:r.pwHashB64, saltB64:r.saltB64, vault:pack, autoBackup:false});
           refreshContactsSelect([]); show('appView'); setActiveTab('agenda'); renderCalendar();
         }catch(err){ showToast('Error creando el almacén', 'error'); }
