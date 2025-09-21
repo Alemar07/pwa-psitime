@@ -1124,40 +1124,34 @@
       st.vault=await encryptJson(S.getKey(), vault); S.save(st);
       closeEventModal(); paintEventDots(); renderDayList(); showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
-	  if (getGCalAuto()) addEventToGoogle({ ...evt });
+	  if (getGCalAuto()) await addEventToGoogle(evt);
 	  toggleLoading(btn, false);
     }
     async function deleteEvent(id){
       if(!await showConfirmation('Eliminar Cita', '¿Seguro que quieres eliminar esta cita?')) return;
-      const st=S.state(); if(!st||!S.getKey()) return;
-      const vault=ensureEvents(await decryptJson(S.getKey(), st.vault));
-	  const ev = (vault.events || []).find(e => e.id === id);
-	  if (ev && ev.gcalId && getGCalAuto()){ 
-		  try{
-			  const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
-			  const url  = base + encodeURIComponent(ev.gcalId);
+	  const st=S.state(); if(!st||!S.getKey()) return;
+	  const vault=ensureEvents(await decryptJson(S.getKey(), st.vault));
+	  const eventToDelete = (vault.events || []).find(e => e.id === id);
 
-			  let token = await ensureGoogleToken(true);
-			  let r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
+	  if (!eventToDelete) {
+		showToast('Error: No se encontró la cita a eliminar.', 'error');
+		return;
+	  }
 
-			  // si el token está caducado → reintentamos
-			  if (r.status === 401){
-				googleAccessToken = null;
-				token = await ensureGoogleToken(false);
-				r = await fetch(url, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
-			  }
-
-			  // 404 (ya no existe en Google) lo ignoramos; 204/200 son OK
-			  if (!r.ok && r.status !== 404){
-				console.warn('Google Calendar delete error:', r.status);
-			  }
-			}catch(e){
-			  console.warn('No se pudo borrar en Google Calendar:', e);
-			}
-		  }
+	  // Llama a la función de borrado de Google ANTES de modificar el vault local
+	  if (eventToDelete.gcalId && getGCalAuto()){
+		await deleteEventFromGoogle(eventToDelete.gcalId);
+	  }
+	  
+	  // Continúa con el borrado local
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
-      st.vault=await encryptJson(S.getKey(), vault); S.save(st);
-	  closeEventModal(); paintEventDots(); renderDayList();
+	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
+	  
+	  // Cierra el modal si está abierto y refresca la UI
+	  try { closeEventModal(); } catch(_) {}
+	  paintEventDots(); 
+	  renderDayList();
+	  
 	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
@@ -1171,7 +1165,7 @@
       openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(buildEventMessage(evt))}`);
     }
 
-    // ===== MODAL SEARCH LOGIC (reutiliza la lógica principal) =====
+    // ===== MODAL SEARCH LOGIC =====
     let activeIndexEvt = -1;
     function selectModalContact(c){
       $('evtContact').value = c.phone;
@@ -1216,7 +1210,7 @@
     }
 	
 	// ===== GOOGLE CALENDAR =====
-	const GOOGLE_CLIENT_ID = '725040297865-tftgfffsebmoejifco1siqf67m7n9d9d.apps.googleusercontent.com';
+	const GOOGLE_CLIENT_ID = '77777.apps.googleusercontent.com';
 	const GCAL_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 	let googleTokenClient = null, googleAccessToken = null, googleTokenExpiry = 0;
 	function setGStatus(connected){ $('gStatus').textContent = connected ? 'Conectado' : 'Sin conectar'; $('gCalAutoToggle').disabled = !connected; $('btnGConnect').textContent = connected ? 'Reconectar' : 'Conectar Google'; }
@@ -1315,7 +1309,38 @@
 		return false;
 	  }
 	}
+	
+	async function deleteEventFromGoogle(gcalId) {
+	  if (!gcalId) return true; 
+	  try {
+		const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events/';
+		const url = base + encodeURIComponent(gcalId);
 
+		let token = await ensureGoogleToken(true); // Intenta silencioso
+		let r = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+
+		// Si el token está caducado, reintenta
+		if (r.status === 401) {
+		  googleAccessToken = null;
+		  token = await ensureGoogleToken(false);
+		  r = await fetch(url, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+		}
+
+		// 404 (Not Found) o 410 (Gone) significa que ya no existe, lo cual es un éxito para nosotros.
+		if (!r.ok && ![404, 410].includes(r.status)) {
+		  throw new Error('Google Calendar delete error: ' + r.status);
+		}
+		
+		console.log('Evento eliminado de Google Calendar con éxito.');
+		return true;
+
+	  } catch (e) {
+		console.warn('No se pudo borrar el evento en Google Calendar:', e);
+		// Decidimos no bloquear la eliminación local aunque falle en Google
+		// para que el usuario pueda seguir trabajando.
+		return false;
+	  }
+	}
 
 	// ===== EVENT WIRING =====
     function wireEvents(){
