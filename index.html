@@ -342,42 +342,41 @@
     /* ===== 18. Nuevos Estilos para Vista Semanal y Plantillas (CORREGIDO) ===== */
 	.cal-head {
 		display: flex;
-		flex-wrap: wrap; /* Permite que los elementos salten a la siguiente línea */
+		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
 		gap: 12px;
 		margin-bottom: 12px;
 	}
 	.cal-title {
-		width: 100%; /* El título ocupa toda la primera línea */
+		width: 100%;
 		text-align: center;
-		order: 1; /* Asegura que vaya primero en el orden visual */
+		order: 1;
 	}
 	.cal-view-switcher {
-		order: 2; /* Segundo elemento en el flujo */
-		margin-right: auto; /* Empuja los elementos de la derecha */
+		order: 2;
+		margin-right: auto;
 	}
-	.cal-nav-group { /* Nuevo contenedor para flechas y botón */
+	.cal-nav-group {
 		display: flex;
 		gap: 8px;
 		align-items: center;
-		order: 3; /* Tercer elemento en el flujo */
+		order: 3;
 	}
-
 	.cal-view-switcher .chip { padding: 6px 12px; font-size: 14px; }
 	.chip.is-active { background: var(--violet); color: white; border-color: var(--violet); }
 
-	/* Estilos para la vista semanal (corregidos y mejorados) */
+	/* --- Estilos de Vista Semanal Reconstruidos --- */
 	.cal-grid-weekly {
 		display: grid;
-		grid-template-columns: 50px repeat(7, 1fr);
+		grid-template-columns: 50px repeat(7, 1fr); /* 1 col para hora + 7 para días */
+		grid-template-rows: auto; /* Cabecera de días se ajusta sola */
 		margin-top: 16px;
 		position: relative;
 		background: rgba(0,0,0,.1);
 		border-radius: 16px;
-		overflow-x: auto; /* Permite scroll horizontal si no cabe */
+		overflow-x: auto;
 	}
-
 	.cal-weekly-header {
 		text-align: center;
 		padding: 8px 4px;
@@ -388,21 +387,21 @@
 		position: sticky; top: 0;
 		background: rgba(15, 28, 54, 0.9);
 		backdrop-filter: blur(4px);
-		z-index: 10;
+		z-index: 20;
 		min-width: 40px;
 	}
 	.cal-weekly-header.is-today { color: var(--cyan); }
-	.cal-weekly-header-time { grid-column: 1 / 2; }
+	.cal-weekly-header-time { grid-column: 1; grid-row: 1; }
 
 	.cal-weekly-times {
-		grid-column: 1 / 2;
-		grid-row: 2 / -1;
-		z-index: 5;
+		grid-column: 1;
+		grid-row: 2 / -1; /* Ocupa todas las filas de horas */
+		z-index: 10;
 		padding-right: 8px;
 		border-right: 1px solid var(--glassBorder);
 	}
 	.cal-weekly-time-slot {
-		height: 40px;
+		height: 40px; /* Altura para cada 30 min */
 		position: relative;
 		text-align: right;
 		font-size: 11px;
@@ -410,13 +409,14 @@
 		padding-top: 2px;
 	}
 
-	.cal-weekly-day-col-bg {
+	.cal-weekly-day-col {
 		position: relative;
+		grid-row: 2 / -1; /* Ocupa todas las filas de horas */
 		border-left: 1px solid var(--glassBorder);
 		background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
-		background-size: 100% 40px;
+		background-size: 100% 40px; /* Línea por cada 30 min */
 	}
-	.cal-weekly-day-col-bg.is-today-col { background-color: rgba(16,181,255,.05); }
+	.cal-weekly-day-col.is-today-col { background-color: rgba(16,181,255,.05); }
 
 	.cal-weekly-event {
 		position: absolute;
@@ -429,7 +429,7 @@
 		box-shadow: 0 4px 10px rgba(0,0,0,.2);
 		border-left: 4px solid var(--violet);
 		cursor: pointer;
-		transition: transform .2s ease, box-shadow .2s ease;
+		transition: all .2s ease;
 		z-index: 15;
 		left: 2px; right: 2px;
 	}
@@ -438,7 +438,7 @@
 	.evt-weekly-title { font-weight: 800; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 	.evt-weekly-meta { font-size: 11px; opacity: .7; }
 
-	/* Estilos para la sección de Plantillas */
+	/* Estilos para la sección de Plantillas (sin cambios) */
 	.template-card {
 		background: #fff; color: var(--ink); border-radius: 14px;
 		padding: 16px; margin-top: 12px; box-shadow: 0 10px 22px rgba(0,0,0,.14);
@@ -1302,10 +1302,9 @@
 		const today = new Date();
 
         // 1. Cabecera con días de la semana
-        const headerContainer = document.createDocumentFragment();
 		const timeHeader = document.createElement('div');
         timeHeader.className = 'cal-weekly-header cal-weekly-header-time';
-        grid.appendChild(timeHeader); // Directly append to grid
+        grid.appendChild(timeHeader);
 		for (let i = 0; i < 7; i++) {
 			const day = addDays(weekStart, i);
 			const headerCell = document.createElement('div');
@@ -1315,7 +1314,7 @@
 			grid.appendChild(headerCell);
 		}
 
-        // 2. Columna de horas y fondo de la cuadrícula
+        // 2. Columna de horas
 		const timeCol = document.createElement('div');
 		timeCol.className = 'cal-weekly-times';
 		for (let hour = WEEKLY_VIEW_START_HOUR; hour < WEEKLY_VIEW_END_HOUR; hour++) {
@@ -1333,7 +1332,7 @@
         for (let i = 0; i < 7; i++) {
             const dayCol = document.createElement('div');
             const day = addDays(weekStart, i);
-            dayCol.className = 'cal-weekly-day-col-bg';
+            dayCol.className = 'cal-weekly-day-col';
             if (isSameDay(day, today)) dayCol.classList.add('is-today-col');
 
             const weekEnd = addDays(weekStart, 7);
@@ -1354,6 +1353,7 @@
                 const endMinutes = (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60);
                 const durationMinutes = Math.max(30, endMinutes - startMinutes);
 
+                // CORRECCIÓN: Cálculo preciso de top y height
                 eventEl.style.top = `${(startMinutes / 30) * 40}px`; 
                 eventEl.style.height = `${(durationMinutes / 30) * 40}px`;
 
