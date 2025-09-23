@@ -11,6 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=ui21">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
   <style>
 	/* ===== 01 Variables ===== */
 	:root{
@@ -1052,24 +1053,25 @@
 	 */
 	const generateCalendarLink = (evt) => {
 		if (!evt || !evt.start) return null;
-		
-        const baseUrl = window.location.origin;
 
-        const params = new URLSearchParams();
-        params.append('title', evt.title || 'Cita');
-        params.append('start', new Date(evt.start).toISOString());
-        
-        if (evt.end) {
-            params.append('end', new Date(evt.end).toISOString());
-        }
-        
-        const when = new Date(evt.start);
-        const d = when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-        const t = when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-        const description = evt.note || `Recordatorio para el ${d} a las ${t}.`;
-        params.append('desc', description);
+		const data = {
+			title: evt.title || 'Cita',
+			start: new Date(evt.start).getTime(), // Usamos timestamp para ahorrar espacio
+			end: evt.end ? new Date(evt.end).getTime() : 0,
+			desc: evt.note || `Recordatorio para ${new Date(evt.start).toLocaleString('es-ES')}.`
+		};
 
-        return `${baseUrl}/api/create-ics?${params.toString()}`;
+		const jsonString = JSON.stringify(data);
+
+		const compressed = pako.deflate(jsonString, { to: 'string' });
+
+		const encoded = btoa(compressed)
+			.replace(/\+/g, '-') // Reemplaza '+' con '-'
+			.replace(/\//g, '_') // Reemplaza '/' con '_'
+			.replace(/=+$/, ''); // Quita los '=' del final
+
+		const baseUrl = window.location.origin;
+		return `${baseUrl}/c/${encoded}`;
 	};
 	
 	// ===== MESSAGE BUILDERS =====
