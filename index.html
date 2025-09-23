@@ -1926,7 +1926,7 @@
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
-      $('evtSend')?.addEventListener('click', ()=>{
+      $('evtSend')?.addEventListener('click', async()=>{
         const id=$('evtId').value;
         let eventData;
 
