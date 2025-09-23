@@ -59,7 +59,7 @@ export default function handler(request, response) {
           <h1>${decodedTitle}</h1>
           <p>${eventDate}</p>
           <a href="${downloadUrl}" download="cita.ics">Añadir a mi Calendario</a>
-          <p class="help-text">Si la descarga no funciona, copia el enlace y ábrelo en Safari.</p>
+          <p class="help-text">Si la descarga no funciona, copia el enlace y ábrelo en Safari o Chrome.</p>
         </div>
       </body>
       </html>
