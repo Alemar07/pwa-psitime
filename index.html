@@ -1053,7 +1053,6 @@
 	const generateCalendarLink = (evt) => {
 		if (!evt || !evt.start) return null;
 
-        // Usamos URLSearchParams para construir la URL de forma segura y limpia
         const params = new URLSearchParams();
         params.append('title', evt.title || 'Cita');
         params.append('start', new Date(evt.start).toISOString());
@@ -1062,15 +1061,14 @@
             params.append('end', new Date(evt.end).toISOString());
         }
         
-        // La descripción del evento debe ser el propio recordatorio.
         const when = new Date(evt.start);
-        const d = when.toLocaleDateDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+        
+        const d = when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
         const t = when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
         const description = evt.note || `Recordatorio para el ${d} a las ${t}.`;
         params.append('desc', description);
 
-        // La URL final apuntará a nuestra función serverless.
-        // Usamos una URL relativa que funcionará cuando despliegues el proyecto.
+        
         return `/api/create-ics?${params.toString()}`;
 	};
 	
