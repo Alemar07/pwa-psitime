@@ -1053,38 +1053,25 @@
 	const generateCalendarLink = (evt) => {
 		if (!evt || !evt.start) return null;
 
-		// El formato de fecha ICS es YYYYMMDDTHHMMSSZ (UTC)
-		const toICSDate = (dateStr) => {
-			if (!dateStr) return '';
-			return new Date(dateStr).toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
-		};
-		
-		const startDate = toICSDate(evt.start);
-		// Si no hay fecha de fin, se asume una duración de 1 hora.
-		const endDate = evt.end ? toICSDate(evt.end) : toICSDate(new Date(new Date(evt.start).getTime() + 60 * 60 * 1000).toISOString());
-		
-		// UID es un identificador único para el evento.
-		const uid = `mf-gestor-citas-${Date.now()}`;
-		
-		// Construcción del contenido del archivo .ics
-		const icsContent = [
-			'BEGIN:VCALENDAR',
-			'VERSION:2.0',
-			'PRODID:-//MFGestorCitas//App//ES',
-			'BEGIN:VEVENT',
-			`UID:${uid}`,
-			`DTSTAMP:${toICSDate(new Date().toISOString())}`,
-			`DTSTART:${startDate}`,
-			`DTEND:${endDate}`,
-			`SUMMARY:${evt.title || 'Cita'}`,
-			// Las notas se añaden a la descripción del evento.
-			`DESCRIPTION:${(evt.note || '').replace(/\n/g, '\\n')}`,
-			'END:VEVENT',
-			'END:VCALENDAR'
-		].join('\n');
-		
-		// Se crea el Data URI. El contenido debe estar codificado para ser parte de una URL.
-		return `data:text/calendar;charset=utf8,${encodeURIComponent(icsContent)}`;
+        // Usamos URLSearchParams para construir la URL de forma segura y limpia
+        const params = new URLSearchParams();
+        params.append('title', evt.title || 'Cita');
+        params.append('start', new Date(evt.start).toISOString());
+        
+        if (evt.end) {
+            params.append('end', new Date(evt.end).toISOString());
+        }
+        
+        // La descripción del evento debe ser el propio recordatorio.
+        const when = new Date(evt.start);
+        const d = when.toLocaleDateDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+        const t = when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+        const description = evt.note || `Recordatorio para el ${d} a las ${t}.`;
+        params.append('desc', description);
+
+        // La URL final apuntará a nuestra función serverless.
+        // Usamos una URL relativa que funcionará cuando despliegues el proyecto.
+        return `/api/create-ics?${params.toString()}`;
 	};
 	
 	// ===== MESSAGE BUILDERS =====
