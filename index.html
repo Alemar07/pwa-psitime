@@ -1061,6 +1061,35 @@
 	  }
       return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
+	
+	
+	// ===== ICS CALENDAR FILE GENERATOR =====
+	function formatICSDate(date) {
+		if (!date) return '';
+		return new Date(date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+	}
+
+	function generateICS(evt) {
+		const startDate = formatICSDate(evt.start);
+		const endDate = evt.end ? formatICSDate(evt.end) : formatICSDate(new Date(new Date(evt.start).getTime() + 60 * 60 * 1000));
+		const stampDate = formatICSDate(new Date());
+		const uid = evt.id + '@mfgestordecitas.app'; // ID único para el evento
+
+		const icsContent = `BEGIN:VCALENDAR
+		VERSION:2.0
+		PRODID:-//MFGestorDeCitas//PWA//ES
+		BEGIN:VEVENT
+		UID:${uid}
+		DTSTAMP:${stampDate}
+		DTSTART:${startDate}
+		DTEND:${endDate}
+		SUMMARY:${evt.title || 'Cita'}
+		DESCRIPTION:${evt.note || ''}
+		END:VEVENT
+		END:VCALENDAR`;
+
+		return icsContent.replace(/\n/g, '\r\n'); // Asegurar compatibilidad de saltos de línea
+	}
 
 	// ===== BACKUPS (CONTACTS) =====
     let pendingAutoBackup = null;
@@ -1852,8 +1881,22 @@
 
         if(!isPhoneValid(phone)){ showToast('Selecciona un contacto válido', 'error'); return; }
 
+		const eventData = {
+            id: 'temp_' + Date.now(),
+            title: `Cita con ${contact?.name || ''}`,
+            start: $('dt').value,
+            end: null, // No hay fecha de fin en esta vista
+            note: msg
+        };
+        
+        // Generar y descargar el .ics
+        const icsData = generateICS(eventData);
+        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
+
         const finalMsg = applyTemplate(msg, contact?.name);
         openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(finalMsg)}`);
+		
+		showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
       });
 	  $('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
 	  $('btnGConnect')?.addEventListener('click', ()=>{ if (googleTokenClient) googleTokenClient.requestAccessToken({ prompt: 'consent' }); });
@@ -1885,13 +1928,39 @@
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
         const id=$('evtId').value;
-        const contact = findContactByPhone($('evtContact').value);
-        const tmpEvt = {
-            title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(),
-            contactPhone: contact?.phone, contactName: contact?.name
-        };
-        if(!id) sendEventByWhatsApp(tmpEvt);
-        else sendEventByWhatsAppById(id);
+        let eventData;
+
+        if (id) {
+            // Si la cita ya existe, la obtenemos del almacén
+            const vault = await decryptJson(S.getKey(), S.state().vault);
+            eventData = vault.events.find(e => e.id === id);
+        } else {
+            // Si es una nueva cita (aún no guardada), construimos el objeto
+            const contact = findContactByPhone($('evtContact').value);
+            eventData = {
+                id: 'temp_' + Date.now(),
+                title: $('evtTitle').value.trim(),
+                start: new Date($('evtStart').value).toISOString(),
+                end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
+                contactPhone: contact?.phone,
+                contactName: contact?.name,
+                note: $('evtNote').value.trim()
+            };
+        }
+
+        if (!eventData || !eventData.contactPhone) {
+            showToast('La cita no tiene un contacto válido.', 'error');
+            return;
+        }
+
+        // Generar y descargar el .ics
+        const icsData = generateICS(eventData);
+        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
+
+        // Preparar y abrir WhatsApp
+        sendEventByWhatsApp(eventData);
+
+        showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
       });
       $('evtClose')?.addEventListener('click', closeEventModal);
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ $(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter') (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }); });
