@@ -1052,6 +1052,8 @@
 	 */
 	const generateCalendarLink = (evt) => {
 		if (!evt || !evt.start) return null;
+		
+        const baseUrl = window.location.origin;
 
         const params = new URLSearchParams();
         params.append('title', evt.title || 'Cita');
@@ -1062,14 +1064,12 @@
         }
         
         const when = new Date(evt.start);
-        
         const d = when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
         const t = when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
         const description = evt.note || `Recordatorio para el ${d} a las ${t}.`;
         params.append('desc', description);
 
-        
-        return `/api/create-ics?${params.toString()}`;
+        return `${baseUrl}/api/create-ics?${params.toString()}`;
 	};
 	
 	// ===== MESSAGE BUILDERS =====
