@@ -1056,19 +1056,26 @@
 
 		const data = {
 			title: evt.title || 'Cita',
-			start: new Date(evt.start).getTime(), // Usamos timestamp para ahorrar espacio
+			start: new Date(evt.start).getTime(),
 			end: evt.end ? new Date(evt.end).getTime() : 0,
 			desc: evt.note || `Recordatorio para ${new Date(evt.start).toLocaleString('es-ES')}.`
 		};
 
 		const jsonString = JSON.stringify(data);
 
-		const compressed = pako.deflate(jsonString, { to: 'string' });
+		// 1. Comprimimos el string a un array de bytes 
+		const compressed = pako.deflate(jsonString);
 
-		const encoded = btoa(compressed)
-			.replace(/\+/g, '-') // Reemplaza '+' con '-'
-			.replace(/\//g, '_') // Reemplaza '/' con '_'
-			.replace(/=+$/, ''); // Quita los '=' del final
+		// 2. Convertimos ese array de bytes a un string Base64.
+		
+		const binaryString = String.fromCharCode.apply(null, compressed);
+		const base64String = btoa(binaryString);
+
+		// 3. Codificamos para que sea seguro en una URL.
+		const encoded = base64String
+			.replace(/\+/g, '-')
+			.replace(/\//g, '_')
+			.replace(/=+$/, '');
 
 		const baseUrl = window.location.origin;
 		return `${baseUrl}/c/${encoded}`;
