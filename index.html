@@ -1061,35 +1061,6 @@
 	  }
       return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
-	
-	
-	// ===== ICS CALENDAR FILE GENERATOR =====
-	function formatICSDate(date) {
-		if (!date) return '';
-		return new Date(date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-	}
-
-	function generateICS(evt) {
-		const startDate = formatICSDate(evt.start);
-		const endDate = evt.end ? formatICSDate(evt.end) : formatICSDate(new Date(new Date(evt.start).getTime() + 60 * 60 * 1000));
-		const stampDate = formatICSDate(new Date());
-		const uid = evt.id + '@mfgestordecitas.app'; // ID único para el evento
-
-		const icsContent = `BEGIN:VCALENDAR
-		VERSION:2.0
-		PRODID:-//MFGestorDeCitas//PWA//ES
-		BEGIN:VEVENT
-		UID:${uid}
-		DTSTAMP:${stampDate}
-		DTSTART:${startDate}
-		DTEND:${endDate}
-		SUMMARY:${evt.title || 'Cita'}
-		DESCRIPTION:${evt.note || ''}
-		END:VEVENT
-		END:VCALENDAR`;
-
-		return icsContent.replace(/\n/g, '\r\n'); // Asegurar compatibilidad de saltos de línea
-	}
 
 	// ===== BACKUPS (CONTACTS) =====
     let pendingAutoBackup = null;
@@ -1514,45 +1485,13 @@
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
     async function sendEventByWhatsAppById(id) {
-        const st = S.state();
-        if (!st || !S.getKey()) return;
-        const vault = await decryptJson(S.getKey(), st.vault);
-        const eventData = vault.events.find(e => e.id === id);
-
-        if (!eventData) {
-            showToast('No se encontró la cita para enviar.', 'error');
-            return;
-        }
-
-        // 1. Generar y descargar el .ics
-        const icsData = generateICS(eventData);
-        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
-
-        // 2. Abrir WhatsApp 
-        sendEventByWhatsApp(eventData);
-
-        // 3. Notificar al usuario
-        showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
-    }
-	
-	function buildSmartEventMessage(evt) {
-        const contact = findContactByPhone(evt.contactPhone);
-        const name = contact?.name || evt.contactName || '';
-
-        if (evt.note && evt.note.trim() !== '') {
-            return applyTemplate(evt.note, name);
-        }
-        
-        return buildEventMessage(evt);
+        const vault = await decryptJson(S.getKey(), S.state().vault);
+        const evt = vault.events.find(e => e.id === id);
+        if (evt) sendEventByWhatsApp(evt);
     }
     function sendEventByWhatsApp(evt){
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){
-          showToast('La cita no tiene un contacto válido', 'error');
-          return;
-      }
-      
-      const message = buildSmartEventMessage(evt); 
-      openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(message)}`);
+      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ showToast('La cita no tiene un contacto válido', 'error'); return; }
+      openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(buildEventMessage(evt))}`);
     }
 
     // ===== MODAL SEARCH LOGIC =====
@@ -1913,22 +1852,8 @@
 
         if(!isPhoneValid(phone)){ showToast('Selecciona un contacto válido', 'error'); return; }
 
-		const eventData = {
-            id: 'temp_' + Date.now(),
-            title: `Cita con ${contact?.name || ''}`,
-            start: $('dt').value,
-            end: null, // No hay fecha de fin en esta vista
-            note: msg
-        };
-        
-        // Generar y descargar el .ics
-        const icsData = generateICS(eventData);
-        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
-
         const finalMsg = applyTemplate(msg, contact?.name);
         openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(finalMsg)}`);
-		
-		showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
       });
 	  $('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
 	  $('btnGConnect')?.addEventListener('click', ()=>{ if (googleTokenClient) googleTokenClient.requestAccessToken({ prompt: 'consent' }); });
@@ -1958,41 +1883,15 @@
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
-      $('evtSend')?.addEventListener('click', async()=>{
+      $('evtSend')?.addEventListener('click', ()=>{
         const id=$('evtId').value;
-        let eventData;
-
-        if (id) {
-            // Si la cita ya existe, la obtenemos del almacén
-            const vault = await decryptJson(S.getKey(), S.state().vault);
-            eventData = vault.events.find(e => e.id === id);
-        } else {
-            // Si es una nueva cita (aún no guardada), construimos el objeto
-            const contact = findContactByPhone($('evtContact').value);
-            eventData = {
-                id: 'temp_' + Date.now(),
-                title: $('evtTitle').value.trim(),
-                start: new Date($('evtStart').value).toISOString(),
-                end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
-                contactPhone: contact?.phone,
-                contactName: contact?.name,
-                note: $('evtNote').value.trim()
-            };
-        }
-
-        if (!eventData || !eventData.contactPhone) {
-            showToast('La cita no tiene un contacto válido.', 'error');
-            return;
-        }
-
-        // Generar y descargar el .ics
-        const icsData = generateICS(eventData);
-        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
-
-        // Preparar y abrir WhatsApp
-        sendEventByWhatsApp(eventData);
-
-        showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
+        const contact = findContactByPhone($('evtContact').value);
+        const tmpEvt = {
+            title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(),
+            contactPhone: contact?.phone, contactName: contact?.name
+        };
+        if(!id) sendEventByWhatsApp(tmpEvt);
+        else sendEventByWhatsAppById(id);
       });
       $('evtClose')?.addEventListener('click', closeEventModal);
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ $(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter') (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }); });
