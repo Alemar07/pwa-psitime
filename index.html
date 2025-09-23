@@ -1514,13 +1514,45 @@
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
     async function sendEventByWhatsAppById(id) {
-        const vault = await decryptJson(S.getKey(), S.state().vault);
-        const evt = vault.events.find(e => e.id === id);
-        if (evt) sendEventByWhatsApp(evt);
+        const st = S.state();
+        if (!st || !S.getKey()) return;
+        const vault = await decryptJson(S.getKey(), st.vault);
+        const eventData = vault.events.find(e => e.id === id);
+
+        if (!eventData) {
+            showToast('No se encontró la cita para enviar.', 'error');
+            return;
+        }
+
+        // 1. Generar y descargar el .ics
+        const icsData = generateICS(eventData);
+        saveFileSmart('cita.ics', 'text/calendar;charset=utf-8', icsData);
+
+        // 2. Abrir WhatsApp 
+        sendEventByWhatsApp(eventData);
+
+        // 3. Notificar al usuario
+        showToast("Adjunta el archivo 'cita.ics' descargado", 'info', 5000);
+    }
+	
+	function buildSmartEventMessage(evt) {
+        const contact = findContactByPhone(evt.contactPhone);
+        const name = contact?.name || evt.contactName || '';
+
+        if (evt.note && evt.note.trim() !== '') {
+            return applyTemplate(evt.note, name);
+        }
+        
+        return buildEventMessage(evt);
     }
     function sendEventByWhatsApp(evt){
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ showToast('La cita no tiene un contacto válido', 'error'); return; }
-      openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(buildEventMessage(evt))}`);
+      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){
+          showToast('La cita no tiene un contacto válido', 'error');
+          return;
+      }
+      
+      const message = buildSmartEventMessage(evt); 
+      openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(message)}`);
     }
 
     // ===== MODAL SEARCH LOGIC =====
