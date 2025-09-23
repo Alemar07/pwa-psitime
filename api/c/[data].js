@@ -1,28 +1,31 @@
 // api/c/[data].js
 
-import pako from 'pako'; // Vercel instalará esto automáticamente
+import pako from 'pako';
 import { generateICSContent, generateHTMLPage } from '../../_lib/calendar-helpers.js';
 
 export default function handler(request, response) {
-  // 1. Obtenemos el código comprimido de la URL.
-  const { data } = request.query;
+  const { data, action } = request.query;
   if (!data) {
     return response.status(400).send('Falta el código de la cita.');
   }
 
   try {
-    // 2. Decodificamos el código de Base64URL a su formato original.
+    // 1. Decodificamos el código de Base64URL a Base64 estándar.
     let base64 = data.replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4) {
       base64 += '=';
     }
-    const compressed = atob(base64);
+
+    // --- CAMBIO CLAVE Y DEFINITIVO ---
+    // 2. Usamos Buffer para decodificar de Base64 a datos binarios.
+    // Este método es robusto y estándar en el servidor.
+    const compressed = Buffer.from(base64, 'base64');
 
     // 3. Descomprimimos para obtener el string JSON original.
     const jsonString = pako.inflate(compressed, { to: 'string' });
     const eventData = JSON.parse(jsonString);
-
-    // 4. Convertimos los timestamps de vuelta a formato de fecha ISO.
+    
+    // El resto de la lógica se mantiene igual...
     const queryForICS = {
       title: encodeURIComponent(eventData.title),
       start: new Date(eventData.start).toISOString(),
@@ -30,9 +33,6 @@ export default function handler(request, response) {
       desc: encodeURIComponent(eventData.desc),
     };
     
-    const { action } = request.query;
-
-    // 5. Reutilizamos la lógica que ya funciona.
     if (action === 'download') {
       const icsContent = generateICSContent(queryForICS);
       response.setHeader('Content-Type', 'application/octet-stream');
