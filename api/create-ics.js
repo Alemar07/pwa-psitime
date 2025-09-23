@@ -29,12 +29,15 @@ export default function handler(request, response) {
     return response.status(200).send(icsContent);
   } 
   
-  // Si no, se muestra la página HTML con el botón que activa la descarga
+  // Si no, se muestra la página HTML que contiene el enlace de descarga
   else {
     const decodedTitle = decodeURIComponent(title);
     const eventDate = new Date(start).toLocaleDateString('es-ES', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
+    
+    // La URL a la que apuntará el botón de descarga
+    const downloadUrl = `${request.url}&action=download`;
 
     const html = `
       <!DOCTYPE html>
@@ -48,23 +51,16 @@ export default function handler(request, response) {
           .card { background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); max-width: 400px; }
           h1 { font-size: 24px; margin-top: 0; }
           p { margin-bottom: 24px; color: #555; line-height: 1.5; }
-          button { border: none; cursor: pointer; display: inline-block; text-decoration: none; background: #007aff; color: white; padding: 16px 24px; border-radius: 12px; font-weight: bold; font-size: 18px; transition: transform 0.2s; }
-          button:active { transform: scale(0.96); }
+          a { display: inline-block; text-decoration: none; background: #007aff; color: white; padding: 16px 24px; border-radius: 12px; font-weight: bold; font-size: 18px; transition: transform 0.2s; }
+          a:active { transform: scale(0.96); }
         </style>
       </head>
       <body>
         <div class="card">
           <h1>${decodedTitle}</h1>
           <p>${eventDate}</p>
-          <button onclick="download()">Añadir a mi Calendario</button>
+          <a href="${downloadUrl}" download="cita.ics">Añadir a mi Calendario</a>
         </div>
-        <script>
-          function download() {
-            // Esta línea le dice al navegador que navegue a la URL de descarga.
-            // Es una acción iniciada por el usuario y, por tanto, de confianza.
-            window.location.href = window.location.href + '&action=download';
-          }
-        </script>
       </body>
       </html>
     `;
