@@ -35,8 +35,6 @@ export default function handler(request, response) {
     const eventDate = new Date(start).toLocaleDateString('es-ES', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
-    
-    // La URL a la que apuntará el botón de descarga
     const downloadUrl = `${request.url}&action=download`;
 
     const html = `
@@ -53,6 +51,7 @@ export default function handler(request, response) {
           p { margin-bottom: 24px; color: #555; line-height: 1.5; }
           a { display: inline-block; text-decoration: none; background: #007aff; color: white; padding: 16px 24px; border-radius: 12px; font-weight: bold; font-size: 18px; transition: transform 0.2s; }
           a:active { transform: scale(0.96); }
+          .help-text { font-size: 12px; color: #888; margin-top: 20px; }
         </style>
       </head>
       <body>
@@ -60,6 +59,7 @@ export default function handler(request, response) {
           <h1>${decodedTitle}</h1>
           <p>${eventDate}</p>
           <a href="${downloadUrl}" download="cita.ics">Añadir a mi Calendario</a>
+          <p class="help-text">Si la descarga no funciona, copia el enlace y ábrelo en Safari.</p>
         </div>
       </body>
       </html>
