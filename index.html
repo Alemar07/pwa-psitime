@@ -460,6 +460,37 @@
 			grid-template-columns: repeat(5, 1fr);
 		}
 	}
+	
+	/* ===== 19. Estilos para el botón de importar contacto ===== */
+	.field-with-button {
+	  position: relative;
+	}
+	
+	.field-with-button input[type="search"] {
+	  padding-right: 80px !important; 
+	}
+	.btn-import-contact {
+	  display: none; 
+	  position: absolute;
+	  top: 50%;
+	  right: 42px; 
+	  transform: translateY(-50%);
+	  padding: 4px;
+	  background: transparent;
+	  border: none;
+	  cursor: pointer;
+	  color: #667085;
+	  opacity: 0.8;
+	  transition: all .2s ease;
+	}
+	.btn-import-contact:hover {
+	  opacity: 1;
+	  color: var(--violet);
+	}
+	
+	body.contact-picker-supported .btn-import-contact {
+	  display: block;
+	}
   </style>
 </head>
 <body>
@@ -570,10 +601,13 @@
               <div>
                 <label for="contactSearch">Contacto</label>
                 <div class="contact-picker">
-                  <div class="search-wrap">
+                  <div class="field field-with-button">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
                     <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
                     <svg id="clearSearch" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+                    <button type="button" id="btnImportContactSend" class="btn-import-contact" title="Importar contacto del dispositivo">
+                      <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M18 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12ZM9 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6Zm9 8H6v-1c0-2 4-3.1 6-3.1s6 1.1 6 3.1v1Z"/></svg>
+                    </button>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
                 </div>
@@ -735,10 +769,13 @@
       </div>
 
       <div class="contact-picker" style="margin-bottom:10px">
-        <div class="search-wrap">
+        <div class="field field-with-button">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
           <input id="evtSearch" type="search" placeholder="Buscar contacto (opcional)" autocapitalize="none" autocomplete="off" spellcheck="false" />
           <svg id="evtClear" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
+          <button type="button" id="btnImportContactModal" class="btn-import-contact" title="Importar contacto del dispositivo">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M18 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12ZM9 9a3 3 0 1 0 0 6a3 3 0 0 0 0-6Zm9 8H6v-1c0-2 4-3.1 6-3.1s6 1.1 6 3.1v1Z"/></svg>
+          </button>
         </div>
         <div id="evtResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
         <select id="evtContact" style="display:none"></select>
@@ -1109,6 +1146,68 @@
 
       return mainMessage; // Devuelve el mensaje original si el enlace no se pudo crear
     }
+
+	// ===== IMPORT & SAVE LOCAL CONTACTS =====
+
+	async function importAndSelectContact(onSelectCallback) {
+	  if (!('contacts' in navigator && 'select' in navigator.contacts)) {
+		showToast('El selector de contactos no es compatible con este navegador.', 'error');
+		return;
+	  }
+	  
+	  try {
+		const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+		if (!contacts.length) {
+		  showToast('No se seleccionó ningún contacto.', 'info');
+		  return;
+		}
+		
+		const nativeContact = contacts[0];
+		if (!nativeContact.tel || nativeContact.tel.length === 0) {
+		  showToast('El contacto seleccionado no tiene número de teléfono.', 'warning');
+		  return;
+		}
+		
+		const name = (nativeContact.name && nativeContact.name.length > 0) ? nativeContact.name[0] : 'Sin Nombre';
+		const phone = nativeContact.tel[0];
+
+		if (!isPhoneValid(phone)) {
+			showToast(`El teléfono "${phone}" no es válido.`, 'error');
+			return;
+		}
+
+		
+		const existingContact = (window.__contacts || []).find(c => c.phone === phone);
+		
+		if (existingContact) {
+		  showToast('Este contacto ya existe en tu lista.', 'info');
+		  onSelectCallback(existingContact);
+		  return;
+		}
+
+		const st = S.state();
+		if (!st || !S.getKey()) return;
+		const vault = await decryptJson(S.getKey(), st.vault);
+		const list = vault.list || [];
+		
+		const newContact = { name, phone };
+		list.push(newContact);
+		vault.list = sortContacts(list);
+		st.vault = await encryptJson(S.getKey(), vault);
+		S.save(st);
+
+		refreshContactsSelect(vault.list);
+		if (getAutoBackup()) exportFixedBackup(true);
+		
+		showToast(`Contacto "${name}" importado y guardado.`, 'success');
+		onSelectCallback(newContact);
+
+	  } catch (err) {
+		console.error("Error al importar contacto:", err);
+		showToast('Se canceló la importación o hubo un error.', 'error');
+	  }
+	}
+
 
 	// ===== BACKUPS (CONTACTS) =====
     let pendingAutoBackup = null;
@@ -2080,7 +2179,12 @@
 	  setActiveTab('agenda');
 	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 	  if ('contacts' in navigator && 'select' in navigator.contacts) {
-		  const btn = $('btnImportDevice'); btn.style.display = 'inline-flex';
+		  document.body.classList.add('contact-picker-supported');
+		  $('btnImportContactSend')?.addEventListener('click', () => importAndSelectContact(selectContact));
+		  $('btnImportContactModal')?.addEventListener('click', () => importAndSelectContact(selectModalContact));
+
+		  const btn = $('btnImportDevice'); 
+		  if(btn) btn.style.display = 'inline-flex';
 		  btn.onclick = async () => {
 			  try {
                   const props = ['name', 'tel'];
