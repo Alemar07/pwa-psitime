@@ -955,6 +955,23 @@
       }
     }
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
+	const normalizePhoneNumber = (phone) => {
+	  if (!phone) return '';
+	  
+	  let p = phone.trim().replace(/[\s-()]/g, '');
+	  
+	  if (p.startsWith('00')) {
+		p = '+' + p.substring(2);
+	  }
+	  
+	  if (!p.startsWith('+') && (p.startsWith('6') || p.startsWith('7')) && p.length === 9) {
+		p = '+34' + p;
+	  }
+	  
+	  return p;
+	};
+	
+	
     function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
     function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]); }
 
@@ -1169,10 +1186,10 @@
 		}
 		
 		const name = (nativeContact.name && nativeContact.name.length > 0) ? nativeContact.name[0] : 'Sin Nombre';
-		const phone = nativeContact.tel[0];
+		const phone = normalizePhoneNumber(nativeContact.tel[0]);
 
 		if (!isPhoneValid(phone)) {
-			showToast(`El teléfono "${phone}" no es válido.`, 'error');
+			showToast(`El teléfono "${nativeContact.tel[0]}" no tiene un formato válido.`, 'error');
 			return;
 		}
 
@@ -1965,7 +1982,8 @@
       })();
 
       $('btnAdd')?.addEventListener('click', async ()=>{
-	    const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
+	    const name=$('newName').value.trim(), phone=normalizePhoneNumber($('newPhone').value.trim());
+		$('newPhone').value = phone;
 	    if(!name){ showToast('Introduce un nombre', 'error'); return; }
 	    if(!isPhoneValid(phone)){ showToast('Teléfono inválido. Usa formato: +34600111222', 'error'); return; }
 	    const st=S.state(); if(!st||!S.getKey()) return;
