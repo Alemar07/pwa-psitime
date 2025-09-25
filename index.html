@@ -1003,8 +1003,10 @@
     function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
     function toggleResetVisibility(){ const reset=$('btnReset'); if(reset) reset.style.display = S.state() ? 'inline-flex' : 'none'; }
     function show(id){
+	  console.log("4. A punto de mostrar la vista:", id);
       ['setupView','loginView','appView'].forEach(v=>{ const el=$(v); if(el) el.style.display=(v===id?'block':'none'); });
-      $('logout').style.display = id==='appView' ? 'inline' : 'none';
+      console.log("5. VISTA MOSTRADA:", id);
+	  $('logout').style.display = id==='appView' ? 'inline' : 'none';
       setHeaderTitle(id==='appView' ? 'Gestionar citas' : 'Iniciar sesión');
       toggleResetVisibility();
       document.body.classList.toggle('login-mode', id==='loginView');
@@ -2426,56 +2428,47 @@
 
     // ===== INITIALIZATION =====
 	async function init(){
+		console.log("1. Iniciando la aplicación..."); // <--- LÍNEA DE DEPURACIÓN
+		
 		const startupLogic = async () => {
-			// Envolvemos TODA la lógica en un try...catch para capturar cualquier error
 			try {
-				// 1. Si ya hay datos en localStorage, ir a la pantalla de login (comportamiento normal)
 				if (S.state()) {
 					show('loginView');
 					return;
 				}
-
-				// 2. Si el navegador no es compatible con el guardado automático, ir a crear cuenta
 				if (!fsaSupported) {
 					show('setupView');
 					return;
 				}
-				
-				// 3. Intentar leer el archivo de respaldo desde la carpeta guardada
 				const dirHandle = await idbKeyval.get('backupDirHandle');
 				if (!dirHandle) {
-					show('setupView'); // No hay respaldo configurado, ir a crear cuenta
+					show('setupView');
 					return;
 				}
-				
 				const fileHandle = await dirHandle.getFileHandle(FsaBackupFile);
 				const file = await fileHandle.getFile();
 				const content = await file.text();
-
-				// 4. Si se encuentra el archivo, preguntar al usuario
 				const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad automática. ¿Quieres restaurarla?');
-				
 				if (restore) {
-					// 5. Si el usuario acepta, importar los datos
 					const success = await importFullFixedFromContent(content);
 					if (success) {
-						show('loginView'); // Llevar al login con los datos ya restaurados
+						show('loginView');
 					} else {
-						show('setupView'); // Si la restauración falla
+						show('setupView');
 					}
 				} else {
-					show('setupView'); // Si el usuario no quiere restaurar
+					show('setupView');
 				}
 			} catch (error) {
-				// 6. Si CUALQUIER paso anterior falla, mostrar la pantalla de crear cuenta
-				console.log('Error en el arranque o no se encontró copia de seguridad. Iniciando en modo normal.', error);
+				console.error('Error en startupLogic, mostrando vista de configuración por defecto.', error); // <--- LÍNEA DE DEPURACIÓN
 				show('setupView');
 			}
 		};
 
+		console.log("2. Ejecutando lógica de arranque (startupLogic)..."); // <--- LÍNEA DE DEPURACIÓN
 		await startupLogic();
+		console.log("3. Lógica de arranque completada."); // <--- LÍNEA DE DEPURACIÓN
 
-		// El resto del código de inicialización se mantiene igual
 		const m=$('msg'); if(m) m.value=buildMessage();
 		const d=new Date(Date.now()+60*60*1000);
 		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -2514,7 +2507,7 @@
 					  }
 				  });
 				  if (added > 0) {
-					  st.vault = await encryptJson(S.getKey(), vault);
+					  st.vault = await encryptJson(S.getKey(), st.vault);
 					  S.save(st);
 					  refreshContactsSelect(vault.list);
 					  triggerAutoFsaBackup();
