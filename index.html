@@ -230,7 +230,7 @@
 	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible{ outline:2px solid var(--cyan); outline-offset:2px; }
 	.toast-container {
 		position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0)); left: 50%;
-		transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column;
+		transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column;
 		align-items: center; gap: 10px; pointer-events: none;
 	}
 	.toast {
@@ -499,7 +499,7 @@
 	body.contact-picker-supported .btn-import-contact {
 	  display: block;
 	}
-  </style>
+</style>
 </head>
 <body>
   <div class="card">
@@ -1158,22 +1158,27 @@
       const when = new Date(evt.start);
       const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
       const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      const title = evt.title ? `“${evt.title}”` : 'la cita';
+      
       let name = evt.contactName || '';
 	  if (!name && evt.contactPhone) {
 		  const contact = findContactByPhone(evt.contactPhone);
 		  if (contact) name = contact.name;
 	  }
       
-      const mainMessage = `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
+      let mainMessage;
+      if (evt.note && evt.note.trim() !== '') {
+        mainMessage = applyTemplate(evt.note, name);
+      } else {
+        const title = evt.title ? `“${evt.title}”` : 'la cita';
+        mainMessage = `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
+      }
       
-      // Generamos y añadimos el enlace del calendario
       const calendarLink = generateCalendarLink(evt);
       if (calendarLink) {
         return `${mainMessage}\n\n🗓️ Para añadir esta cita a tu calendario, haz clic en el siguiente enlace:\n${calendarLink}`;
       }
 
-      return mainMessage; // Devuelve el mensaje original si el enlace no se pudo crear
+      return mainMessage;
     }
 
 	// ===== IMPORT & SAVE LOCAL CONTACTS =====
@@ -2031,14 +2036,12 @@
 
         const finalMsg = applyTemplate(msg, contact?.name);
 
-        // Creamos un objeto de evento temporal con los datos del formulario
         const tempEvent = {
-            title: 'Recordatorio de Cita', // Título genérico
+            title: 'Recordatorio de Cita',
             start: $('dt')?.value,
-            note: finalMsg // Usamos el propio mensaje como nota
+            note: finalMsg
         };
 
-        // Generamos y añadimos el enlace del calendario
         const calendarLink = generateCalendarLink(tempEvent);
         let messageToSend = finalMsg;
 
@@ -2077,13 +2080,17 @@
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
-        const contact = findContactByPhone($('evtContact').value);
+        const phone = $('evtContact').value;
+        if (!phone) {
+            showToast('Debes seleccionar un contacto para enviar la cita.', 'error');
+            return;
+        }
+        const contact = findContactByPhone(phone);
         if (!contact || !isPhoneValid(contact.phone)) {
-            showToast('Selecciona un contacto válido para enviar la cita.', 'error');
+            showToast('El contacto seleccionado no es válido.', 'error');
             return;
         }
 
-        // Construimos el objeto del evento con los datos actuales del modal
         const tmpEvt = {
             title: $('evtTitle').value.trim() || 'Cita',
             start: new Date($('evtStart').value).toISOString(),
@@ -2093,7 +2100,6 @@
             contactName: contact?.name
         };
 
-        // La función buildEventMessage ya se encarga de generar y añadir el enlace
         const messageToSend = buildEventMessage(tmpEvt);
         
         openExternal(`https://wa.me/${contact.phone.replace('+','')}/?text=${encodeURIComponent(messageToSend)}`);
@@ -2134,7 +2140,7 @@
 			$('viewWeek').classList.remove('is-active');
 			$('calGrid').style.display = 'grid';
 			$('calGridWeekly').style.display = 'none';
-            $('dayToolbar').style.display = 'flex'; // <-- MOSTRAR barra de herramientas del día
+            $('dayToolbar').style.display = 'flex';
 			$('dayList').style.display = 'grid';
 			renderCalendar();
 	  });
@@ -2144,7 +2150,7 @@
 			$('viewMonth').classList.remove('is-active');
 			$('calGrid').style.display = 'none';
 			$('calGridWeekly').style.display = 'grid';
-            $('dayToolbar').style.display = 'none'; // <-- OCULTAR barra de herramientas del día
+            $('dayToolbar').style.display = 'none';
 			$('dayList').style.display = 'none';
 			currentWeekDate = selectedDay;
 			renderWeeklyCalendar();
