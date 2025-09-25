@@ -728,6 +728,17 @@
 				<button id="btnImportFull" class="btn btn-outline" type="button">Importar todo…</button>
               </div>
             </div>
+			<div class="gc-sep"></div>
+			  <div id="fsaSetupContainer" style="display:none; margin-top:12px;">
+				<h3 class="section-title" style="margin-bottom:10px">Guardado Automático en Dispositivo</h3>
+				<p class="muted" style="font-size:13px; margin-top:-8px; margin-bottom:12px;">
+				  Guarda una copia de seguridad automáticamente en una carpeta de tu dispositivo.
+				</p>
+				<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+				  <button id="btnFsaSetup" class="btn btn-outline" type="button">Activar Guardado Automático…</button>
+				  <span id="fsaStatus" class="muted" style="font-size:12px;"></span>
+				</div>
+			  </div>
           </div>
         </div>
 
@@ -888,6 +899,46 @@
 			button.disabled = false;
 		}
 	};
+
+	// ===== INDEXEDDB KEY-VALUE STORE =====
+	const idbKeyval = (() => {
+		let db;
+		async function getDB() {
+			if (db) return db;
+			return new Promise((resolve, reject) => {
+				const request = indexedDB.open('mf-gestor-citas-db', 1);
+				request.onupgradeneeded = () => request.result.createObjectStore('keyval');
+				request.onsuccess = () => resolve(request.result);
+				request.onerror = () => reject(request.error);
+			});
+		}
+		async function withStore(type, callback) {
+			const db = await getDB();
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction('keyval', type);
+				tx.oncomplete = () => resolve();
+				tx.onerror = () => reject(tx.error);
+				callback(tx.objectStore('keyval'));
+			});
+		}
+		return {
+			get: async (key) => {
+				let req;
+				await withStore('readonly', store => { req = store.get(key); });
+				return new Promise((resolve, reject) => {
+					req.onsuccess = () => resolve(req.result);
+					req.onerror = () => reject(req.error);
+				});
+			},
+			set: async (key, value) => {
+				return withStore('readwrite', store => { store.put(value, key); });
+			},
+			del: async (key) => {
+				return withStore('readwrite', store => { store.delete(key); });
+			}
+		};
+	})();
+
 
 	// ===== STATE MANAGEMENT MODULE =====
 	const S = (() => {
@@ -1084,6 +1135,7 @@
 		refreshContactsSelect(v.list);
 		updateSelectedContactCard($('contactSelect')?.value || '');
 		if(getAutoBackup()) exportFixedBackup(true);
+		triggerAutoFsaBackup();
 		showToast('Contacto eliminado.', 'success');
 	  };
 	}
@@ -1273,6 +1325,7 @@
       refreshContactsSelect(vault.list);
       showToast(`Importación completa. Añadidos: ${added}, existentes: ${skipped}.`, 'success');
       if(getAutoBackup()) exportFixedBackup(true);
+	  triggerAutoFsaBackup();
     }
     async function exportCSV(){
       if(!S.getKey()){ showToast('Inicia sesión para exportar.', 'error'); return; }
@@ -1314,6 +1367,7 @@
 	  paintEventDots(); renderDayList();
 	  showToast(`Agenda importada. Añadidos: ${added}, existentes: ${skipped}.`, 'success');
 	  if(getAutoBackupCal()) exportAgendaFixed(true);
+	  triggerAutoFsaBackup();
 	}
 	function getAutoBackupCal(){ return !!S.state()?.autoBackupCal; }
 	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); $('autoBackupCalToggle').checked = st.autoBackupCal; }
@@ -1358,6 +1412,130 @@
       populateTemplateSelectors();
 	  showToast(`Importación completa. Contactos: ${addedC}+, Citas: ${addedE}+, Plantillas: ${addedT}+`, 'success');
 	}
+	
+	async function processFullBackupData(data) {
+		if(data.format!=='mf-full-fixed-v1'){
+			showToast('Copia completa no reconocida.', 'error');
+			return false;
+		}
+		let obj;
+		try {
+			const {aesKey} = await deriveFixed(data.saltB64);
+			obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct});
+		} catch(e){
+			showToast('No se pudo descifrar la copia.', 'error');
+			return false;
+		}
+		if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){
+			showToast('El contenido de la copia es inválido.', 'error');
+			return false;
+		}
+		
+		const freshVault = {
+			list: obj.list || [],
+			events: obj.events || [],
+			templates: obj.templates || []
+		};
+		
+		let pass = prompt("Crea una nueva contraseña para tus datos restaurados (mín. 6 caracteres)");
+		if (!pass || pass.length < 6) {
+			showToast("La contraseña no es válida.", "error");
+			return false;
+		}
+		let user = prompt("Crea un nuevo nombre de usuario");
+		if (!user) {
+			showToast("Se requiere un nombre de usuario.", "error");
+			return false;
+		}
+
+		const {aesKey, pwHashB64, saltB64} = await derive(pass);
+		S.setKey(aesKey);
+		S.setUser(user);
+		
+		const pack = await encryptJson(aesKey, freshVault);
+		S.save({user, pwHashB64, saltB64, vault:pack, autoBackup:false});
+		triggerAutoFsaBackup();
+		
+		showToast(`Restauración completa. Por favor, inicia sesión con tus nuevas credenciales.`, 'success');
+		return true;
+	}
+
+	async function importFullFixedFromContent(content) {
+		try {
+			const data = JSON.parse(content);
+			return await processFullBackupData(data);
+		} catch (e) {
+			showToast('El archivo de copia de seguridad está dañado.', 'error');
+			return false;
+		}
+	}
+
+	async function importFullFixedFromFile(file){
+	  try {
+		const content = await file.text();
+		const success = await importFullFixedFromContent(content);
+		if (success) {
+			show('loginView');
+		}
+	  } catch(e) {
+		showToast('No se pudo leer el archivo.', 'error');
+	  }
+	}
+	
+	// ===== FILE SYSTEM ACCESS API & AUTO-BACKUP =====
+	const fsaSupported = 'showDirectoryPicker' in window;
+	const FsaBackupFile = 'backup_mf_gestor_citas.json';
+
+	async function updateFsaStatus() {
+		if (!fsaSupported) return;
+		const statusEl = $('fsaStatus');
+		const btn = $('btnFsaSetup');
+		const dirHandle = await idbKeyval.get('backupDirHandle');
+		if (dirHandle) {
+			if (await dirHandle.queryPermission({ mode: 'readwrite' }) === 'granted') {
+				statusEl.textContent = `Guardando en: "${dirHandle.name}".`;
+				btn.textContent = 'Cambiar Carpeta';
+			} else {
+				statusEl.textContent = 'Permiso denegado. Vuelve a activar.';
+				btn.textContent = 'Activar Guardado Automático…';
+				await idbKeyval.del('backupDirHandle');
+			}
+		} else {
+			statusEl.textContent = 'Aún no activado.';
+			btn.textContent = 'Activar Guardado Automático…';
+		}
+	}
+
+	async function triggerAutoFsaBackup() {
+		if (!fsaSupported || !S.getKey()) return;
+		const dirHandle = await idbKeyval.get('backupDirHandle');
+		if (!dirHandle) return;
+
+		try {
+			if (await dirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+				console.warn('Permiso de escritura denegado. Omitiendo auto-backup.');
+				updateFsaStatus();
+				return;
+			}
+			
+			const vault = await decryptJson(S.getKey(), S.state().vault);
+			const {aesKey, saltB64} = await deriveFixed();
+			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
+			const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
+
+			const fileHandle = await dirHandle.getFileHandle(FsaBackupFile, { create: true });
+			const writable = await fileHandle.createWritable();
+			await writable.write(JSON.stringify(payload));
+			await writable.close();
+			console.log('Copia de seguridad automática guardada con éxito.');
+
+		} catch (error) {
+			console.error('Error durante el auto-backup de FSA:', error);
+			showToast('Error al guardar la copia automática.', 'error');
+			updateFsaStatus();
+		}
+	}
+	
 
 	// ===== PASSWORD VISIBILITY =====
     const eyeOpen = `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c-5.5 0-10 4.5-11 7 1 2.5 5.5 7 11 7s10-4.5 11-7c-1-2.5-5.5-7-11-7Z"></path><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"></circle></g>`;
@@ -1611,6 +1789,7 @@
             st.vault = await encryptJson(S.getKey(), vault);
 			S.save(st);
 			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success', 3000, 'modal');
+			triggerAutoFsaBackup();
 
 			if (getGCalAuto()) {
 				const newGCalId = await addEventToGoogle(eventData);
@@ -1656,6 +1835,7 @@
 
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
+	  triggerAutoFsaBackup();
       
       showToast('Cita eliminada.', 'success'); // This will show globally after modal closes
 	  try { closeEventModal(); } catch(_) {}
@@ -1896,6 +2076,7 @@
 			vault.templates.push({ id: makeTemplateId(), name, content });
 		}
 		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
+		triggerAutoFsaBackup();
 		showToast(id ? 'Plantilla actualizada' : 'Plantilla guardada', 'success');
 		resetTemplateForm(); await renderTemplates(); await populateTemplateSelectors();
 	}
@@ -1905,6 +2086,7 @@
 		const vault = await decryptJson(S.getKey(), st.vault);
 		vault.templates = (vault.templates || []).filter(t => t.id !== id);
 		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
+		triggerAutoFsaBackup();
 		showToast('Plantilla eliminada.', 'success');
 		await renderTemplates(); await populateTemplateSelectors();
 	}
@@ -2041,6 +2223,7 @@
 		  $('newName').value = ''; $('newPhone').value = '+34'; $('newName').focus();
 		  showToast('Contacto añadido.', 'success');
 	    }
+		triggerAutoFsaBackup();
 	  });
 
       $('dt')?.addEventListener('change', ()=>{ $('msg').value=buildMessage(); });
@@ -2092,6 +2275,27 @@
       $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
       $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
 
+	  $('btnFsaSetup')?.addEventListener('click', async () => {
+		try {
+			const dirHandle = await window.showDirectoryPicker();
+			if (await dirHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
+				showToast('Permiso para escribir en la carpeta denegado.', 'error');
+				await idbKeyval.del('backupDirHandle');
+				await updateFsaStatus();
+				return;
+			}
+			await idbKeyval.set('backupDirHandle', dirHandle);
+			await updateFsaStatus();
+			showToast('Guardado automático activado.', 'success');
+			triggerAutoFsaBackup();
+		} catch (error) {
+			if (error.name !== 'AbortError') {
+				console.error('Error al configurar FSA:', error);
+				showToast('No se pudo configurar la carpeta.', 'error');
+			}
+		}
+	  });
+	  
       wireSearch(); wireModalSearch();
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
@@ -2220,60 +2424,100 @@
 	  apply(); window.matchMedia?.('(display-mode: standalone)').addEventListener('change', apply);
 	})();
 
-	// ===== INITIALIZATION =====
-    function init(){
-      show(S.state()? 'loginView' : 'setupView');
-      const m=$('msg'); if(m) m.value=buildMessage();
-      const d=new Date(Date.now()+60*60*1000);
-      $('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-      wireEvents();
-	  wireBottomNav();
-	  setActiveTab('agenda');
-	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
-	  if ('contacts' in navigator && 'select' in navigator.contacts) {
+    // ===== INITIALIZATION =====
+	async function init(){
+		const startupLogic = async () => {
+			if (S.state()) {
+				show('loginView');
+				return;
+			}
+			if (!fsaSupported) {
+				show('setupView');
+				return;
+			}
+
+			try {
+				const dirHandle = await idbKeyval.get('backupDirHandle');
+				if (!dirHandle) {
+					show('setupView');
+					return;
+				}
+				
+				const fileHandle = await dirHandle.getFileHandle(FsaBackupFile);
+				const file = await fileHandle.getFile();
+				const content = await file.text();
+
+				const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad automática. ¿Quieres restaurarla?');
+				
+				if (restore) {
+					const success = await importFullFixedFromContent(content);
+					if (success) {
+						show('loginView');
+					} else {
+						show('setupView');
+					}
+				} else {
+					show('setupView');
+				}
+			} catch (error) {
+				console.log('No se encontró o no se pudo leer la copia de seguridad automática.', error);
+				show('setupView');
+			}
+		};
+
+		await startupLogic();
+
+		const m=$('msg'); if(m) m.value=buildMessage();
+		const d=new Date(Date.now()+60*60*1000);
+		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+		wireEvents();
+		wireBottomNav();
+		setActiveTab('agenda');
+		(function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
+		
+		if (fsaSupported) {
+			const container = $('fsaSetupContainer');
+			if(container) container.style.display = 'block';
+		}
+
+		if ('contacts' in navigator && 'select' in navigator.contacts) {
 		  document.body.classList.add('contact-picker-supported');
 		  $('btnImportContactSend')?.addEventListener('click', () => importAndSelectContact(selectContact, 'global'));
 		  $('btnImportContactModal')?.addEventListener('click', () => importAndSelectContact(selectModalContact, 'modal'));
-
 		  const btn = $('btnImportDevice'); 
 		  if(btn) btn.style.display = 'inline-flex';
 		  btn.onclick = async () => {
 			  try {
-                  const props = ['name', 'tel'];
-                  const opts = {multiple: true};
-				  const contacts = await navigator.contacts.select(props, opts);
+				  const contacts = await navigator.contacts.select(['name', 'tel'], {multiple: true});
 				  if (!contacts.length) return;
-                  const st = S.state(); if (!st || !S.getKey()) return;
-                  const vault = await decryptJson(S.getKey(), st.vault);
-                  let added = 0, skipped = 0;
-                  const phoneSet = new Set((vault.list || []).map(c => c.phone));
-                  
-                  contacts.forEach(contact => {
-                      if (contact.tel && contact.tel.length > 0) {
-                          const phone = contact.tel[0];
-                          if (!phoneSet.has(phone)) {
-                              vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
-                              phoneSet.add(phone);
-                              added++;
-                          } else {
-                              skipped++;
-                          }
-                      }
-                  });
-
-                  if (added > 0) {
-                      st.vault = await encryptJson(S.getKey(), vault);
-                      S.save(st);
-                      refreshContactsSelect(vault.list);
-                  }
+				  const st = S.state(); if (!st || !S.getKey()) return;
+				  const vault = await decryptJson(S.getKey(), st.vault);
+				  let added = 0, skipped = 0;
+				  const phoneSet = new Set((vault.list || []).map(c => c.phone));
+				  contacts.forEach(contact => {
+					  if (contact.tel && contact.tel.length > 0) {
+						  const phone = normalizePhoneNumber(contact.tel[0]);
+						  if (!phoneSet.has(phone)) {
+							  vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
+							  phoneSet.add(phone);
+							  added++;
+						  } else { skipped++; }
+					  }
+				  });
+				  if (added > 0) {
+					  st.vault = await encryptJson(S.getKey(), vault);
+					  S.save(st);
+					  refreshContactsSelect(vault.list);
+					  triggerAutoFsaBackup();
+				  }
 				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
 			  } catch (err) {
-                  console.error(err);
-                  showToast('No se pudieron importar los contactos.', 'error');
-              }
+				  console.error(err);
+				  showToast('No se pudieron importar los contactos.', 'error');
+			  }
 		  };
-	  }
-    }
+		}
+	}
     document.addEventListener('DOMContentLoaded', init);
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui21').catch(()=>{})); }
 </script>
