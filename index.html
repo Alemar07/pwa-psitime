@@ -818,6 +818,9 @@
         <button id="evtSend" class="btn btn-outline" type="button">Enviar cita</button>
         <button id="evtDelete" class="btn btn-danger" type="button" style="margin-left:auto; display:none">Eliminar</button>
       </div>
+      
+      <div id="modalToastContainer" class="toast-container" style="position: absolute; width: auto;"></div>
+
     </form>
   </dialog>
 
@@ -843,8 +846,9 @@
     const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
 	const debounce = (fn, delay) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), delay); }; };
 
-	const showToast = (message, type = 'info', duration = 3000) => {
-		const container = $('toastContainer');
+	const showToast = (message, type = 'info', duration = 3000, context = 'global') => {
+		const container = (context === 'modal') ? $('modalToastContainer') : $('toastContainer');
+		if (!container) return;
 		const toast = document.createElement('div');
 		toast.className = `toast ${type}`;
 		toast.textContent = message;
@@ -1183,22 +1187,22 @@
 
 	// ===== IMPORT & SAVE LOCAL CONTACTS =====
 
-	async function importAndSelectContact(onSelectCallback) {
+	async function importAndSelectContact(onSelectCallback, context = 'global') {
 	  if (!('contacts' in navigator && 'select' in navigator.contacts)) {
-		showToast('El selector de contactos no es compatible con este navegador.', 'error');
+		showToast('El selector de contactos no es compatible con este navegador.', 'error', 3000, context);
 		return;
 	  }
 	  
 	  try {
 		const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
 		if (!contacts.length) {
-		  showToast('No se seleccionó ningún contacto.', 'info');
+		  showToast('No se seleccionó ningún contacto.', 'info', 3000, context);
 		  return;
 		}
 		
 		const nativeContact = contacts[0];
 		if (!nativeContact.tel || nativeContact.tel.length === 0) {
-		  showToast('El contacto seleccionado no tiene número de teléfono.', 'warning');
+		  showToast('El contacto seleccionado no tiene número de teléfono.', 'warning', 3000, context);
 		  return;
 		}
 		
@@ -1206,7 +1210,7 @@
 		const phone = normalizePhoneNumber(nativeContact.tel[0]);
 
 		if (!isPhoneValid(phone)) {
-			showToast(`El teléfono "${nativeContact.tel[0]}" no tiene un formato válido.`, 'error');
+			showToast(`El teléfono "${nativeContact.tel[0]}" no tiene un formato válido.`, 'error', 3000, context);
 			return;
 		}
 
@@ -1214,7 +1218,7 @@
 		const existingContact = (window.__contacts || []).find(c => c.phone === phone);
 		
 		if (existingContact) {
-		  showToast('Este contacto ya existe en tu lista.', 'info');
+		  showToast('Este contacto ya existe en tu lista.', 'info', 3000, context);
 		  onSelectCallback(existingContact);
 		  return;
 		}
@@ -1233,12 +1237,12 @@
 		refreshContactsSelect(vault.list);
 		if (getAutoBackup()) exportFixedBackup(true);
 		
-		showToast(`Contacto "${name}" importado y guardado.`, 'success');
+		showToast(`Contacto "${name}" importado y guardado.`, 'success', 3000, context);
 		onSelectCallback(newContact);
 
 	  } catch (err) {
 		console.error("Error al importar contacto:", err);
-		showToast('Se canceló la importación o hubo un error.', 'error');
+		showToast('Se canceló la importación o hubo un error.', 'error', 3000, context);
 	  }
 	}
 
@@ -1534,7 +1538,6 @@
                 const endMinutes = (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60);
                 const durationMinutes = Math.max(30, endMinutes - startMinutes);
 
-                // CORRECCIÓN: Cálculo preciso de top y height
                 eventEl.style.top = `${(startMinutes / 30) * 40}px`; 
                 eventEl.style.height = `${(durationMinutes / 30) * 40}px`;
 
@@ -1561,6 +1564,7 @@
         const base=new Date(selectedDay); base.setHours(10,0,0,0);
 		$('evtForm').reset();
         $('evtId').value = '';
+		$('evtContact').value = '';
         $('evtStart').value = toLocalInput(base);
         del.style.display='none';
       }else{
@@ -1612,7 +1616,7 @@
 
             st.vault = await encryptJson(S.getKey(), vault);
 			S.save(st);
-			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
+			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success', 3000, 'modal');
 
 			if (getGCalAuto()) {
 				const newGCalId = await addEventToGoogle(eventData);
@@ -1634,7 +1638,7 @@
 
 		} catch (error) {
 			console.error("Error al guardar el evento:", error);
-			showToast(error.message || 'Ocurrió un error al guardar.', 'error');
+			showToast(error.message || 'Ocurrió un error al guardar.', 'error', 3000, 'modal');
             if(error.message.includes('inicio')) $('evtStart-field').classList.add('field-error');
             if(error.message.includes('fin')) $('evtEnd-field').classList.add('field-error');
 		} finally {
@@ -1648,7 +1652,7 @@
 	  const eventToDelete = (vault.events || []).find(e => e.id === id);
 
 	  if (!eventToDelete) {
-		showToast('Error: No se encontró la cita a eliminar.', 'error');
+		showToast('Error: No se encontró la cita a eliminar.', 'error', 3000, 'modal');
 		return;
 	  }
 
@@ -1658,11 +1662,11 @@
 
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
-
+      
+      showToast('Cita eliminada.', 'success'); // This will show globally after modal closes
 	  try { closeEventModal(); } catch(_) {}
 	  if(currentView === 'month') { renderCalendar(); } else { await renderWeeklyCalendar(); }
 
-	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
     async function sendEventByWhatsAppById(id) {
@@ -1671,7 +1675,11 @@
         if (evt) sendEventByWhatsApp(evt);
     }
     function sendEventByWhatsApp(evt){
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ showToast('La cita no tiene un contacto válido', 'error'); return; }
+	  console.log("Intentando enviar cita:", evt);
+      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ 
+		  showToast('La cita no tiene un contacto válido para enviar.', 'error'); 
+		  return; 
+	  }
       openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(buildEventMessage(evt))}`);
     }
 
@@ -1708,7 +1716,16 @@
     }
     function wireModalSearch(){
       const input=$('evtSearch'), box=$('evtResults'), clear=$('evtClear');
-      input.addEventListener('input', debounce(()=>renderEvtResults(input.value), 200));
+      
+      input.addEventListener('input', debounce(() => {
+        const query = input.value;
+        renderEvtResults(query);
+        // CORRECCIÓN: Si el usuario vacía el campo, limpiar el contacto seleccionado.
+        if (query.trim() === '') {
+            $('evtContact').value = '';
+        }
+      }, 200));
+
       input.addEventListener('focus', ()=>renderEvtResults(input.value));
       input.addEventListener('keydown', (e)=>{
         if(e.key==='ArrowDown'){ e.preventDefault(); setActiveEvt(activeIndexEvt<0?0:activeIndexEvt+1); }
@@ -1716,7 +1733,13 @@
         else if(e.key==='Enter' && !box.hidden){ e.preventDefault(); chooseActiveEvt(); }
         else if(e.key==='Escape'){ box.hidden=true; activeIndexEvt=-1; }
       });
-      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; input.focus(); renderEvtResults(''); });
+      clear?.addEventListener('click', ()=>{ 
+          input.value=''; 
+          $('evtContact').value = ''; // CORRECCIÓN: Limpiar también el contacto seleccionado
+          box.hidden=true; 
+          input.focus(); 
+          renderEvtResults(''); 
+      });
     }
 
 	// ===== GOOGLE CALENDAR =====
@@ -1797,12 +1820,12 @@
             }
 			const j = await r.json();
             
-            showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success');
+            showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success', 3000, 'modal');
 			return j.id;
 
 		} catch (e) {
 			console.warn('No se pudo sincronizar con Google Calendar:', e);
-            showToast('Error al sincronizar con Google.', 'error');
+            showToast('Error al sincronizar con Google.', 'error', 3000, 'modal');
 			return null;
 		}
 	}
@@ -2082,12 +2105,12 @@
       $('evtSend')?.addEventListener('click', ()=>{
         const phone = $('evtContact').value;
         if (!phone) {
-            showToast('Debes seleccionar un contacto para enviar la cita.', 'error');
+            showToast('Debes seleccionar un contacto para enviar la cita.', 'error', 3000, 'modal');
             return;
         }
         const contact = findContactByPhone(phone);
         if (!contact || !isPhoneValid(contact.phone)) {
-            showToast('El contacto seleccionado no es válido.', 'error');
+            showToast('El contacto seleccionado no es válido.', 'error', 3000, 'modal');
             return;
         }
 
@@ -2133,7 +2156,6 @@
             }
 	  });
 		
-      // CORRECTED VIEW SWITCHER LOGIC
 	  $('viewMonth')?.addEventListener('click', () => {
 			currentView = 'month';
 			$('viewMonth').classList.add('is-active');
@@ -2216,8 +2238,8 @@
 	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 	  if ('contacts' in navigator && 'select' in navigator.contacts) {
 		  document.body.classList.add('contact-picker-supported');
-		  $('btnImportContactSend')?.addEventListener('click', () => importAndSelectContact(selectContact));
-		  $('btnImportContactModal')?.addEventListener('click', () => importAndSelectContact(selectModalContact));
+		  $('btnImportContactSend')?.addEventListener('click', () => importAndSelectContact(selectContact, 'global'));
+		  $('btnImportContactModal')?.addEventListener('click', () => importAndSelectContact(selectModalContact, 'modal'));
 
 		  const btn = $('btnImportDevice'); 
 		  if(btn) btn.style.display = 'inline-flex';
