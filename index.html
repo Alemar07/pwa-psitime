@@ -2497,23 +2497,31 @@
 	async function init(){
 		const startupLogic = async () => {
 			try {
+				// 1. Si ya hay una sesión, mostrar la pantalla de login
 				if (S.state()) {
 					show('loginView');
 					return;
 				}
 
+				// 2. Si no hay sesión, buscar una posible copia de seguridad
 				let backupContent = null;
 				if (fsaSupported) {
 					const dirHandle = await idbKeyval.get('backupDirHandle');
 					if (dirHandle) {
-						const fileHandle = await dirHandle.getFileHandle(FsaBackupFile);
-						const file = await fileHandle.getFile();
-						backupContent = await file.text();
+						// Usamos un try/catch interno por si el archivo no existe
+						try {
+							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile);
+							const file = await fileHandle.getFile();
+							backupContent = await file.text();
+						} catch (e) {
+							console.log("No se encontró el archivo de respaldo en la carpeta.");
+						}
 					}
-				} else {
+				} else { // Lógica para iOS/Firefox
 					backupContent = await idbKeyval.get('idbBackupContent');
 				}
 				
+				// 3. Si se encontró contenido en la copia de seguridad, ofrecer restauración
 				if (backupContent) {
 					const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad. ¿Quieres restaurarla?');
 					if (restore) {
@@ -2523,20 +2531,22 @@
 						} else {
 							show('setupView');
 						}
-						return;
+						return; // Importante: terminar la ejecución aquí
 					}
 				}
 				
+				// 4. LÍNEA CORREGIDA: Si no hay sesión ni se restauró una copia, mostrar la pantalla de bienvenida
 				show('setupView');
 
 			} catch (error) {
-				console.log('Error en arranque o no se encontró copia. Iniciando en modo normal.', error);
+				console.error('Error crítico en el arranque, mostrando vista de configuración por defecto.', error);
 				show('setupView');
 			}
 		};
 
 		await startupLogic();
 
+		// El resto del código de inicialización se mantiene igual
 		const m=$('msg'); if(m) m.value=buildMessage();
 		const d=new Date(Date.now()+60*60*1000);
 		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -2546,7 +2556,11 @@
 		(function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 		
 		if (fsaSupported) {
-			const container = $('fsaSetupContainer');
+			const container = $('autoBackupContainer');
+			if(container) container.style.display = 'block';
+		} else {
+			// También mostramos el contenedor en iOS, ya que ahora tiene funcionalidad
+			const container = $('autoBackupContainer');
 			if(container) container.style.display = 'block';
 		}
 
@@ -2575,10 +2589,10 @@
 					  }
 				  });
 				  if (added > 0) {
-					  st.vault = await encryptJson(S.getKey(), st.vault);
+					  st.vault = await encryptJson(S.getKey(), vault);
 					  S.save(st);
 					  refreshContactsSelect(vault.list);
-					  triggerAutoFsaBackup();
+					  triggerAutoBackup();
 				  }
 				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
 			  } catch (err) {
