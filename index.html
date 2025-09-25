@@ -945,14 +945,8 @@
     const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
     function openExternal(url){
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
+		window.location.href = url;
+	}
 
 	// ===== UI LOGIC =====
     function setHeaderTitle(t){ const h=$('hdrTitle'); if(h) h.textContent=t; }
