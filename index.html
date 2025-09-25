@@ -1411,48 +1411,24 @@
 	}
 	
 	async function processFullBackupData(data) {
-		if(data.format!=='mf-full-fixed-v1'){
-			showToast('Copia completa no reconocida.', 'error');
-			return false;
-		}
+		if(data.format!=='mf-full-fixed-v1'){ showToast('Copia completa no reconocida.', 'error'); return false; }
 		let obj;
 		try {
 			const {aesKey} = await deriveFixed(data.saltB64);
 			obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct});
-		} catch(e){
-			showToast('No se pudo descifrar la copia.', 'error');
-			return false;
-		}
-		if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){
-			showToast('El contenido de la copia es inválido.', 'error');
-			return false;
-		}
-		
-		const freshVault = {
-			list: obj.list || [],
-			events: obj.events || [],
-			templates: obj.templates || []
-		};
-		
+		} catch(e){ showToast('No se pudo descifrar la copia.', 'error'); return false; }
+		if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){ showToast('El contenido de la copia es inválido.', 'error'); return false; }
+		const freshVault = { list: obj.list || [], events: obj.events || [], templates: obj.templates || [] };
 		let pass = prompt("Crea una nueva contraseña para tus datos restaurados (mín. 6 caracteres)");
-		if (!pass || pass.length < 6) {
-			showToast("La contraseña no es válida.", "error");
-			return false;
-		}
+		if (!pass || pass.length < 6) { showToast("La contraseña no es válida.", "error"); return false; }
 		let user = prompt("Crea un nuevo nombre de usuario");
-		if (!user) {
-			showToast("Se requiere un nombre de usuario.", "error");
-			return false;
-		}
-
+		if (!user) { showToast("Se requiere un nombre de usuario.", "error"); return false; }
 		const {aesKey, pwHashB64, saltB64} = await derive(pass);
 		S.setKey(aesKey);
 		S.setUser(user);
-		
 		const pack = await encryptJson(aesKey, freshVault);
 		S.save({user, pwHashB64, saltB64, vault:pack, autoBackup:false});
-		triggerAutoFsaBackup();
-		
+		triggerAutoBackup();
 		showToast(`Restauración completa. Por favor, inicia sesión con tus nuevas credenciales.`, 'success');
 		return true;
 	}
@@ -1461,22 +1437,15 @@
 		try {
 			const data = JSON.parse(content);
 			return await processFullBackupData(data);
-		} catch (e) {
-			showToast('El archivo de copia de seguridad está dañado.', 'error');
-			return false;
-		}
+		} catch (e) { showToast('El archivo de copia de seguridad está dañado.', 'error'); return false; }
 	}
 
 	async function importFullFixedFromFile(file){
 	  try {
 		const content = await file.text();
 		const success = await importFullFixedFromContent(content);
-		if (success) {
-			show('loginView');
-		}
-	  } catch(e) {
-		showToast('No se pudo leer el archivo.', 'error');
-	  }
+		if (success) { show('loginView'); }
+	  } catch(e) { showToast('No se pudo leer el archivo.', 'error'); }
 	}
 	
 	// ===== FILE SYSTEM ACCESS API & AUTO-BACKUP =====
@@ -1523,9 +1492,7 @@
 		const dirHandle = await idbKeyval.get('backupDirHandle');
 		if (!dirHandle) return;
 		try {
-			if (await dirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-				updateAutoBackupStatus(); return;
-			}
+			if (await dirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') { updateAutoBackupStatus(); return; }
 			const vault = await decryptJson(S.getKey(), S.state().vault);
 			const {aesKey, saltB64} = await deriveFixed();
 			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
@@ -1534,7 +1501,7 @@
 			const writable = await fileHandle.createWritable();
 			await writable.write(JSON.stringify(payload));
 			await writable.close();
-			console.log('Copia de seguridad automática guardada con éxito.');
+			console.log('Copia de seguridad automática (FSA) guardada con éxito.');
 		} catch (error) {
 			console.error('Error durante el auto-backup de FSA:', error);
 			showToast('Error al guardar la copia automática.', 'error');
@@ -1552,7 +1519,7 @@
 			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
 			const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
 			await idbKeyval.set('idbBackupContent', JSON.stringify(payload));
-			console.log('Copia de seguridad interna guardada con éxito.');
+			console.log('Copia de seguridad interna (IDB) guardada con éxito.');
 		} catch (error) {
 			console.error('Error durante el auto-backup de IndexedDB:', error);
 			showToast('Error al guardar la copia interna.', 'error');
@@ -2253,7 +2220,7 @@
 		  $('newName').value = ''; $('newPhone').value = '+34'; $('newName').focus();
 		  showToast('Contacto añadido.', 'success');
 	    }
-		triggerAutoFsaBackup();
+		triggerAutoBackup();
 	  });
 
       $('dt')?.addEventListener('change', ()=>{ $('msg').value=buildMessage(); });
@@ -2339,12 +2306,9 @@
 					triggerAutoBackup();
 				}
 			} catch (error) {
-				if (error.name !== 'AbortError') {
-					console.error('Error al configurar FSA:', error);
-					showToast('No se pudo configurar la carpeta.', 'error');
-				}
+				if (error.name !== 'AbortError') { console.error('Error al configurar FSA:', error); showToast('No se pudo configurar la carpeta.', 'error'); }
 			}
-		} else { // Lógica para iOS
+		} else {
 			const idbEnabled = await idbKeyval.get('idbBackupEnabled');
 			if (idbEnabled) {
 				await idbKeyval.del('idbBackupEnabled');
@@ -2495,13 +2459,12 @@
 					show('loginView');
 					return;
 				}
-
 				let backupContent = null;
 				if (fsaSupported) {
 					const dirHandle = await idbKeyval.get('backupDirHandle');
 					if (dirHandle) {
 						try {
-							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile); // <--- CORRECCIÓN DE LA ERRATA
+							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile); // <-- CORREGIDO
 							const file = await fileHandle.getFile();
 							backupContent = await file.text();
 						} catch (e) {
@@ -2511,7 +2474,6 @@
 				} else {
 					backupContent = await idbKeyval.get('idbBackupContent');
 				}
-				
 				if (backupContent) {
 					const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad. ¿Quieres restaurarla?');
 					if (restore) {
@@ -2524,32 +2486,24 @@
 						return;
 					}
 				}
-				
 				show('setupView');
-
 			} catch (error) {
 				console.error('Error crítico en el arranque, mostrando vista de configuración por defecto.', error);
 				show('setupView');
 			}
 		};
-
 		await startupLogic();
 
 		const m=$('msg'); if(m) m.value=buildMessage();
 		const d=new Date(Date.now()+60*60*1000);
 		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-		wireEvents();
+		wireEvents(); // <-- Se llama a la versión corregida de wireEvents
 		wireBottomNav();
 		setActiveTab('agenda');
 		(function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
 		
-		if (fsaSupported) {
-			const container = $('autoBackupContainer');
-			if(container) container.style.display = 'block';
-		} else {
-			const container = $('autoBackupContainer');
-			if(container) container.style.display = 'block';
-		}
+		const backupContainer = $('autoBackupContainer');
+        if(backupContainer) backupContainer.style.display = 'block';
 
 		if ('contacts' in navigator && 'select' in navigator.contacts) {
 		  document.body.classList.add('contact-picker-supported');
@@ -2579,7 +2533,7 @@
 					  st.vault = await encryptJson(S.getKey(), vault);
 					  S.save(st);
 					  refreshContactsSelect(vault.list);
-					  triggerAutoBackup(); // <-- Llamada corregida
+					  triggerAutoBackup(); 
 				  }
 				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
 			  } catch (err) {
@@ -2590,5 +2544,5 @@
 		}
 	}
     document.addEventListener('DOMContentLoaded', init);
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui23').catch(()=>{})); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui24').catch(()=>{})); }
 </script>
