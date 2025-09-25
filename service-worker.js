@@ -1,5 +1,5 @@
 // Robust SW for GitHub Pages (works under /<repo>/ scope)
-const VERSION = 'v1.1.1';
+const VERSION = 'v1.2.1';
 const CACHE = 'wa-reminders-' + VERSION;
 
 const base = self.registration.scope; // e.g., https://user.github.io/repo/
