@@ -901,10 +901,9 @@
 	};
 
 	// ===== INDEXEDDB KEY-VALUE STORE =====
+	// ===== INDEXEDDB KEY-VALUE STORE =====
 	const idbKeyval = (() => {
-		let db;
-		async function getDB() {
-			if (db) return db;
+		function getDB() {
 			return new Promise((resolve, reject) => {
 				const request = indexedDB.open('mf-gestor-citas-db', 1);
 				request.onupgradeneeded = () => request.result.createObjectStore('keyval');
@@ -912,29 +911,36 @@
 				request.onerror = () => reject(request.error);
 			});
 		}
-		async function withStore(type, callback) {
-			const db = await getDB();
-			return new Promise((resolve, reject) => {
-				const tx = db.transaction('keyval', type);
-				tx.oncomplete = () => resolve();
-				tx.onerror = () => reject(tx.error);
-				callback(tx.objectStore('keyval'));
-			});
-		}
 		return {
 			get: async (key) => {
-				let req;
-				await withStore('readonly', store => { req = store.get(key); });
+				const db = await getDB();
 				return new Promise((resolve, reject) => {
-					req.onsuccess = () => resolve(req.result);
-					req.onerror = () => reject(req.error);
+					const tx = db.transaction('keyval', 'readonly');
+					const store = tx.objectStore('keyval');
+					const request = store.get(key);
+					request.onsuccess = () => resolve(request.result);
+					request.onerror = () => reject(tx.error);
 				});
 			},
 			set: async (key, value) => {
-				return withStore('readwrite', store => { store.put(value, key); });
+				const db = await getDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction('keyval', 'readwrite');
+					const store = tx.objectStore('keyval');
+					store.put(value, key);
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
 			},
 			del: async (key) => {
-				return withStore('readwrite', store => { store.delete(key); });
+				const db = await getDB();
+				return new Promise((resolve, reject) => {
+					const tx = db.transaction('keyval', 'readwrite');
+					const store = tx.objectStore('keyval');
+					store.delete(key);
+					tx.oncomplete = () => resolve();
+					tx.onerror = () => reject(tx.error);
+				});
 			}
 		};
 	})();
