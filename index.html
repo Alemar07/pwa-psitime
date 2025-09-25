@@ -2427,19 +2427,24 @@
     // ===== INITIALIZATION =====
 	async function init(){
 		const startupLogic = async () => {
-			if (S.state()) {
-				show('loginView');
-				return;
-			}
-			if (!fsaSupported) {
-				show('setupView');
-				return;
-			}
-
+			// Envolvemos TODA la lógica en un try...catch para capturar cualquier error
 			try {
+				// 1. Si ya hay datos en localStorage, ir a la pantalla de login (comportamiento normal)
+				if (S.state()) {
+					show('loginView');
+					return;
+				}
+
+				// 2. Si el navegador no es compatible con el guardado automático, ir a crear cuenta
+				if (!fsaSupported) {
+					show('setupView');
+					return;
+				}
+				
+				// 3. Intentar leer el archivo de respaldo desde la carpeta guardada
 				const dirHandle = await idbKeyval.get('backupDirHandle');
 				if (!dirHandle) {
-					show('setupView');
+					show('setupView'); // No hay respaldo configurado, ir a crear cuenta
 					return;
 				}
 				
@@ -2447,26 +2452,30 @@
 				const file = await fileHandle.getFile();
 				const content = await file.text();
 
+				// 4. Si se encuentra el archivo, preguntar al usuario
 				const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad automática. ¿Quieres restaurarla?');
 				
 				if (restore) {
+					// 5. Si el usuario acepta, importar los datos
 					const success = await importFullFixedFromContent(content);
 					if (success) {
-						show('loginView');
+						show('loginView'); // Llevar al login con los datos ya restaurados
 					} else {
-						show('setupView');
+						show('setupView'); // Si la restauración falla
 					}
 				} else {
-					show('setupView');
+					show('setupView'); // Si el usuario no quiere restaurar
 				}
 			} catch (error) {
-				console.log('No se encontró o no se pudo leer la copia de seguridad automática.', error);
+				// 6. Si CUALQUIER paso anterior falla, mostrar la pantalla de crear cuenta
+				console.log('Error en el arranque o no se encontró copia de seguridad. Iniciando en modo normal.', error);
 				show('setupView');
 			}
 		};
 
 		await startupLogic();
 
+		// El resto del código de inicialización se mantiene igual
 		const m=$('msg'); if(m) m.value=buildMessage();
 		const d=new Date(Date.now()+60*60*1000);
 		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
