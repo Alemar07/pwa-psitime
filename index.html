@@ -1489,7 +1489,7 @@
 		const container = $('autoBackupContainer');
 		if(!container) return;
 
-		container.style.display = 'block'; // Mostrar siempre el contenedor
+		container.style.display = 'block';
 
 		if (fsaSupported) {
 			const dirHandle = await idbKeyval.get('backupDirHandle');
@@ -1506,7 +1506,7 @@
 				statusEl.textContent = 'Recomendado. Guarda una copia segura en una carpeta de tu dispositivo.';
 				btn.textContent = 'Activar Guardado en Dispositivo';
 			}
-		} else { // Lógica para iOS y otros navegadores
+		} else {
 			const idbEnabled = await idbKeyval.get('idbBackupEnabled');
 			if (idbEnabled) {
 				statusEl.textContent = 'Guardado interno activado en este navegador.';
@@ -1517,34 +1517,28 @@
 			}
 		}
 	}
-
+	
 	async function triggerAutoFsaBackup() {
 		if (!fsaSupported || !S.getKey()) return;
 		const dirHandle = await idbKeyval.get('backupDirHandle');
 		if (!dirHandle) return;
-
 		try {
 			if (await dirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-				console.warn('Permiso de escritura denegado. Omitiendo auto-backup.');
-				updateFsaStatus();
-				return;
+				updateAutoBackupStatus(); return;
 			}
-			
 			const vault = await decryptJson(S.getKey(), S.state().vault);
 			const {aesKey, saltB64} = await deriveFixed();
 			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
 			const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
-
 			const fileHandle = await dirHandle.getFileHandle(FsaBackupFile, { create: true });
 			const writable = await fileHandle.createWritable();
 			await writable.write(JSON.stringify(payload));
 			await writable.close();
 			console.log('Copia de seguridad automática guardada con éxito.');
-
 		} catch (error) {
 			console.error('Error durante el auto-backup de FSA:', error);
 			showToast('Error al guardar la copia automática.', 'error');
-			updateFsaStatus();
+			updateAutoBackupStatus();
 		}
 	}
 	
@@ -2497,31 +2491,27 @@
 	async function init(){
 		const startupLogic = async () => {
 			try {
-				// 1. Si ya hay una sesión, mostrar la pantalla de login
 				if (S.state()) {
 					show('loginView');
 					return;
 				}
 
-				// 2. Si no hay sesión, buscar una posible copia de seguridad
 				let backupContent = null;
 				if (fsaSupported) {
 					const dirHandle = await idbKeyval.get('backupDirHandle');
 					if (dirHandle) {
-						// Usamos un try/catch interno por si el archivo no existe
 						try {
-							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile);
+							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile); // <--- CORRECCIÓN DE LA ERRATA
 							const file = await fileHandle.getFile();
 							backupContent = await file.text();
 						} catch (e) {
 							console.log("No se encontró el archivo de respaldo en la carpeta.");
 						}
 					}
-				} else { // Lógica para iOS/Firefox
+				} else {
 					backupContent = await idbKeyval.get('idbBackupContent');
 				}
 				
-				// 3. Si se encontró contenido en la copia de seguridad, ofrecer restauración
 				if (backupContent) {
 					const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad. ¿Quieres restaurarla?');
 					if (restore) {
@@ -2531,11 +2521,10 @@
 						} else {
 							show('setupView');
 						}
-						return; // Importante: terminar la ejecución aquí
+						return;
 					}
 				}
 				
-				// 4. LÍNEA CORREGIDA: Si no hay sesión ni se restauró una copia, mostrar la pantalla de bienvenida
 				show('setupView');
 
 			} catch (error) {
@@ -2546,7 +2535,6 @@
 
 		await startupLogic();
 
-		// El resto del código de inicialización se mantiene igual
 		const m=$('msg'); if(m) m.value=buildMessage();
 		const d=new Date(Date.now()+60*60*1000);
 		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
@@ -2559,7 +2547,6 @@
 			const container = $('autoBackupContainer');
 			if(container) container.style.display = 'block';
 		} else {
-			// También mostramos el contenedor en iOS, ya que ahora tiene funcionalidad
 			const container = $('autoBackupContainer');
 			if(container) container.style.display = 'block';
 		}
@@ -2592,7 +2579,7 @@
 					  st.vault = await encryptJson(S.getKey(), vault);
 					  S.save(st);
 					  refreshContactsSelect(vault.list);
-					  triggerAutoBackup();
+					  triggerAutoBackup(); // <-- Llamada corregida
 				  }
 				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
 			  } catch (err) {
@@ -2603,5 +2590,5 @@
 		}
 	}
     document.addEventListener('DOMContentLoaded', init);
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui22').catch(()=>{})); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui23').catch(()=>{})); }
 </script>
