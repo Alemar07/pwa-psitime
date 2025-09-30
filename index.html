@@ -63,6 +63,10 @@
 	.subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
 	.hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
 	body.login-mode .auth-head, body.login-mode .hr, body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
+	body.login-mode #bottomNav,
+	body.setup-mode #bottomNav {
+	  display: none !important;
+	}
 	body:not(.login-mode):not(.setup-mode) .auth-head{
 	  position:sticky; top:0; z-index:20;
 	  backdrop-filter: blur(12px) saturate(120%);
@@ -2561,7 +2565,7 @@
 	
 	// ===== WEBAUTHN BIOMETRIC LOGIN =====
 	const webAuthn = (() => {
-		const CREDENTIAL_STORAGE_KEY = 'mf-gestor-citas-webauthn-credential-id';
+		const CREDENTIAL_ID_KEY = 'mf-gestor-citas-webauthn-credential-id';
 
 		const isSupported = () => window.PublicKeyCredential &&
 			PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
@@ -2569,17 +2573,20 @@
 
 		const arrayToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
 		const base64ToArray = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-		
-		const register = async () => {
+
+		const register = async (username, password) => {
 			if (!isSupported()) return showToast('Tu navegador no soporta claves de acceso.', 'error');
 			
-			const username = S.getUser();
-			if (!username) return showToast('Error: No se ha encontrado el usuario.', 'error');
-
 			const challenge = crypto.getRandomValues(new Uint8Array(32));
 			const userId = base64ToArray(btoa(username));
 
 			try {
+				// Paso 1: Primero, guardamos la contraseña en el gestor del navegador.
+				// Esto es crucial para que iOS la asocie con la clave de acceso (Passkey).
+				const passwordCredential = new PasswordCredential({ id: username, password: password });
+				await navigator.credentials.store(passwordCredential);
+				
+				// Paso 2: Ahora, creamos la clave de acceso biométrica.
 				const credential = await navigator.credentials.create({
 					publicKey: {
 						challenge,
@@ -2590,58 +2597,55 @@
 							authenticatorAttachment: "platform",
 							userVerification: "required",
 							residentKey: "required",
-						},
-						timeout: 60000,
-						attestation: "none"
+						}
 					}
 				});
 
 				if (credential) {
-					localStorage.setItem(CREDENTIAL_STORAGE_KEY, arrayToBase64(credential.rawId));
-					showToast('¡Clave de acceso guardada!', 'success');
+					localStorage.setItem(CREDENTIAL_ID_KEY, arrayToBase64(credential.rawId));
+					showToast('¡Acceso biométrico activado!', 'success');
 					updateUi();
 				}
 			} catch (err) {
 				console.error("Error en registro de Passkey:", err);
-				showToast('No se pudo crear la clave de acceso.', 'error');
+				showToast('No se pudo activar la biometría.', 'error');
 			}
 		};
 
 		const initConditionalLogin = async () => {
 			if (!isSupported()) return;
-			const abortController = new AbortController();
 			
 			try {
-				const credential = await navigator.credentials.get({
+				// El navegador mostrará la opción de autocompletar con Passkey
+				const passkeyCredential = await navigator.credentials.get({
 					mediation: 'conditional',
 					publicKey: {
 						challenge: crypto.getRandomValues(new Uint8Array(32)),
-						allowCredentials: [],
 						userVerification: 'required'
-					},
-					signal: abortController.signal
+					}
 				});
 
-				if (credential) {
-					const username = S.state()?.user;
-					if (!username) return;
+				if (passkeyCredential) {
+					// Si el usuario elige la Passkey, el navegador nos dará la contraseña asociada
+					const passwordCredential = await navigator.credentials.get({ password: true });
 
-					$('loginUser').value = username;
-					const passCredential = await navigator.credentials.get({ password: true, mediation: 'required' });
-					
-					if (passCredential) {
-						$('loginPass').value = passCredential.password;
-						// Añadimos un pequeño retraso para que el autocompletado sea visible
+					if (passwordCredential) {
+						$('loginUser').value = passwordCredential.id;
+						$('loginPass').value = passwordCredential.password;
+						// Forzamos el click para que el flujo de login original se ejecute
 						setTimeout(() => $('btnLogin').click(), 100);
+					} else {
+					   showToast('No se encontró una contraseña asociada a la clave de acceso.', 'error');
 					}
 				}
 			} catch (err) {
-				console.log("Login condicional cancelado o no disponible:", err.name);
+				console.log("Login condicional no disponible o cancelado:", err.name);
 			}
 		};
 
 		const disable = async () => {
-			localStorage.removeItem(CREDENTIAL_STORAGE_KEY);
+			localStorage.removeItem(CREDENTIAL_ID_KEY);
+			// Opcional: Esto ayuda a limpiar la asociación en algunos navegadores.
 			if (navigator.credentials && navigator.credentials.preventSilentAccess) {
 				await navigator.credentials.preventSilentAccess();
 			}
@@ -2659,34 +2663,33 @@
 			}
 
 			section.style.display = 'block';
-			const storedCredId = localStorage.getItem(CREDENTIAL_STORAGE_KEY);
+			const storedCredId = localStorage.getItem(CREDENTIAL_ID_KEY);
 
 			if (storedCredId) {
 				status.innerHTML = `
-					<p class="muted" style="color: var(--ok);">✅ El acceso con clave guardada está activado.</p>
+					<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
 					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>
 				`;
 				$('btnDisableBiometric').onclick = disable;
 			} else {
 				status.innerHTML = `
-					<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso sin contraseña</button>
+					<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>
 				`;
 				$('btnEnableBiometric').onclick = async () => {
-					const pass = prompt("Para activar, confirma tu contraseña actual:");
-					if (pass === null || pass === "") return;
-					
+					const pass = prompt("Para activar el acceso biométrico, por favor, confirma tu contraseña actual:");
+					if (!pass) return; // Si el usuario cancela o no escribe nada
+
 					const state = S.state();
 					try {
 						const r = await derive(pass, state.saltB64);
 						if (r.pwHashB64 === state.pwHashB64) {
-							const passwordCredential = new PasswordCredential({ id: S.getUser(), password: pass });
-							await navigator.credentials.store(passwordCredential);
-							await register();
+							// Pasamos el usuario y la contraseña para que se guarden juntos
+							await register(S.getUser(), pass);
 						} else {
 							showToast('Contraseña incorrecta.', 'error');
 						}
 					} catch (e) {
-						showToast('Contraseña incorrecta.', 'error');
+						showToast('Error al verificar la contraseña.', 'error');
 					}
 				};
 			}
