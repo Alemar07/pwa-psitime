@@ -2573,11 +2573,7 @@
 	const webAuthn = (() => {
 		const CREDENTIAL_ID_KEY = 'mf-gestor-citas-webauthn-credential-id';
 
-		// 1. Detección de compatibilidad más sencilla y universal
 		const isSupported = () => !!(window.PublicKeyCredential && window.PasswordCredential);
-
-		const arrayToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
-		const base64ToArray = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
 		const register = async (username, password) => {
 			if (!isSupported()) return showToast('Tu navegador no soporta esta función.', 'error');
@@ -2586,7 +2582,6 @@
 				const passwordCredential = new PasswordCredential({ id: username, password: password });
 				await navigator.credentials.store(passwordCredential);
 				
-				// Guardamos una clave simple para saber que la biometría está activada para este usuario
 				localStorage.setItem(CREDENTIAL_ID_KEY, username);
 				showToast('¡Acceso biométrico activado!', 'success');
 				updateUi();
@@ -2596,7 +2591,6 @@
 			}
 		};
 
-		// 2. Nueva función de Login que se llama con el botón
 		const login = async () => {
 			if (!isSupported()) return showToast('Función no disponible en este navegador.', 'error');
 
@@ -2632,7 +2626,6 @@
 			const loginButton = $('btnBiometricLogin');
 			const storedUser = localStorage.getItem(CREDENTIAL_ID_KEY);
 			
-			// Muestra/oculta el botón de login
 			if (loginButton && isSupported() && S.state()?.user && storedUser === S.state().user) {
 				loginButton.style.display = 'inline-flex';
 			} else if (loginButton) {
@@ -2648,7 +2641,8 @@
 
 			section.style.display = 'block';
 			
-			if (storedUser === S.getUser()) {
+			const loggedInUser = S.getUser();
+			if (loggedInUser && storedUser === loggedInUser) {
 				status.innerHTML = `<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
 					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>`;
 				$('btnDisableBiometric').onclick = disable;
@@ -2660,7 +2654,7 @@
 
 					const state = S.state();
 					try {
-						const r = await derive(pass, state.saltB4);
+						const r = await derive(pass, state.saltB64); 
 						if (r.pwHashB64 === state.pwHashB64) {
 							await register(S.getUser(), pass);
 						} else {
