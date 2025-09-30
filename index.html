@@ -1035,6 +1035,7 @@
         renderTemplates();
         populateTemplateSelectors();
 		updateAutoBackupStatus();
+		webAuthn.updateUi();
       }
 	  if (id === 'loginView') {
         webAuthn.initConditionalLogin();
@@ -2658,7 +2659,6 @@
 			if (!section || !status) return; // Si el HTML no existe, salimos.
 
 			if (!isSupported()) {
-				// Si no es compatible, mostramos la sección con un mensaje de diagnóstico.
 				section.style.display = 'block';
 				status.innerHTML = `
 					<p class="muted" style="font-size: 12px; color: var(--warning);">
