@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Test de Compatibilidad Biométrica</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f0f0; }
+        .result { margin-bottom: 10px; font-size: 18px; }
+        .ok { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Test de Compatibilidad Biométrica</h1>
+    <p>Esta página comprueba si tu navegador soporta las APIs necesarias para el acceso biométrico.</p>
+
+    <div class="result">
+        API de Claves Públicas (PublicKeyCredential): 
+        <span id="test1">...</span>
+    </div>
+    <div class="result">
+        API de Credenciales de Contraseña (PasswordCredential): 
+        <span id="test2">...</span>
+    </div>
+    <hr>
+    <h2>Resultado Final:</h2>
+    <div class="result">
+        <b>¿Es compatible tu navegador?</b>
+        <span id="finalResult">...</span>
+    </div>
+
+    <script>
+        const test1 = !!window.PublicKeyCredential;
+        const test2 = !!window.PasswordCredential;
+        const final = test1 && test2;
+
+        document.getElementById('test1').textContent = test1;
+        document.getElementById('test1').className = test1 ? 'ok' : 'fail';
+
+        document.getElementById('test2').textContent = test2;
+        document.getElementById('test2').className = test2 ? 'ok' : 'fail';
+
+        document.getElementById('finalResult').textContent = final ? 'SÍ ✅' : 'NO ❌';
+        document.getElementById('finalResult').className = final ? 'ok' : 'fail';
+    </script>
+</body>
+</html>
