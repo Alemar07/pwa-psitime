@@ -563,6 +563,10 @@
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
               <button id="btnLogin" class="btn" type="button">Entrar</button>
+			  <button id="btnBiometricLogin" class="btn-ghost" type="button" style="display: none; gap: 12px; margin-top: 10px;">
+				  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6.36,10.22A7.5,7.5,0,0,1,12,6.5a7.5,7.5,0,0,1,5.64,3.72c.49.83.71,1.75.71,2.78,0,1-.22,1.95-.71,2.78A7.5,7.5,0,0,1,12,19.5a7.5,7.5,0,0,1-5.64-3.72A6.13,6.13,0,0,1,5.65,13,6.13,6.13,0,0,1,6.36,10.22M12,5A9,9,0,0,0,4.8,11.26c-.1.17-.19.33-.28.5V13a6.45,6.45,0,0,0-.2,1.5c0,.51.08,1,.2,1.5v.24c.09.17.18.33.28.5A9,9,0,0,0,12,21a9,9,0,0,0,7.2-5.74c.1-.17.19-.33.28-.5V14.5a6.45,6.45,0,0,0,.2-1.5c0-.51-.08-1-.2-1.5v-.24c-.09-.17-.18-.33-.28-.5A9,9,0,0,0,12,5Z"></path><path d="M12,16.5A3.5,3.5,0,1,1,15.5,13,3.5,3.5,0,0,1,12,16.5m0-6A2.5,2.5,0,1,0,14.5,13,2.5,2.5,0,0,0,12,10.5Z"></path></svg>
+				  <span>Acceder con biometría</span>
+			  </button>
 			  
               <button id="btnReset" class="btn-ghost" type="button" style="display:none">Borrar datos de la app</button>
             </div>
@@ -2213,7 +2217,8 @@
         el.addEventListener('focus', ()=>{ if(!el.value) el.value='+34'; });
         el.addEventListener('input', ()=>{ el.value = '+'+el.value.replace(/[^\d]/g,''); });
       })();
-
+		
+	  $('btnBiometricLogin')?.addEventListener('click', webAuthn.login);
       $('btnAdd')?.addEventListener('click', async ()=>{
 	    const name=$('newName').value.trim(), phone=normalizePhoneNumber($('newPhone').value.trim());
 		$('newPhone').value = phone;
@@ -2568,13 +2573,8 @@
 	const webAuthn = (() => {
 		const CREDENTIAL_ID_KEY = 'mf-gestor-citas-webauthn-credential-id';
 
-		// 1. MEJORA: Añadimos la comprobación de PasswordCredential
-		const isSupported = () => !!(
-			window.PublicKeyCredential &&
-			PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
-			PublicKeyCredential.isConditionalMediationAvailable &&
-			window.PasswordCredential
-		);
+		// 1. Detección de compatibilidad más sencilla y universal
+		const isSupported = () => !!(window.PublicKeyCredential && window.PasswordCredential);
 
 		const arrayToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
 		const base64ToArray = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -2582,60 +2582,39 @@
 		const register = async (username, password) => {
 			if (!isSupported()) return showToast('Tu navegador no soporta esta función.', 'error');
 			
-			const challenge = crypto.getRandomValues(new Uint8Array(32));
-			const userId = base64ToArray(btoa(username));
-
 			try {
 				const passwordCredential = new PasswordCredential({ id: username, password: password });
 				await navigator.credentials.store(passwordCredential);
 				
-				const credential = await navigator.credentials.create({
-					publicKey: {
-						challenge,
-						rp: { name: "MF Gestor de Citas", id: window.location.hostname },
-						user: { id: userId, name: username, displayName: username },
-						pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-						authenticatorSelection: {
-							authenticatorAttachment: "platform",
-							userVerification: "required",
-							residentKey: "required",
-						}
-					}
-				});
-
-				if (credential) {
-					localStorage.setItem(CREDENTIAL_ID_KEY, arrayToBase64(credential.rawId));
-					showToast('¡Acceso biométrico activado!', 'success');
-					updateUi();
-				}
+				// Guardamos una clave simple para saber que la biometría está activada para este usuario
+				localStorage.setItem(CREDENTIAL_ID_KEY, username);
+				showToast('¡Acceso biométrico activado!', 'success');
+				updateUi();
 			} catch (err) {
-				console.error("Error en registro de Passkey:", err);
+				console.error("Error en registro de biometría:", err);
 				showToast(`Error al registrar: ${err.name}`, 'error', 5000);
 			}
 		};
 
-		const initConditionalLogin = async () => {
-			if (!isSupported()) return;
-			
-			try {
-				const passkeyCredential = await navigator.credentials.get({
-					mediation: 'conditional',
-					publicKey: {
-						challenge: crypto.getRandomValues(new Uint8Array(32)),
-						userVerification: 'required'
-					}
-				});
+		// 2. Nueva función de Login que se llama con el botón
+		const login = async () => {
+			if (!isSupported()) return showToast('Función no disponible en este navegador.', 'error');
 
-				if (passkeyCredential) {
-					const passwordCredential = await navigator.credentials.get({ password: true });
-					if (passwordCredential) {
-						$('loginUser').value = passwordCredential.id;
-						$('loginPass').value = passwordCredential.password;
-						setTimeout(() => $('btnLogin').click(), 100);
-					}
+			const btn = $('btnBiometricLogin');
+			toggleLoading(btn, true);
+
+			try {
+				const passwordCredential = await navigator.credentials.get({ password: true });
+				if (passwordCredential) {
+					$('loginUser').value = passwordCredential.id;
+					$('loginPass').value = passwordCredential.password;
+					$('btnLogin').click();
+				} else {
+					toggleLoading(btn, false);
 				}
 			} catch (err) {
-				console.log("Login condicional no disponible o cancelado:", err.name);
+				toggleLoading(btn, false);
+				console.log("Login biométrico cancelado:", err.name);
 			}
 		};
 
@@ -2650,53 +2629,51 @@
 
 		const updateUi = () => {
 			const section = $('biometricSection'), status = $('biometricStatus');
+			const loginButton = $('btnBiometricLogin');
+			const storedUser = localStorage.getItem(CREDENTIAL_ID_KEY);
+			
+			// Muestra/oculta el botón de login
+			if (loginButton && isSupported() && S.state()?.user && storedUser === S.state().user) {
+				loginButton.style.display = 'inline-flex';
+			} else if (loginButton) {
+				loginButton.style.display = 'none';
+			}
+
 			if (!section || !status) return;
 
 			if (!isSupported()) {
-				section.style.display = 'block';
-				status.innerHTML = `
-					<p class="muted" style="font-size: 12px; color: var(--warning);">
-						El acceso biométrico no está disponible en este navegador o la página no es segura (HTTPS).
-					</p>
-				`;
+				section.style.display = 'none';
 				return;
 			}
 
 			section.style.display = 'block';
-			const storedCredId = localStorage.getItem(CREDENTIAL_ID_KEY);
-
-			if (storedCredId) {
-				status.innerHTML = `
-					<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
-					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>
-				`;
+			
+			if (storedUser === S.getUser()) {
+				status.innerHTML = `<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
+					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>`;
 				$('btnDisableBiometric').onclick = disable;
 			} else {
-				status.innerHTML = `
-					<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>
-				`;
+				status.innerHTML = `<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>`;
 				$('btnEnableBiometric').onclick = async () => {
 					const pass = prompt("Para activar el acceso biométrico, confirma tu contraseña actual:");
 					if (!pass) return;
 
 					const state = S.state();
 					try {
-						const r = await derive(pass, state.saltB64);
+						const r = await derive(pass, state.saltB4);
 						if (r.pwHashB64 === state.pwHashB64) {
 							await register(S.getUser(), pass);
 						} else {
 							showToast('Contraseña incorrecta.', 'error');
 						}
 					} catch (e) {
-						// 2. MEJORA: Capturamos el error específico y lo mostramos
-						console.error("Error al verificar la contraseña o registrar:", e);
-						showToast(`Error: ${e.name}. ${e.message}`, 'error', 5000);
+						showToast(`Error: ${e.message}`, 'error', 5000);
 					}
 				};
 			}
 		};
 
-		return { initConditionalLogin, updateUi };
+		return { login, updateUi };
 	})();
 	
 	
