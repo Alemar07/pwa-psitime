@@ -2626,6 +2626,7 @@
 			const loginButton = $('btnBiometricLogin');
 			const storedUser = localStorage.getItem(CREDENTIAL_ID_KEY);
 			
+			// Lógica para el botón en la pantalla de LOGIN
 			if (loginButton && isSupported() && S.state()?.user && storedUser === S.state().user) {
 				loginButton.style.display = 'inline-flex';
 			} else if (loginButton) {
@@ -2642,11 +2643,15 @@
 			section.style.display = 'block';
 			
 			const loggedInUser = S.getUser();
+			
+			// ===== INICIO DE LA CORRECCIÓN LÓGICA =====
 			if (loggedInUser && storedUser === loggedInUser) {
+				// Caso 1: Logueado y biometría activada -> Mostrar "Desactivar"
 				status.innerHTML = `<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
 					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>`;
 				$('btnDisableBiometric').onclick = disable;
-			} else {
+			} else if (loggedInUser) {
+				// Caso 2: Logueado pero biometría NO activada -> Mostrar "Activar"
 				status.innerHTML = `<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>`;
 				$('btnEnableBiometric').onclick = async () => {
 					const pass = prompt("Para activar el acceso biométrico, confirma tu contraseña actual:");
@@ -2664,6 +2669,9 @@
 						showToast(`Error: ${e.message}`, 'error', 5000);
 					}
 				};
+			} else {
+				// Caso 3: No logueado -> No mostrar nada en esta sección
+				status.innerHTML = '';
 			}
 		};
 
