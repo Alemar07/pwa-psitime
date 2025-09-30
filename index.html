@@ -563,10 +563,6 @@
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
               <button id="btnLogin" class="btn" type="button">Entrar</button>
-			  <button id="btnBiometricLogin" class="btn-ghost" type="button" style="display: none; gap: 12px; margin-top: 10px;">
-				  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6.36,10.22A7.5,7.5,0,0,1,12,6.5a7.5,7.5,0,0,1,5.64,3.72c.49.83.71,1.75.71,2.78,0,1-.22,1.95-.71,2.78A7.5,7.5,0,0,1,12,19.5a7.5,7.5,0,0,1-5.64-3.72A6.13,6.13,0,0,1,5.65,13,6.13,6.13,0,0,1,6.36,10.22M12,5A9,9,0,0,0,4.8,11.26c-.1.17-.19.33-.28.5V13a6.45,6.45,0,0,0-.2,1.5c0,.51.08,1,.2,1.5v.24c.09.17.18.33.28.5A9,9,0,0,0,12,21a9,9,0,0,0,7.2-5.74c.1-.17.19-.33.28-.5V14.5a6.45,6.45,0,0,0,.2-1.5c0-.51-.08-1-.2-1.5v-.24c-.09-.17-.18-.33-.28-.5A9,9,0,0,0,12,5Z"></path><path d="M12,16.5A3.5,3.5,0,1,1,15.5,13,3.5,3.5,0,0,1,12,16.5m0-6A2.5,2.5,0,1,0,14.5,13,2.5,2.5,0,0,0,12,10.5Z"></path></svg>
-				  <span>Acceder con biometría</span>
-			  </button>
 			  
               <button id="btnReset" class="btn-ghost" type="button" style="display:none">Borrar datos de la app</button>
             </div>
@@ -747,16 +743,6 @@
 				  <button id="btnAutoBackupSetup" class="btn btn-outline" type="button">Activar…</button>
 				  <span id="autoBackupStatus" class="muted" style="font-size:12px;"></span>
 				</div>
-			  </div>
-			  
-			  <div class="gc-sep"></div>
-
-			  <div id="biometricSection" style="display: none; margin-top: 12px;">
-				  <h3 class="section-title" style="margin-bottom:10px">Acceso Biométrico</h3>
-				  <p class="muted" style="font-size:13px; margin-top:-8px; margin-bottom:12px;">
-					Activa el inicio de sesión con tu huella dactilar o reconocimiento facial 
-				  </p>
-				  <div id="biometricStatus"></div>
 			  </div>
 			</div>
           </div>
@@ -1039,10 +1025,6 @@
         renderTemplates();
         populateTemplateSelectors();
 		updateAutoBackupStatus();
-		webAuthn.updateUi();
-      }
-	  if (id === 'loginView') {
-        webAuthn.updateUi();
       }
     }
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
@@ -2218,7 +2200,6 @@
         el.addEventListener('input', ()=>{ el.value = '+'+el.value.replace(/[^\d]/g,''); });
       })();
 		
-	  $('btnBiometricLogin')?.addEventListener('click', webAuthn.login);
       $('btnAdd')?.addEventListener('click', async ()=>{
 	    const name=$('newName').value.trim(), phone=normalizePhoneNumber($('newPhone').value.trim());
 		$('newPhone').value = phone;
@@ -2568,116 +2549,6 @@
 		  };
 		}
 	}
-	
-	// ===== WEBAUTHN BIOMETRIC LOGIN =====
-	const webAuthn = (() => {
-		const CREDENTIAL_ID_KEY = 'mf-gestor-citas-webauthn-credential-id';
-
-		const isSupported = () => !!(window.PublicKeyCredential && window.PasswordCredential);
-
-		const register = async (username, password) => {
-			if (!isSupported()) return showToast('Tu navegador no soporta esta función.', 'error');
-			
-			try {
-				const passwordCredential = new PasswordCredential({ id: username, password: password });
-				await navigator.credentials.store(passwordCredential);
-				
-				localStorage.setItem(CREDENTIAL_ID_KEY, username);
-				showToast('¡Acceso biométrico activado!', 'success');
-				updateUi();
-			} catch (err) {
-				console.error("Error en registro de biometría:", err);
-				showToast(`Error al registrar: ${err.name}`, 'error', 5000);
-			}
-		};
-
-		const login = async () => {
-			if (!isSupported()) return showToast('Función no disponible en este navegador.', 'error');
-
-			const btn = $('btnBiometricLogin');
-			toggleLoading(btn, true);
-
-			try {
-				const passwordCredential = await navigator.credentials.get({ password: true });
-				if (passwordCredential) {
-					$('loginUser').value = passwordCredential.id;
-					$('loginPass').value = passwordCredential.password;
-					$('btnLogin').click();
-				} else {
-					toggleLoading(btn, false);
-				}
-			} catch (err) {
-				toggleLoading(btn, false);
-				console.log("Login biométrico cancelado:", err.name);
-			}
-		};
-
-		const disable = async () => {
-			localStorage.removeItem(CREDENTIAL_ID_KEY);
-			if (navigator.credentials && navigator.credentials.preventSilentAccess) {
-				await navigator.credentials.preventSilentAccess();
-			}
-			showToast('Acceso biométrico desactivado.', 'info');
-			updateUi();
-		};
-
-		const updateUi = () => {
-			const section = $('biometricSection'), status = $('biometricStatus');
-			const loginButton = $('btnBiometricLogin');
-			const storedUser = localStorage.getItem(CREDENTIAL_ID_KEY);
-			
-			// Lógica para el botón en la pantalla de LOGIN
-			if (loginButton && isSupported() && S.state()?.user && storedUser === S.state().user) {
-				loginButton.style.display = 'inline-flex';
-			} else if (loginButton) {
-				loginButton.style.display = 'none';
-			}
-
-			if (!section || !status) return;
-
-			if (!isSupported()) {
-				section.style.display = 'none';
-				return;
-			}
-
-			section.style.display = 'block';
-			
-			const loggedInUser = S.getUser();
-			
-			// ===== INICIO DE LA CORRECCIÓN LÓGICA =====
-			if (loggedInUser && storedUser === loggedInUser) {
-				// Caso 1: Logueado y biometría activada -> Mostrar "Desactivar"
-				status.innerHTML = `<p class="muted" style="color: var(--ok);">✅ El acceso biométrico está activado.</p>
-					<button id="btnDisableBiometric" class="btn-small btn-danger" type="button">Desactivar</button>`;
-				$('btnDisableBiometric').onclick = disable;
-			} else if (loggedInUser) {
-				// Caso 2: Logueado pero biometría NO activada -> Mostrar "Activar"
-				status.innerHTML = `<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>`;
-				$('btnEnableBiometric').onclick = async () => {
-					const pass = prompt("Para activar el acceso biométrico, confirma tu contraseña actual:");
-					if (!pass) return;
-
-					const state = S.state();
-					try {
-						const r = await derive(pass, state.saltB64); 
-						if (r.pwHashB64 === state.pwHashB64) {
-							await register(S.getUser(), pass);
-						} else {
-							showToast('Contraseña incorrecta.', 'error');
-						}
-					} catch (e) {
-						showToast(`Error: ${e.message}`, 'error', 5000);
-					}
-				};
-			} else {
-				// Caso 3: No logueado -> No mostrar nada en esta sección
-				status.innerHTML = '';
-			}
-		};
-
-		return { login, updateUi };
-	})();
-	
 	
     document.addEventListener('DOMContentLoaded', init);
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui25').catch(()=>{})); }
