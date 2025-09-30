@@ -2607,10 +2607,12 @@
 					showToast('¡Acceso biométrico activado!', 'success');
 					updateUi();
 				}
+
 			} catch (err) {
 				console.error("Error en registro de Passkey:", err);
-				showToast('No se pudo activar la biometría.', 'error');
+				showToast(`Error: ${err.name}`, 'error', 5000);
 			}
+
 		};
 
 		const initConditionalLogin = async () => {
