@@ -2568,26 +2568,27 @@
 	const webAuthn = (() => {
 		const CREDENTIAL_ID_KEY = 'mf-gestor-citas-webauthn-credential-id';
 
-		const isSupported = () => window.PublicKeyCredential &&
+		// 1. MEJORA: Añadimos la comprobación de PasswordCredential
+		const isSupported = () => !!(
+			window.PublicKeyCredential &&
 			PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable &&
-			PublicKeyCredential.isConditionalMediationAvailable;
+			PublicKeyCredential.isConditionalMediationAvailable &&
+			window.PasswordCredential
+		);
 
 		const arrayToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
 		const base64ToArray = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 
 		const register = async (username, password) => {
-			if (!isSupported()) return showToast('Tu navegador no soporta claves de acceso.', 'error');
+			if (!isSupported()) return showToast('Tu navegador no soporta esta función.', 'error');
 			
 			const challenge = crypto.getRandomValues(new Uint8Array(32));
 			const userId = base64ToArray(btoa(username));
 
 			try {
-				// Paso 1: Primero, guardamos la contraseña en el gestor del navegador.
-				// Esto es crucial para que iOS la asocie con la clave de acceso (Passkey).
 				const passwordCredential = new PasswordCredential({ id: username, password: password });
 				await navigator.credentials.store(passwordCredential);
 				
-				// Paso 2: Ahora, creamos la clave de acceso biométrica.
 				const credential = await navigator.credentials.create({
 					publicKey: {
 						challenge,
@@ -2607,19 +2608,16 @@
 					showToast('¡Acceso biométrico activado!', 'success');
 					updateUi();
 				}
-
 			} catch (err) {
 				console.error("Error en registro de Passkey:", err);
-				showToast(`Error: ${err.name}`, 'error', 5000);
+				showToast(`Error al registrar: ${err.name}`, 'error', 5000);
 			}
-
 		};
 
 		const initConditionalLogin = async () => {
 			if (!isSupported()) return;
 			
 			try {
-				// El navegador mostrará la opción de autocompletar con Passkey
 				const passkeyCredential = await navigator.credentials.get({
 					mediation: 'conditional',
 					publicKey: {
@@ -2629,16 +2627,11 @@
 				});
 
 				if (passkeyCredential) {
-					// Si el usuario elige la Passkey, el navegador nos dará la contraseña asociada
 					const passwordCredential = await navigator.credentials.get({ password: true });
-
 					if (passwordCredential) {
 						$('loginUser').value = passwordCredential.id;
 						$('loginPass').value = passwordCredential.password;
-						// Forzamos el click para que el flujo de login original se ejecute
 						setTimeout(() => $('btnLogin').click(), 100);
-					} else {
-					   showToast('No se encontró una contraseña asociada a la clave de acceso.', 'error');
 					}
 				}
 			} catch (err) {
@@ -2648,7 +2641,6 @@
 
 		const disable = async () => {
 			localStorage.removeItem(CREDENTIAL_ID_KEY);
-			// Opcional: Esto ayuda a limpiar la asociación en algunos navegadores.
 			if (navigator.credentials && navigator.credentials.preventSilentAccess) {
 				await navigator.credentials.preventSilentAccess();
 			}
@@ -2658,14 +2650,13 @@
 
 		const updateUi = () => {
 			const section = $('biometricSection'), status = $('biometricStatus');
-			if (!section || !status) return; // Si el HTML no existe, salimos.
+			if (!section || !status) return;
 
 			if (!isSupported()) {
 				section.style.display = 'block';
 				status.innerHTML = `
 					<p class="muted" style="font-size: 12px; color: var(--warning);">
-						El acceso biométrico no está disponible.<br>
-						Motivo: Tu navegador no es compatible o la página no se está sirviendo por HTTPS.
+						El acceso biométrico no está disponible en este navegador o la página no es segura (HTTPS).
 					</p>
 				`;
 				return;
@@ -2685,7 +2676,7 @@
 					<button id="btnEnableBiometric" class="btn btn-outline" type="button">Activar acceso biométrico</button>
 				`;
 				$('btnEnableBiometric').onclick = async () => {
-					const pass = prompt("Para activar el acceso biométrico, por favor, confirma tu contraseña actual:");
+					const pass = prompt("Para activar el acceso biométrico, confirma tu contraseña actual:");
 					if (!pass) return;
 
 					const state = S.state();
@@ -2697,7 +2688,9 @@
 							showToast('Contraseña incorrecta.', 'error');
 						}
 					} catch (e) {
-						showToast('Error al verificar la contraseña.', 'error');
+						// 2. MEJORA: Capturamos el error específico y lo mostramos
+						console.error("Error al verificar la contraseña o registrar:", e);
+						showToast(`Error: ${e.name}. ${e.message}`, 'error', 5000);
 					}
 				};
 			}
