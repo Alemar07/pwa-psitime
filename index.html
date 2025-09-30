@@ -2655,10 +2655,17 @@
 
 		const updateUi = () => {
 			const section = $('biometricSection'), status = $('biometricStatus');
-			if (!section || !status) return;
+			if (!section || !status) return; // Si el HTML no existe, salimos.
 
 			if (!isSupported()) {
-				section.style.display = 'none';
+				// Si no es compatible, mostramos la sección con un mensaje de diagnóstico.
+				section.style.display = 'block';
+				status.innerHTML = `
+					<p class="muted" style="font-size: 12px; color: var(--warning);">
+						El acceso biométrico no está disponible.<br>
+						Motivo: Tu navegador no es compatible o la página no se está sirviendo por HTTPS.
+					</p>
+				`;
 				return;
 			}
 
@@ -2677,13 +2684,12 @@
 				`;
 				$('btnEnableBiometric').onclick = async () => {
 					const pass = prompt("Para activar el acceso biométrico, por favor, confirma tu contraseña actual:");
-					if (!pass) return; // Si el usuario cancela o no escribe nada
+					if (!pass) return;
 
 					const state = S.state();
 					try {
 						const r = await derive(pass, state.saltB64);
 						if (r.pwHashB64 === state.pwHashB64) {
-							// Pasamos el usuario y la contraseña para que se guarden juntos
 							await register(S.getUser(), pass);
 						} else {
 							showToast('Contraseña incorrecta.', 'error');
