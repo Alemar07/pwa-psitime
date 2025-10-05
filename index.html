@@ -12,14 +12,6 @@
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-944M4YL7C3"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
-
-	  gtag('config', 'G-944M4YL7C3');
-	</script>
   <style>
 	/* ===== 01 Variables ===== */
 	:root{
@@ -230,7 +222,7 @@
 	.btn:focus-visible, .chip:focus-visible, .result-item:focus-visible{ outline:2px solid var(--cyan); outline-offset:2px; }
 	.toast-container {
 		position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0)); left: 50%;
-		transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column;
+		transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column;
 		align-items: center; gap: 10px; pointer-events: none;
 	}
 	.toast {
@@ -327,7 +319,7 @@
 	.main{ padding:0; }
 	.stage{ display:none; }
 	@media (max-width: 980px){
-	  body{ height: 100svh; overflow: hidden; }
+	  body:not(.login-mode):not(.setup-mode){ height: 100svh; overflow: hidden; }
 	  .card{ position: fixed; inset: 0; display: flex; flex-direction: column; }
 	  .main{ flex: 1 1 auto; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
 	  #bottomNav.bottom-nav{
@@ -468,38 +460,7 @@
 			grid-template-columns: repeat(5, 1fr);
 		}
 	}
-	
-	/* ===== 19. Estilos para el botón de importar contacto ===== */
-	.field-with-button {
-	  position: relative;
-	}
-	
-	.field-with-button input[type="search"] {
-	  padding-right: 80px !important; 
-	}
-	.btn-import-contact {
-	  display: none; 
-	  position: absolute;
-	  top: 50%;
-	  right: 42px; 
-	  transform: translateY(-50%);
-	  padding: 4px;
-	  background: transparent;
-	  border: none;
-	  cursor: pointer;
-	  color: #667085;
-	  opacity: 0.8;
-	  transition: all .2s ease;
-	}
-	.btn-import-contact:hover {
-	  opacity: 1;
-	  color: var(--violet);
-	}
-	
-	body.contact-picker-supported .btn-import-contact {
-	  display: block;
-	}
-</style>
+  </style>
 </head>
 <body>
   <div class="card">
@@ -609,15 +570,10 @@
               <div>
                 <label for="contactSearch">Contacto</label>
                 <div class="contact-picker">
-                  <div class="field field-with-button">
+                  <div class="search-wrap">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
                     <input id="contactSearch" type="search" placeholder="Buscar por nombre o teléfono" autocapitalize="none" autocomplete="off" spellcheck="false" />
                     <svg id="clearSearch" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
-                    <button type="button" id="btnImportContactSend" class="btn-import-contact" title="Importar contacto del dispositivo">
-					  <svg viewBox="0 0 24 24" width="24" height="24">
-						<path fill="currentColor" d="M19.5 2H7.5C6.12 2 5 3.12 5 4.5v15C5 20.88 6.12 22 7.5 22h12c1.38 0 2.5-1.12 2.5-2.5v-15C22 3.12 20.88 2 19.5 2zM7 6h1V5H7v1zm0 5h1v-1H7v1zm0 5h1v-1H7v1zm11-8a2 2 0 1 1-4 0a2 2 0 0 1 4 0zm-1 3h-4c-1.1 0-2 .9-2 2v1.5h8V14c0-1.1-.9-2-2-2z" />
-					  </svg>
-					</button>
                   </div>
                   <div id="contactResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
                 </div>
@@ -685,7 +641,7 @@
                     <button id="btnSaveTemplate" class="btn" type="button">Guardar Plantilla</button>
                     <button id="btnCancelEditTemplate" class="btn btn-outline" type="button" style="display: none;">Cancelar Edición</button>
                 </div>
-				<p class="template-tip"><b>Consejo:</b> Puedes usar <code>{NOMBRE}</code> en tu texto y será reemplazado por el nombre del contacto.</p>
+				<p class="template-tip"><b>Consejo:</b> Usa <code>{NOMBRE}</code> en tu texto y será reemplazado por el nombre del contacto.</p>
             </div>
             <div id="templateList" style="margin-top: 24px;"></div>
           </div>
@@ -700,9 +656,9 @@
                 <button id="btnImportApp" class="btn btn-outline" type="button">Importar contactos…</button>
 				<button id="btnImportDevice" class="btn btn-outline" type="button" style="display:none;">Importar del dispositivo</button>
               </div>
-			  <!--<p class="muted" style="font-size:12px; margin-top:8px;">
+			  <p class="muted" style="font-size:12px; margin-top:8px;">
 				⚠️ La exportación `.json` usa una clave fija para facilitar la restauración. Guarda el archivo en un lugar seguro.
-			  </p>-->
+			  </p>
               <div class="toggle" style="margin-top:12px">
                 <input id="autoBackupToggle" type="checkbox" />
                 <span class="muted">Auto-descargar copia tras cada cambio de contactos</span>
@@ -728,17 +684,6 @@
 				<button id="btnImportFull" class="btn btn-outline" type="button">Importar todo…</button>
               </div>
             </div>
-			<div class="gc-sep"></div>
-			  <div id="autoBackupContainer" style="display:none; margin-top:12px;">
-				<h3 class="section-title" style="margin-bottom:10px">Guardado Automático Persistente</h3>
-				<p class="muted" style="font-size:13px; margin-top:-8px; margin-bottom:12px;">
-				  Guarda una copia de seguridad automáticamente.
-				</p>
-				<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
-				  <button id="btnAutoBackupSetup" class="btn btn-outline" type="button">Activar…</button>
-				  <span id="autoBackupStatus" class="muted" style="font-size:12px;"></span>
-				</div>
-			  </div>
           </div>
         </div>
 
@@ -790,15 +735,10 @@
       </div>
 
       <div class="contact-picker" style="margin-bottom:10px">
-        <div class="field field-with-button">
+        <div class="search-wrap">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 20.5 21.5 19l-6-6ZM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z" fill="currentColor"/></svg>
           <input id="evtSearch" type="search" placeholder="Buscar contacto (opcional)" autocapitalize="none" autocomplete="off" spellcheck="false" />
           <svg id="evtClear" class="icon-right" viewBox="0 0 24 24" fill="none"><path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4l-6.3 6.3-1.41-1.42L9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3 1.42 1.42Z" fill="currentColor"/></svg>
-          <button type="button" id="btnImportContactModal" class="btn-import-contact" title="Importar contacto del dispositivo">
-			<svg viewBox="0 0 24 24" width="24" height="24">
-				<path fill="currentColor" d="M19.5 2H7.5C6.12 2 5 3.12 5 4.5v15C5 20.88 6.12 22 7.5 22h12c1.38 0 2.5-1.12 2.5-2.5v-15C22 3.12 20.88 2 19.5 2zM7 6h1V5H7v1zm0 5h1v-1H7v1zm0 5h1v-1H7v1zm11-8a2 2 0 1 1-4 0a2 2 0 0 1 4 0zm-1 3h-4c-1.1 0-2 .9-2 2v1.5h8V14c0-1.1-.9-2-2-2z" />
-			</svg>
-		  </button>
         </div>
         <div id="evtResults" role="listbox" aria-label="Resultados de contactos" hidden></div>
         <select id="evtContact" style="display:none"></select>
@@ -829,9 +769,6 @@
         <button id="evtSend" class="btn btn-outline" type="button">Enviar cita</button>
         <button id="evtDelete" class="btn btn-danger" type="button" style="margin-left:auto; display:none">Eliminar</button>
       </div>
-      
-      <div id="modalToastContainer" class="toast-container" style="position: absolute; width: auto;"></div>
-
     </form>
   </dialog>
 
@@ -851,15 +788,14 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <script>
-// ===== UTILITIES =====
+    // ===== UTILITIES =====
 	const $ = id => document.getElementById(id);
     const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
     const ubuf = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0)).buffer;
 	const debounce = (fn, delay) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), delay); }; };
 
-	const showToast = (message, type = 'info', duration = 3000, context = 'global') => {
-		const container = (context === 'modal') ? $('modalToastContainer') : $('toastContainer');
-		if (!container) return;
+	const showToast = (message, type = 'info', duration = 3000) => {
+		const container = $('toastContainer');
 		const toast = document.createElement('div');
 		toast.className = `toast ${type}`;
 		toast.textContent = message;
@@ -899,51 +835,6 @@
 			button.disabled = false;
 		}
 	};
-	
-	// ===== INDEXEDDB KEY-VALUE STORE =====
-	const idbKeyval = (() => {
-		function getDB() {
-			return new Promise((resolve, reject) => {
-				const request = indexedDB.open('mf-gestor-citas-db', 1);
-				request.onupgradeneeded = () => request.result.createObjectStore('keyval');
-				request.onsuccess = () => resolve(request.result);
-				request.onerror = () => reject(request.error);
-			});
-		}
-		return {
-			get: async (key) => {
-				const db = await getDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction('keyval', 'readonly');
-					const store = tx.objectStore('keyval');
-					const request = store.get(key);
-					request.onsuccess = () => resolve(request.result);
-					request.onerror = () => reject(tx.error);
-				});
-			},
-			set: async (key, value) => {
-				const db = await getDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction('keyval', 'readwrite');
-					const store = tx.objectStore('keyval');
-					store.put(value, key);
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			},
-			del: async (key) => {
-				const db = await getDB();
-				return new Promise((resolve, reject) => {
-					const tx = db.transaction('keyval', 'readwrite');
-					const store = tx.objectStore('keyval');
-					store.delete(key);
-					tx.oncomplete = () => resolve();
-					tx.onerror = () => reject(tx.error);
-				});
-			}
-		};
-	})();
-
 
 	// ===== STATE MANAGEMENT MODULE =====
 	const S = (() => {
@@ -1001,7 +892,13 @@
     const saveCsv  = (name, csv) => saveFileSmart(name, 'text/csv;charset=utf-8', '\uFEFF' + csv);
 
     function openExternal(url){
-      window.location.href = url;
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
 
 	// ===== UI LOGIC =====
@@ -1018,18 +915,9 @@
       if (id === 'appView') {
         renderTemplates();
         populateTemplateSelectors();
-		updateAutoBackupStatus();
       }
     }
     const isPhoneValid = p => /^\+\d{6,15}$/.test(p);
-	const normalizePhoneNumber = (phone) => {
-	  if (!phone) return '';
-	  let p = phone.trim().replace(/[\s-()]/g, '');
-	  if (p.startsWith('00')) p = '+' + p.substring(2);
-	  if (!p.startsWith('+') && (p.startsWith('6') || p.startsWith('7')) && p.length === 9) p = '+34' + p;
-	  return p;
-	};
-	
     function diac(s){ return s.normalize('NFD').replace(/\p{Diacritic}+/gu,'').toLowerCase(); }
     function esc(s){ return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])[ch]); }
 
@@ -1132,7 +1020,6 @@
 		refreshContactsSelect(v.list);
 		updateSelectedContactCard($('contactSelect')?.value || '');
 		if(getAutoBackup()) exportFixedBackup(true);
-		triggerAutoFsaBackup();
 		showToast('Contacto eliminado.', 'success');
 	  };
 	}
@@ -1205,90 +1092,23 @@
       const when = new Date(evt.start);
       const d=when.toLocaleDateString(undefined,{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
       const t=when.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      
+      const title = evt.title ? `“${evt.title}”` : 'la cita';
       let name = evt.contactName || '';
 	  if (!name && evt.contactPhone) {
 		  const contact = findContactByPhone(evt.contactPhone);
 		  if (contact) name = contact.name;
 	  }
       
-      let mainMessage;
-      if (evt.note && evt.note.trim() !== '') {
-        mainMessage = applyTemplate(evt.note, name);
-      } else {
-        const title = evt.title ? `“${evt.title}”` : 'la cita';
-        mainMessage = `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
-      }
+      const mainMessage = `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
       
+      // Generamos y añadimos el enlace del calendario
       const calendarLink = generateCalendarLink(evt);
       if (calendarLink) {
         return `${mainMessage}\n\n🗓️ Para añadir esta cita a tu calendario, haz clic en el siguiente enlace:\n${calendarLink}`;
       }
 
-      return mainMessage;
+      return mainMessage; // Devuelve el mensaje original si el enlace no se pudo crear
     }
-
-	// ===== IMPORT & SAVE LOCAL CONTACTS =====
-
-	async function importAndSelectContact(onSelectCallback, context = 'global') {
-	  if (!('contacts' in navigator && 'select' in navigator.contacts)) {
-		showToast('El selector de contactos no es compatible con este navegador.', 'error', 3000, context);
-		return;
-	  }
-	  
-	  try {
-		const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
-		if (!contacts.length) {
-		  showToast('No se seleccionó ningún contacto.', 'info', 3000, context);
-		  return;
-		}
-		
-		const nativeContact = contacts[0];
-		if (!nativeContact.tel || nativeContact.tel.length === 0) {
-		  showToast('El contacto seleccionado no tiene número de teléfono.', 'warning', 3000, context);
-		  return;
-		}
-		
-		const name = (nativeContact.name && nativeContact.name.length > 0) ? nativeContact.name[0] : 'Sin Nombre';
-		const phone = normalizePhoneNumber(nativeContact.tel[0]);
-
-		if (!isPhoneValid(phone)) {
-			showToast(`El teléfono "${nativeContact.tel[0]}" no tiene un formato válido.`, 'error', 3000, context);
-			return;
-		}
-
-		
-		const existingContact = (window.__contacts || []).find(c => c.phone === phone);
-		
-		if (existingContact) {
-		  showToast('Este contacto ya existe en tu lista.', 'info', 3000, context);
-		  onSelectCallback(existingContact);
-		  return;
-		}
-
-		const st = S.state();
-		if (!st || !S.getKey()) return;
-		const vault = await decryptJson(S.getKey(), st.vault);
-		const list = vault.list || [];
-		
-		const newContact = { name, phone };
-		list.push(newContact);
-		vault.list = sortContacts(list);
-		st.vault = await encryptJson(S.getKey(), vault);
-		S.save(st);
-
-		refreshContactsSelect(vault.list);
-		if (getAutoBackup()) exportFixedBackup(true);
-		
-		showToast(`Contacto "${name}" importado y guardado.`, 'success', 3000, context);
-		onSelectCallback(newContact);
-
-	  } catch (err) {
-		console.error("Error al importar contacto:", err);
-		showToast('Se canceló la importación o hubo un error.', 'error', 3000, context);
-	  }
-	}
-
 
 	// ===== BACKUPS (CONTACTS) =====
     let pendingAutoBackup = null;
@@ -1322,7 +1142,6 @@
       refreshContactsSelect(vault.list);
       showToast(`Importación completa. Añadidos: ${added}, existentes: ${skipped}.`, 'success');
       if(getAutoBackup()) exportFixedBackup(true);
-	  triggerAutoFsaBackup();
     }
     async function exportCSV(){
       if(!S.getKey()){ showToast('Inicia sesión para exportar.', 'error'); return; }
@@ -1364,7 +1183,6 @@
 	  paintEventDots(); renderDayList();
 	  showToast(`Agenda importada. Añadidos: ${added}, existentes: ${skipped}.`, 'success');
 	  if(getAutoBackupCal()) exportAgendaFixed(true);
-	  triggerAutoFsaBackup();
 	}
 	function getAutoBackupCal(){ return !!S.state()?.autoBackupCal; }
 	function setAutoBackupCal(v){ const st=S.state(); if(!st) return; st.autoBackupCal = !!v; S.save(st); $('autoBackupCalToggle').checked = st.autoBackupCal; }
@@ -1408,163 +1226,6 @@
       renderTemplates();
       populateTemplateSelectors();
 	  showToast(`Importación completa. Contactos: ${addedC}+, Citas: ${addedE}+, Plantillas: ${addedT}+`, 'success');
-	}
-	
-	async function processFullBackupData(data) {
-		if(data.format!=='mf-full-fixed-v1'){
-			showToast('Copia completa no reconocida.', 'error');
-			return false;
-		}
-		let obj;
-		try {
-			const {aesKey} = await deriveFixed(data.saltB64);
-			obj = await decryptJson(aesKey, {iv:data.iv, ct:data.ct});
-		} catch(e){
-			showToast('No se pudo descifrar la copia.', 'error');
-			return false;
-		}
-		if(!obj || !Array.isArray(obj.list) || !Array.isArray(obj.events)){
-			showToast('El contenido de la copia es inválido.', 'error');
-			return false;
-		}
-		
-		const freshVault = {
-			list: obj.list || [],
-			events: obj.events || [],
-			templates: obj.templates || []
-		};
-		
-		let pass = prompt("Crea una nueva contraseña para tus datos restaurados (mín. 6 caracteres)");
-		if (!pass || pass.length < 6) {
-			showToast("La contraseña no es válida.", "error");
-			return false;
-		}
-		let user = prompt("Crea un nuevo nombre de usuario");
-		if (!user) {
-			showToast("Se requiere un nombre de usuario.", "error");
-			return false;
-		}
-
-		const {aesKey, pwHashB64, saltB64} = await derive(pass);
-		S.setKey(aesKey);
-		S.setUser(user);
-		
-		const pack = await encryptJson(aesKey, freshVault);
-		S.save({user, pwHashB64, saltB64, vault:pack, autoBackup:false});
-		triggerAutoFsaBackup();
-		
-		showToast(`Restauración completa. Por favor, inicia sesión con tus nuevas credenciales.`, 'success');
-		return true;
-	}
-
-	async function importFullFixedFromContent(content) {
-		try {
-			const data = JSON.parse(content);
-			return await processFullBackupData(data);
-		} catch (e) {
-			showToast('El archivo de copia de seguridad está dañado.', 'error');
-			return false;
-		}
-	}
-
-	async function importFullFixedFromFile(file){
-	  try {
-		const content = await file.text();
-		const success = await importFullFixedFromContent(content);
-		if (success) {
-			show('loginView');
-		}
-	  } catch(e) {
-		showToast('No se pudo leer el archivo.', 'error');
-	  }
-	}
-	
-	// ===== FILE SYSTEM ACCESS API & AUTO-BACKUP =====
-	const fsaSupported = 'showDirectoryPicker' in window;
-	const FsaBackupFile = 'backup_mf_gestor_citas.json';
-
-	async function updateAutoBackupStatus() {
-		const statusEl = $('autoBackupStatus');
-		const btn = $('btnAutoBackupSetup');
-		const container = $('autoBackupContainer');
-		if(!container) return;
-
-		container.style.display = 'block';
-
-		if (fsaSupported) {
-			const dirHandle = await idbKeyval.get('backupDirHandle');
-			if (dirHandle) {
-				if (await dirHandle.queryPermission({ mode: 'readwrite' }) === 'granted') {
-					statusEl.textContent = `Guardando en la carpeta: "${dirHandle.name}".`;
-					btn.textContent = 'Cambiar Carpeta';
-				} else {
-					statusEl.textContent = 'Permiso denegado. Vuelve a activar.';
-					btn.textContent = 'Activar Guardado en Dispositivo';
-					await idbKeyval.del('backupDirHandle');
-				}
-			} else {
-				statusEl.textContent = 'Recomendado. Guarda una copia segura en una carpeta de tu dispositivo.';
-				btn.textContent = 'Activar Guardado en Dispositivo';
-			}
-		} else {
-			const idbEnabled = await idbKeyval.get('idbBackupEnabled');
-			if (idbEnabled) {
-				statusEl.textContent = 'Guardado interno activado en este navegador.';
-				btn.textContent = 'Desactivar Guardado Interno';
-			} else {
-				statusEl.textContent = 'Recomendado. Protege tus datos contra cierres accidentales.';
-				btn.textContent = 'Activar Guardado Interno';
-			}
-		}
-	}
-	
-	async function triggerAutoFsaBackup() {
-		if (!fsaSupported || !S.getKey()) return;
-		const dirHandle = await idbKeyval.get('backupDirHandle');
-		if (!dirHandle) return;
-		try {
-			if (await dirHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-				updateAutoBackupStatus(); return;
-			}
-			const vault = await decryptJson(S.getKey(), S.state().vault);
-			const {aesKey, saltB64} = await deriveFixed();
-			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
-			const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
-			const fileHandle = await dirHandle.getFileHandle(FsaBackupFile, { create: true });
-			const writable = await fileHandle.createWritable();
-			await writable.write(JSON.stringify(payload));
-			await writable.close();
-			console.log('Copia de seguridad automática guardada con éxito.');
-		} catch (error) {
-			console.error('Error durante el auto-backup de FSA:', error);
-			showToast('Error al guardar la copia automática.', 'error');
-			updateAutoBackupStatus();
-		}
-	}
-	
-	async function triggerAutoIdbBackup() {
-		if (!S.getKey()) return;
-		const idbEnabled = await idbKeyval.get('idbBackupEnabled');
-		if (!idbEnabled) return;
-		try {
-			const vault = await decryptJson(S.getKey(), S.state().vault);
-			const {aesKey, saltB64} = await deriveFixed();
-			const pack = await encryptJson(aesKey, { list: (vault.list||[]), events: (vault.events||[]), templates: (vault.templates||[]) });
-			const payload = { format:'mf-full-fixed-v1', saltB64, iv: pack.iv, ct: pack.ct, createdAt: new Date().toISOString() };
-			await idbKeyval.set('idbBackupContent', JSON.stringify(payload));
-			console.log('Copia de seguridad interna guardada con éxito.');
-		} catch (error) {
-			console.error('Error durante el auto-backup de IndexedDB:', error);
-			showToast('Error al guardar la copia interna.', 'error');
-		}
-	}
-
-	async function triggerAutoBackup() {
-		if (fsaSupported) {
-			await triggerAutoFsaBackup();
-		} else {
-			await triggerAutoIdbBackup();
-		}
 	}
 
 	// ===== PASSWORD VISIBILITY =====
@@ -1740,6 +1401,7 @@
                 const endMinutes = (end.getHours() * 60 + end.getMinutes()) - (WEEKLY_VIEW_START_HOUR * 60);
                 const durationMinutes = Math.max(30, endMinutes - startMinutes);
 
+                // CORRECCIÓN: Cálculo preciso de top y height
                 eventEl.style.top = `${(startMinutes / 30) * 40}px`; 
                 eventEl.style.height = `${(durationMinutes / 30) * 40}px`;
 
@@ -1766,7 +1428,6 @@
         const base=new Date(selectedDay); base.setHours(10,0,0,0);
 		$('evtForm').reset();
         $('evtId').value = '';
-		$('evtContact').value = '';
         $('evtStart').value = toLocalInput(base);
         del.style.display='none';
       }else{
@@ -1818,8 +1479,7 @@
 
             st.vault = await encryptJson(S.getKey(), vault);
 			S.save(st);
-			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success', 3000, 'modal');
-			triggerAutoFsaBackup();
+			showToast(isNew ? 'Cita creada.' : 'Cita guardada.', 'success');
 
 			if (getGCalAuto()) {
 				const newGCalId = await addEventToGoogle(eventData);
@@ -1841,7 +1501,7 @@
 
 		} catch (error) {
 			console.error("Error al guardar el evento:", error);
-			showToast(error.message || 'Ocurrió un error al guardar.', 'error', 3000, 'modal');
+			showToast(error.message || 'Ocurrió un error al guardar.', 'error');
             if(error.message.includes('inicio')) $('evtStart-field').classList.add('field-error');
             if(error.message.includes('fin')) $('evtEnd-field').classList.add('field-error');
 		} finally {
@@ -1855,7 +1515,7 @@
 	  const eventToDelete = (vault.events || []).find(e => e.id === id);
 
 	  if (!eventToDelete) {
-		showToast('Error: No se encontró la cita a eliminar.', 'error', 3000, 'modal');
+		showToast('Error: No se encontró la cita a eliminar.', 'error');
 		return;
 	  }
 
@@ -1865,12 +1525,11 @@
 
 	  vault.events = (vault.events || []).filter(e => e.id !== id);
 	  st.vault=await encryptJson(S.getKey(), vault); S.save(st);
-	  triggerAutoFsaBackup();
-      
-      showToast('Cita eliminada.', 'success'); // This will show globally after modal closes
+
 	  try { closeEventModal(); } catch(_) {}
 	  if(currentView === 'month') { renderCalendar(); } else { await renderWeeklyCalendar(); }
 
+	  showToast('Cita eliminada.', 'success');
 	  if (getAutoBackupCal()) exportAgendaFixed(true);
     }
     async function sendEventByWhatsAppById(id) {
@@ -1879,11 +1538,7 @@
         if (evt) sendEventByWhatsApp(evt);
     }
     function sendEventByWhatsApp(evt){
-	  console.log("Intentando enviar cita:", evt);
-      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ 
-		  showToast('La cita no tiene un contacto válido para enviar.', 'error'); 
-		  return; 
-	  }
+      if(!evt || !evt.contactPhone || !isPhoneValid(evt.contactPhone)){ showToast('La cita no tiene un contacto válido', 'error'); return; }
       openExternal(`https://wa.me/${evt.contactPhone.replace('+','')}/?text=${encodeURIComponent(buildEventMessage(evt))}`);
     }
 
@@ -1920,16 +1575,7 @@
     }
     function wireModalSearch(){
       const input=$('evtSearch'), box=$('evtResults'), clear=$('evtClear');
-      
-      input.addEventListener('input', debounce(() => {
-        const query = input.value;
-        renderEvtResults(query);
-        // CORRECCIÓN: Si el usuario vacía el campo, limpiar el contacto seleccionado.
-        if (query.trim() === '') {
-            $('evtContact').value = '';
-        }
-      }, 200));
-
+      input.addEventListener('input', debounce(()=>renderEvtResults(input.value), 200));
       input.addEventListener('focus', ()=>renderEvtResults(input.value));
       input.addEventListener('keydown', (e)=>{
         if(e.key==='ArrowDown'){ e.preventDefault(); setActiveEvt(activeIndexEvt<0?0:activeIndexEvt+1); }
@@ -1937,13 +1583,7 @@
         else if(e.key==='Enter' && !box.hidden){ e.preventDefault(); chooseActiveEvt(); }
         else if(e.key==='Escape'){ box.hidden=true; activeIndexEvt=-1; }
       });
-      clear?.addEventListener('click', ()=>{ 
-          input.value=''; 
-          $('evtContact').value = ''; // CORRECCIÓN: Limpiar también el contacto seleccionado
-          box.hidden=true; 
-          input.focus(); 
-          renderEvtResults(''); 
-      });
+      clear?.addEventListener('click', ()=>{ input.value=''; box.hidden=true; input.focus(); renderEvtResults(''); });
     }
 
 	// ===== GOOGLE CALENDAR =====
@@ -2024,12 +1664,12 @@
             }
 			const j = await r.json();
             
-            showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success', 3000, 'modal');
+            showToast(method === 'POST' ? 'Cita creada en Google Calendar.' : 'Cita actualizada en Google Calendar.', 'success');
 			return j.id;
 
 		} catch (e) {
 			console.warn('No se pudo sincronizar con Google Calendar:', e);
-            showToast('Error al sincronizar con Google.', 'error', 3000, 'modal');
+            showToast('Error al sincronizar con Google.', 'error');
 			return null;
 		}
 	}
@@ -2106,7 +1746,6 @@
 			vault.templates.push({ id: makeTemplateId(), name, content });
 		}
 		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
-		triggerAutoFsaBackup();
 		showToast(id ? 'Plantilla actualizada' : 'Plantilla guardada', 'success');
 		resetTemplateForm(); await renderTemplates(); await populateTemplateSelectors();
 	}
@@ -2116,7 +1755,6 @@
 		const vault = await decryptJson(S.getKey(), st.vault);
 		vault.templates = (vault.templates || []).filter(t => t.id !== id);
 		st.vault = await encryptJson(S.getKey(), vault); S.save(st);
-		triggerAutoFsaBackup();
 		showToast('Plantilla eliminada.', 'success');
 		await renderTemplates(); await populateTemplateSelectors();
 	}
@@ -2228,8 +1866,7 @@
       })();
 
       $('btnAdd')?.addEventListener('click', async ()=>{
-	    const name=$('newName').value.trim(), phone=normalizePhoneNumber($('newPhone').value.trim());
-		$('newPhone').value = phone;
+	    const name=$('newName').value.trim(), phone=$('newPhone').value.trim();
 	    if(!name){ showToast('Introduce un nombre', 'error'); return; }
 	    if(!isPhoneValid(phone)){ showToast('Teléfono inválido. Usa formato: +34600111222', 'error'); return; }
 	    const st=S.state(); if(!st||!S.getKey()) return;
@@ -2253,7 +1890,6 @@
 		  $('newName').value = ''; $('newPhone').value = '+34'; $('newName').focus();
 		  showToast('Contacto añadido.', 'success');
 	    }
-		triggerAutoFsaBackup();
 	  });
 
       $('dt')?.addEventListener('change', ()=>{ $('msg').value=buildMessage(); });
@@ -2266,12 +1902,14 @@
 
         const finalMsg = applyTemplate(msg, contact?.name);
 
+        // Creamos un objeto de evento temporal con los datos del formulario
         const tempEvent = {
-            title: 'Recordatorio de Cita',
+            title: 'Recordatorio de Cita', // Título genérico
             start: $('dt')?.value,
-            note: finalMsg
+            note: finalMsg // Usamos el propio mensaje como nota
         };
 
+        // Generamos y añadimos el enlace del calendario
         const calendarLink = generateCalendarLink(tempEvent);
         let messageToSend = finalMsg;
 
@@ -2305,76 +1943,18 @@
       $('autoBackupToggle')?.addEventListener('change', (e)=>setAutoBackup(e.target.checked));
       $('btnDownloadAuto')?.addEventListener('click', ()=>{ if(pendingAutoBackup){ saveFileSmart(pendingAutoBackup.name, 'application/json', pendingAutoBackup.json); pendingAutoBackup=null; showAutoToast(false); } });
 
-	  $('btnFsaSetup')?.addEventListener('click', async () => {
-		try {
-			const dirHandle = await window.showDirectoryPicker();
-			if (await dirHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
-				showToast('Permiso para escribir en la carpeta denegado.', 'error');
-				await idbKeyval.del('backupDirHandle');
-				await updateFsaStatus();
-				return;
-			}
-			await idbKeyval.set('backupDirHandle', dirHandle);
-			await updateFsaStatus();
-			showToast('Guardado automático activado.', 'success');
-			triggerAutoFsaBackup();
-		} catch (error) {
-			if (error.name !== 'AbortError') {
-				console.error('Error al configurar FSA:', error);
-				showToast('No se pudo configurar la carpeta.', 'error');
-			}
-		}
-	  });
-	  
-	  $('btnAutoBackupSetup')?.addEventListener('click', async () => {
-		if (fsaSupported) {
-			try {
-				const dirHandle = await window.showDirectoryPicker();
-				if (await dirHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
-					showToast('Permiso para escribir en la carpeta denegado.', 'error');
-					await idbKeyval.del('backupDirHandle');
-				} else {
-					await idbKeyval.set('backupDirHandle', dirHandle);
-					showToast('Guardado en dispositivo activado.', 'success');
-					triggerAutoBackup();
-				}
-			} catch (error) {
-				if (error.name !== 'AbortError') {
-					console.error('Error al configurar FSA:', error);
-					showToast('No se pudo configurar la carpeta.', 'error');
-				}
-			}
-		} else { // Lógica para iOS
-			const idbEnabled = await idbKeyval.get('idbBackupEnabled');
-			if (idbEnabled) {
-				await idbKeyval.del('idbBackupEnabled');
-				await idbKeyval.del('idbBackupContent');
-				showToast('Guardado interno desactivado.', 'info');
-			} else {
-				await idbKeyval.set('idbBackupEnabled', true);
-				showToast('Guardado interno activado.', 'success');
-				triggerAutoBackup();
-			}
-		}
-		await updateAutoBackupStatus();
-	  });
-	  
       wireSearch(); wireModalSearch();
       $('btnNewEvent')?.addEventListener('click', ()=>openEventModal());
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
-        const phone = $('evtContact').value;
-        if (!phone) {
-            showToast('Debes seleccionar un contacto para enviar la cita.', 'error', 3000, 'modal');
-            return;
-        }
-        const contact = findContactByPhone(phone);
+        const contact = findContactByPhone($('evtContact').value);
         if (!contact || !isPhoneValid(contact.phone)) {
-            showToast('El contacto seleccionado no es válido.', 'error', 3000, 'modal');
+            showToast('Selecciona un contacto válido para enviar la cita.', 'error');
             return;
         }
 
+        // Construimos el objeto del evento con los datos actuales del modal
         const tmpEvt = {
             title: $('evtTitle').value.trim() || 'Cita',
             start: new Date($('evtStart').value).toISOString(),
@@ -2384,6 +1964,7 @@
             contactName: contact?.name
         };
 
+        // La función buildEventMessage ya se encarga de generar y añadir el enlace
         const messageToSend = buildEventMessage(tmpEvt);
         
         openExternal(`https://wa.me/${contact.phone.replace('+','')}/?text=${encodeURIComponent(messageToSend)}`);
@@ -2417,13 +1998,14 @@
             }
 	  });
 		
+      // CORRECTED VIEW SWITCHER LOGIC
 	  $('viewMonth')?.addEventListener('click', () => {
 			currentView = 'month';
 			$('viewMonth').classList.add('is-active');
 			$('viewWeek').classList.remove('is-active');
 			$('calGrid').style.display = 'grid';
 			$('calGridWeekly').style.display = 'none';
-            $('dayToolbar').style.display = 'flex';
+            $('dayToolbar').style.display = 'flex'; // <-- MOSTRAR barra de herramientas del día
 			$('dayList').style.display = 'grid';
 			renderCalendar();
 	  });
@@ -2433,7 +2015,7 @@
 			$('viewMonth').classList.remove('is-active');
 			$('calGrid').style.display = 'none';
 			$('calGridWeekly').style.display = 'grid';
-            $('dayToolbar').style.display = 'none';
+            $('dayToolbar').style.display = 'none'; // <-- OCULTAR barra de herramientas del día
 			$('dayList').style.display = 'none';
 			currentWeekDate = selectedDay;
 			renderWeeklyCalendar();
@@ -2487,108 +2069,55 @@
 	  apply(); window.matchMedia?.('(display-mode: standalone)').addEventListener('change', apply);
 	})();
 
-    // ===== INITIALIZATION =====
-	async function init(){
-		const startupLogic = async () => {
-			try {
-				if (S.state()) {
-					show('loginView');
-					return;
-				}
-
-				let backupContent = null;
-				if (fsaSupported) {
-					const dirHandle = await idbKeyval.get('backupDirHandle');
-					if (dirHandle) {
-						try {
-							const fileHandle = await dirHandle.getFileHandle(FsaBackupFile); // <--- CORRECCIÓN DE LA ERRATA
-							const file = await fileHandle.getFile();
-							backupContent = await file.text();
-						} catch (e) {
-							console.log("No se encontró el archivo de respaldo en la carpeta.");
-						}
-					}
-				} else {
-					backupContent = await idbKeyval.get('idbBackupContent');
-				}
-				
-				if (backupContent) {
-					const restore = await showConfirmation('Restaurar Copia de Seguridad', 'Parece que no hay datos locales, pero se encontró una copia de seguridad. ¿Quieres restaurarla?');
-					if (restore) {
-						const success = await importFullFixedFromContent(backupContent);
-						if (success) {
-							show('loginView');
-						} else {
-							show('setupView');
-						}
-						return;
-					}
-				}
-				
-				show('setupView');
-
-			} catch (error) {
-				console.error('Error crítico en el arranque, mostrando vista de configuración por defecto.', error);
-				show('setupView');
-			}
-		};
-
-		await startupLogic();
-
-		const m=$('msg'); if(m) m.value=buildMessage();
-		const d=new Date(Date.now()+60*60*1000);
-		$('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-		wireEvents();
-		wireBottomNav();
-		setActiveTab('agenda');
-		(function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
-		
-		if (fsaSupported) {
-			const container = $('autoBackupContainer');
-			if(container) container.style.display = 'block';
-		} else {
-			const container = $('autoBackupContainer');
-			if(container) container.style.display = 'block';
-		}
-
-		if ('contacts' in navigator && 'select' in navigator.contacts) {
-		  document.body.classList.add('contact-picker-supported');
-		  $('btnImportContactSend')?.addEventListener('click', () => importAndSelectContact(selectContact, 'global'));
-		  $('btnImportContactModal')?.addEventListener('click', () => importAndSelectContact(selectModalContact, 'modal'));
-		  const btn = $('btnImportDevice'); 
-		  if(btn) btn.style.display = 'inline-flex';
+	// ===== INITIALIZATION =====
+    function init(){
+      show(S.state()? 'loginView' : 'setupView');
+      const m=$('msg'); if(m) m.value=buildMessage();
+      const d=new Date(Date.now()+60*60*1000);
+      $('dt').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      wireEvents();
+	  wireBottomNav();
+	  setActiveTab('agenda');
+	  (function waitGIS(){ if (window.google?.accounts?.oauth2) setupGoogle(); else setTimeout(waitGIS, 300); })();
+	  if ('contacts' in navigator && 'select' in navigator.contacts) {
+		  const btn = $('btnImportDevice'); btn.style.display = 'inline-flex';
 		  btn.onclick = async () => {
 			  try {
-				  const contacts = await navigator.contacts.select(['name', 'tel'], {multiple: true});
+                  const props = ['name', 'tel'];
+                  const opts = {multiple: true};
+				  const contacts = await navigator.contacts.select(props, opts);
 				  if (!contacts.length) return;
-				  const st = S.state(); if (!st || !S.getKey()) return;
-				  const vault = await decryptJson(S.getKey(), st.vault);
-				  let added = 0, skipped = 0;
-				  const phoneSet = new Set((vault.list || []).map(c => c.phone));
-				  contacts.forEach(contact => {
-					  if (contact.tel && contact.tel.length > 0) {
-						  const phone = normalizePhoneNumber(contact.tel[0]);
-						  if (!phoneSet.has(phone)) {
-							  vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
-							  phoneSet.add(phone);
-							  added++;
-						  } else { skipped++; }
-					  }
-				  });
-				  if (added > 0) {
-					  st.vault = await encryptJson(S.getKey(), vault);
-					  S.save(st);
-					  refreshContactsSelect(vault.list);
-					  triggerAutoBackup(); // <-- Llamada corregida
-				  }
+                  const st = S.state(); if (!st || !S.getKey()) return;
+                  const vault = await decryptJson(S.getKey(), st.vault);
+                  let added = 0, skipped = 0;
+                  const phoneSet = new Set((vault.list || []).map(c => c.phone));
+                  
+                  contacts.forEach(contact => {
+                      if (contact.tel && contact.tel.length > 0) {
+                          const phone = contact.tel[0];
+                          if (!phoneSet.has(phone)) {
+                              vault.list.push({name: contact.name[0] || 'Sin Nombre', phone});
+                              phoneSet.add(phone);
+                              added++;
+                          } else {
+                              skipped++;
+                          }
+                      }
+                  });
+
+                  if (added > 0) {
+                      st.vault = await encryptJson(S.getKey(), vault);
+                      S.save(st);
+                      refreshContactsSelect(vault.list);
+                  }
 				  showToast(`${added} contactos importados. ${skipped} ya existían.`, 'success');
 			  } catch (err) {
-				  console.error(err);
-				  showToast('No se pudieron importar los contactos.', 'error');
-			  }
+                  console.error(err);
+                  showToast('No se pudieron importar los contactos.', 'error');
+              }
 		  };
-		}
-	}
+	  }
+    }
     document.addEventListener('DOMContentLoaded', init);
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui23').catch(()=>{})); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui21').catch(()=>{})); }
 </script>
