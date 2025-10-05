@@ -63,10 +63,6 @@
 	.subtitle{ margin:2px 0 0; font-size:clamp(12px,1.6vw,14px); color:#c7d2fe }
 	.hr{ height:1px; background:rgba(255,255,255,.14); margin:0 }
 	body.login-mode .auth-head, body.login-mode .hr, body.setup-mode .auth-head, body.setup-mode .hr{ display:none; }
-	body.login-mode #bottomNav,
-	body.setup-mode #bottomNav {
-	  display: none !important;
-	}
 	body:not(.login-mode):not(.setup-mode) .auth-head{
 	  position:sticky; top:0; z-index:20;
 	  backdrop-filter: blur(12px) saturate(120%);
@@ -563,7 +559,6 @@
                 <svg id="toggleLogin" class="icon-right" viewBox="0 0 24 24" fill="none" aria-label="Mostrar/Ocultar"></svg>
               </div>
               <button id="btnLogin" class="btn" type="button">Entrar</button>
-			  
               <button id="btnReset" class="btn-ghost" type="button" style="display:none">Borrar datos de la app</button>
             </div>
           </div>
@@ -744,7 +739,6 @@
 				  <span id="autoBackupStatus" class="muted" style="font-size:12px;"></span>
 				</div>
 			  </div>
-			</div>
           </div>
         </div>
 
@@ -2199,7 +2193,7 @@
         el.addEventListener('focus', ()=>{ if(!el.value) el.value='+34'; });
         el.addEventListener('input', ()=>{ el.value = '+'+el.value.replace(/[^\d]/g,''); });
       })();
-		
+
       $('btnAdd')?.addEventListener('click', async ()=>{
 	    const name=$('newName').value.trim(), phone=normalizePhoneNumber($('newPhone').value.trim());
 		$('newPhone').value = phone;
@@ -2549,7 +2543,6 @@
 		  };
 		}
 	}
-	
     document.addEventListener('DOMContentLoaded', init);
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui25').catch(()=>{})); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=ui24').catch(()=>{})); }
 </script>
