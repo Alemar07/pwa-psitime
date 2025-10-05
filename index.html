@@ -11,7 +11,6 @@
   <link rel="manifest" href="manifest.webmanifest?v=ui21">
   <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
   <style>
 	/* ===== 01 Variables ===== */
 	:root{
@@ -1043,44 +1042,6 @@
 	  updateSelectedContactCard(sel?.value || '');
 	}
 
-	
-	
-	// ===== NUEVA FUNCIÓN: GENERADOR DE ENLACE DE CALENDARIO =====
-	/**
-	 * Enlace de Data URI con un archivo .ics 
-	 * @param {object} evt - El objeto del evento con { title, start, end, note }.
-	 * @returns {string|null} - El enlace Data URI o null si el evento es inválido.
-	 */
-	const generateCalendarLink = (evt) => {
-		if (!evt || !evt.start) return null;
-
-		const data = {
-			title: evt.title || 'Cita',
-			start: new Date(evt.start).getTime(),
-			end: evt.end ? new Date(evt.end).getTime() : 0,
-			desc: evt.note || `Recordatorio para ${new Date(evt.start).toLocaleString('es-ES')}.`
-		};
-
-		const jsonString = JSON.stringify(data);
-
-		// 1. Comprimimos el string a un array de bytes 
-		const compressed = pako.deflate(jsonString);
-
-		// 2. Convertimos ese array de bytes a un string Base64.
-		
-		const binaryString = String.fromCharCode.apply(null, compressed);
-		const base64String = btoa(binaryString);
-
-		// 3. Codificamos para que sea seguro en una URL.
-		const encoded = base64String
-			.replace(/\+/g, '-')
-			.replace(/\//g, '_')
-			.replace(/=+$/, '');
-
-		const baseUrl = window.location.origin;
-		return `${baseUrl}/api/c/${encoded}`;
-	};
-	
 	// ===== MESSAGE BUILDERS =====
     function buildMessage(){
       const v=$('dt')?.value||''; const when=v?new Date(v):new Date();
@@ -1098,16 +1059,7 @@
 		  const contact = findContactByPhone(evt.contactPhone);
 		  if (contact) name = contact.name;
 	  }
-      
-      const mainMessage = `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
-      
-      // Generamos y añadimos el enlace del calendario
-      const calendarLink = generateCalendarLink(evt);
-      if (calendarLink) {
-        return `${mainMessage}\n\n🗓️ Para añadir esta cita a tu calendario, haz clic en el siguiente enlace:\n${calendarLink}`;
-      }
-
-      return mainMessage; // Devuelve el mensaje original si el enlace no se pudo crear
+      return `¡Hola${name?`, ${name}`:''}! 👋 Te recuerdo tu cita ${title} para el ${d} a las ${t}.`;
     }
 
 	// ===== BACKUPS (CONTACTS) =====
@@ -1901,23 +1853,7 @@
         if(!isPhoneValid(phone)){ showToast('Selecciona un contacto válido', 'error'); return; }
 
         const finalMsg = applyTemplate(msg, contact?.name);
-
-        // Creamos un objeto de evento temporal con los datos del formulario
-        const tempEvent = {
-            title: 'Recordatorio de Cita', // Título genérico
-            start: $('dt')?.value,
-            note: finalMsg // Usamos el propio mensaje como nota
-        };
-
-        // Generamos y añadimos el enlace del calendario
-        const calendarLink = generateCalendarLink(tempEvent);
-        let messageToSend = finalMsg;
-
-        if (calendarLink) {
-            messageToSend += `\n\n🗓️ Para añadir esta cita a tu calendario, haz clic en el siguiente enlace:\n${calendarLink}`;
-        }
-
-        openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(messageToSend)}`);
+        openExternal(`https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(finalMsg)}`);
       });
 	  $('gCalAutoToggle')?.addEventListener('change', (e)=> setGCalAuto(e.target.checked));
 	  $('btnGConnect')?.addEventListener('click', ()=>{ if (googleTokenClient) googleTokenClient.requestAccessToken({ prompt: 'consent' }); });
@@ -1948,26 +1884,14 @@
       $('evtSave')?.addEventListener('click', saveEvent);
       $('evtDelete')?.addEventListener('click', ()=>{ const id=$('evtId').value; if(id) deleteEvent(id); });
       $('evtSend')?.addEventListener('click', ()=>{
+        const id=$('evtId').value;
         const contact = findContactByPhone($('evtContact').value);
-        if (!contact || !isPhoneValid(contact.phone)) {
-            showToast('Selecciona un contacto válido para enviar la cita.', 'error');
-            return;
-        }
-
-        // Construimos el objeto del evento con los datos actuales del modal
         const tmpEvt = {
-            title: $('evtTitle').value.trim() || 'Cita',
-            start: new Date($('evtStart').value).toISOString(),
-            end: $('evtEnd').value ? new Date($('evtEnd').value).toISOString() : null,
-            note: $('evtNote').value.trim(),
-            contactPhone: contact?.phone, 
-            contactName: contact?.name
+            title: $('evtTitle').value.trim(), start: new Date($('evtStart').value).toISOString(),
+            contactPhone: contact?.phone, contactName: contact?.name
         };
-
-        // La función buildEventMessage ya se encarga de generar y añadir el enlace
-        const messageToSend = buildEventMessage(tmpEvt);
-        
-        openExternal(`https://wa.me/${contact.phone.replace('+','')}/?text=${encodeURIComponent(messageToSend)}`);
+        if(!id) sendEventByWhatsApp(tmpEvt);
+        else sendEventByWhatsAppById(id);
       });
       $('evtClose')?.addEventListener('click', closeEventModal);
       ['loginUser','loginPass','setupUser','setupPass'].forEach(id=>{ $(id)?.addEventListener('keydown',e=>{ if(e.key==='Enter') (id.startsWith('login')?$('btnLogin'):$('btnSetup'))?.click(); }); });
